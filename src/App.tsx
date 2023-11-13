@@ -1,8 +1,13 @@
+import { ThemeProvider } from "@mui/material";
+import AppTheme from "./themes/AppTheme";
+import Popup from "./pages/Popup";
+
+
 function App() {
   return (
-    <div className="App">
-      Hello World
-    </div>
+    <ThemeProvider theme={AppTheme}>
+      <Popup/>
+    </ThemeProvider>
   );
 }
 

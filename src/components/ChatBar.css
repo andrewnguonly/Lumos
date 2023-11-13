@@ -1,0 +1,16 @@
+.chat-bar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.input-field {
+  flex: 1;
+  width: 450px;
+}
+
+.submit-button {
+  flex: 1;
+  width: 40px;
+  height: 40px;
+}
