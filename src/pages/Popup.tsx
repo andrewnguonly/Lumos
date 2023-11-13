@@ -5,7 +5,7 @@ import "./Popup.css";
 const Popup: React.FC = () => {
   return (
     <div className="popup">
-      <ChatBar />
+      <ChatBar/>
     </div>
   )
 }

@@ -6,5 +6,8 @@
     "action": {
         "default_popup": "js/index.html",
         "default_title": "React Chrome Extension"
+    },
+    "background": {
+        "service_worker": "scripts/background.js"
     }
 }
