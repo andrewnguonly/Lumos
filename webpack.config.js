@@ -41,6 +41,9 @@ module.exports = {
     ],
     resolve: {
         extensions: [".tsx", ".ts", ".js"],
+        fallback: {
+            "perf_hooks": false,
+        }
     },
     output: {
         path: path.join(__dirname, "dist/js"),
