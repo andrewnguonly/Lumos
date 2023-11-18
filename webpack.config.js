@@ -1,6 +1,8 @@
 const path = require("path");
 const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin")
+// https://stackoverflow.com/questions/68707553/uncaught-referenceerror-buffer-is-not-defined
+const webpack = require("webpack");
 
 module.exports = {
     entry: {
@@ -35,7 +37,11 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 { from: "manifest.json", to: "../manifest.json" },
+                { from: "src/scripts/content.js", to: "content.js" }
             ],
+        }),
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
         }),
         ...getHtmlPlugins(["index"]),
     ],
