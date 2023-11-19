@@ -5,7 +5,14 @@
     "description": "A web-based LLM co-pilot for browsing the web. Your prompts never leave the browser.",
     "action": {
         "default_popup": "js/index.html",
-        "default_title": "Lumos"
+        "default_title": "Lumos",
+        "default_icon": "assets/wand_128.png"
+    },
+    "icons": {
+        "16": "assets/wand_16.png",
+        "32": "assets/wand_32.png",
+        "48": "assets/wand_48.png",
+        "128": "assets/wand_128.png"
     },
     "background": {
         "service_worker": "js/background.js"

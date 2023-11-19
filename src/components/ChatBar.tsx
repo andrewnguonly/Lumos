@@ -60,7 +60,7 @@ const ChatBar: React.FC = () => {
           disabled={submitDisabled}
           onClick={handleSendButtonClick}
         >
-          <SendIcon/>
+          <img alt="" src="../assets/wand_32.png"/>
         </IconButton>
       </Box>
       <Box className="chat-box">
