@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";import "./ChatBar.css";
+import "./ChatBar.css";
 
 
 const ChatBar: React.FC = () => {
@@ -17,7 +17,6 @@ const ChatBar: React.FC = () => {
   const handleSendButtonClick = async () => {
     setLoading(true);
     setSubmitDisabled(true);
-
     chrome.runtime.sendMessage({ prompt: prompt });
   };
 
@@ -27,23 +26,10 @@ const ChatBar: React.FC = () => {
       setSubmitDisabled(false);
       setCompletion(msg.answer);
     }
-    
   });
 
   useEffect(() => {
-    
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
-
-    // fetch page contents
-    // chrome.tabs.query({currentWindow: true, active: true}, (tabs) => {
-    //   if (tabs[0].id) {
-    //     var port = chrome.tabs.connect(tabs[0].id, {name: "channelName"});
-    //     port.postMessage({});
-    //     port.onMessage.addListener((msg) => {
-    //       chrome.runtime.sendMessage({ context: msg.contents });
-    //     });
-    //   }
-    // });
   });
 
   return (
@@ -60,7 +46,7 @@ const ChatBar: React.FC = () => {
           disabled={submitDisabled}
           onClick={handleSendButtonClick}
         >
-          <img alt="" src="../assets/wand_32.png"/>
+          <img alt="" src="../assets/wand_32.png" />
         </IconButton>
       </Box>
       <Box className="chat-box">
@@ -71,7 +57,7 @@ const ChatBar: React.FC = () => {
           value={completion}
         />
       </Box>
-      {loading && <LinearProgress/>}
+      {loading && <LinearProgress />}
     </Box>
   );
 }
