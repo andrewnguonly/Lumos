@@ -15,7 +15,7 @@ A local server is needed to run the LLM. Follow the [Web LLM REST API documentat
 
 ### Download Prebuilt Models and Weights
 
-[This example notebook](https://github.com/mlc-ai/notebooks/blob/main/mlc-llm/tutorial_chat_module_getting_started.ipynb) demonstrates the steps to install the MLC-Chat Python package and download a prebuilt model and weights. Models and weights are saved to the local machine.
+[This example notebook](https://github.com/mlc-ai/notebooks/blob/main/mlc-llm/tutorial_chat_module_getting_started.ipynb) demonstrates the steps to install the MLC-Chat Python package and download prebuilt models and weights. Models and weights are saved to the local machine.
 
 Example directory structure:
 ```
@@ -34,6 +34,14 @@ Example directory structure:
 Example:
 ```
 python -m mlc_chat.rest --model=./models/prebuilt/mlc-chat-Llama-2-7b-chat-hf-q4f16_1 --lib-path=./models/prebuilt/lib/Llama-2-7b-chat-hf-q4f16_1-metal.so
+```
+
+Terminal output:
+```
+INFO:     Started server process [91509]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
 ## Chrome Extension
