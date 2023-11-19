@@ -1,8 +1,42 @@
-# Chrome Extension React Template
+# Lumos
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). Clone this repo to bootstrap a Chrome Extension React app.
+A web-based LLM co-pilot for browsing the web. Your prompts never leave the browser.
 
-## Available Scripts
+This Chrome extension is powered by [Web LLM](https://webllm.mlc.ai/). Inference is done on the local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the Web LLM project.
+
+- [Web LLM (Home)](https://webllm.mlc.ai/)
+- [Web LLM (GitHub)](https://github.com/mlc-ai/web-llm/tree/main)
+
+_Lumos. Nox. Lumos. Nox._
+
+## Local Server
+
+A local server is needed to run the LLM. Follow the [Web LLM REST API documentation](https://llm.mlc.ai/docs/deploy/rest.html) to set up the server.
+
+### Download Prebuilt Models and Weights
+
+[This example notebook](https://github.com/mlc-ai/notebooks/blob/main/mlc-llm/tutorial_chat_module_getting_started.ipynb) demonstrates the steps to install the MLC-Chat Python package and download a prebuilt model and weights. Models and weights are saved to the local machine.
+
+Example directory structure:
+```
+/models
+  /prebuilt
+    /lib
+      Llama-2-7b-chat-hf-q4f16_1-metal.so
+      <model_name_2>
+    /mlc-chat-Llama-2-7b-chat-hf-q4f16_1
+      ...
+    /mlc-chat-<model_name_2>
+```
+
+### Start Server
+
+Example:
+```
+python -m mlc_chat.rest --model=./models/prebuilt/mlc-chat-Llama-2-7b-chat-hf-q4f16_1 --lib-path=./models/prebuilt/lib/Llama-2-7b-chat-hf-q4f16_1-metal.so
+```
+
+## Chrome Extension
 
 In the project directory, you can run:
 

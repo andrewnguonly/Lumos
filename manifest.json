@@ -1,11 +1,11 @@
 {
     "version": "1.0.0",
     "manifest_version": 3,
-    "name": "React Chrome Extension",
-    "description": "This is a Chrome extension built with React and TypeScript",
+    "name": "Lumos",
+    "description": "A web-based LLM co-pilot for browsing the web. Your prompts never leave the browser.",
     "action": {
         "default_popup": "js/index.html",
-        "default_title": "React Chrome Extension"
+        "default_title": "Lumos"
     },
     "background": {
         "service_worker": "js/background.js"
