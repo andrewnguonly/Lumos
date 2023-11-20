@@ -46,6 +46,39 @@ INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
+### Update `max_window_size`
+
+The following error may occur if the `max_window_size` is too small:
+
+```
+[12:22:30] /Users/catalyst/Workspace/mlc-ai-package-self-runner/_work/package/package/mlc-llm/cpp/llm_chat.cc:648: Warning: The prompt tokens are more than `max_window_size`, the input will be truncated.
+```
+
+Update the `max_window_size` configuration in the model's `mlc-chat-config.json` configuration file (located at `./models/prebuilt/mlc-chat-Llama-2-7b-chat-hf-q4f16_1/mlc-chat-config.json`).
+
+```
+{
+    "model_lib": "Llama-2-7b-chat-hf-q4f16_1",
+    "local_id": "Llama-2-7b-chat-hf-q4f16_1",
+    "conv_template": "llama-2",
+    "temperature": 0.7,
+    "repetition_penalty": 1.0,
+    "top_p": 0.95,
+    "mean_gen_len": 128,
+    "max_gen_len": 512,
+    "shift_fill_factor": 0.3,
+    "tokenizer_files": [
+        "added_tokens.json",
+        "tokenizer.json",
+        "tokenizer.model"
+    ],
+    "model_category": "llama",
+    "model_name": "Llama-2-7b-chat-hf",
+    "max_window_size": 8192,
+    "vocab_size": 32000
+}
+```
+
 ## Ollama Server
 
 A local Ollama server is needed for the embedding database. Download and install Ollama and the CLI [here](https://ollama.ai/).
