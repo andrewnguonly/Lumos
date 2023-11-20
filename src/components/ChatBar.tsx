@@ -35,22 +35,23 @@ const ChatBar: React.FC = () => {
     setSubmitDisabled(true);
     chrome.runtime.sendMessage({ prompt: prompt });
 
-    chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       var activeTab = tabs[0];
       var activeTabId = activeTab.id;
 
       return chrome.scripting.executeScript({
-         // @ts-ignore
+        // @ts-ignore
         target: { tabId: activeTabId },
         injectImmediately: true,
         func: htmlToString,
         args: ["body"]
       });
-    }).then(function (results) {
-      chrome.runtime.sendMessage({ context: results[0].result });
+    }).then(async (results) => {
+      const pageContent = results[0].result;
+      chrome.runtime.sendMessage({ context: pageContent });
       chrome.runtime.sendMessage({ prompt: prompt });
     }).catch(function (error) {
-      console.log(`Error injecting script: ${error}`);
+      console.log(`Error: ${error}`);
     });
   };
 

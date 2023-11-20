@@ -1,17 +1,17 @@
 # Lumos
 
-A web-based LLM co-pilot for browsing the web. Your prompts never leave the browser.
+A RAG LLM co-pilot for browsing the web, powered by local LLMs.
 
-This Chrome extension is powered by [Web LLM](https://webllm.mlc.ai/). Inference is done on the local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the Web LLM project.
+This Chrome extension is powered by [Web LLM](https://webllm.mlc.ai/) and [Ollama](https://ollama.ai/). Inference is done on your local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the Web LLM project and the [local LLMs (Ollama) examples](https://js.langchain.com/docs/use_cases/question_answering/local_retrieval_qa) provided by LangChain.
 
 - [Web LLM (Home)](https://webllm.mlc.ai/)
 - [Web LLM (GitHub)](https://github.com/mlc-ai/web-llm/tree/main)
 
 _Lumos. Nox. Lumos. Nox._
 
-## Local Server
+## Web LLM Server
 
-A local server is needed to run the LLM. Follow the [Web LLM REST API documentation](https://llm.mlc.ai/docs/deploy/rest.html) to set up the server.
+A local Web LLM server is needed to run the LLM. Follow the [Web LLM REST API documentation](https://llm.mlc.ai/docs/deploy/rest.html) to set up the server.
 
 ### Download Prebuilt Models and Weights
 
@@ -43,6 +43,26 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
+
+## Ollama Server
+
+A local Ollama server is needed for the embedding database. Download and install Ollama [here](https://ollama.ai/).
+
+### Start Server
+
+Example:
+```
+OLLAMA_ORIGINS=chrome-extension://* ollama serve
+```
+
+Terminal output:
+```
+2023/11/19 20:55:16 images.go:799: total blobs: 6
+2023/11/19 20:55:16 images.go:806: total unused blobs removed: 0
+2023/11/19 20:55:16 routes.go:777: Listening on 127.0.0.1:11434 (version 0.1.10)
+```
+
+Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://*` to allow requests originating from the Chrome extension.
 
 ## Chrome Extension
 
@@ -81,8 +101,6 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
+### Load Unpacked Extension (Install)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
