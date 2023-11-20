@@ -1,6 +1,10 @@
 import { createTheme } from "@mui/material/styles";
+import { amber } from '@mui/material/colors';
 
 const AppTheme = createTheme({
+  palette: {
+    primary: amber,
+  },
   components: {
     MuiTextField: {
       defaultProps: {
@@ -11,7 +15,7 @@ const AppTheme = createTheme({
       defaultProps: {
         color: "primary"
       }
-    }
+    },
   }
 });
 
