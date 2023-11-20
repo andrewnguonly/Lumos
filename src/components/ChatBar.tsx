@@ -82,6 +82,11 @@ const ChatBar: React.FC = () => {
           placeholder="Enter your prompt here"
           value={prompt}
           onChange={handlePromptChange}
+          onKeyUp={(event) => {
+            if (event.key === "Enter") {
+              handleSendButtonClick();
+            }
+          }}
         />
         <IconButton
           className="submit-button"
