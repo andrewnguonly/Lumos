@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
 import "./ChatBar.css";
 
@@ -9,6 +9,7 @@ const ChatBar: React.FC = () => {
   const [completion, setCompletion] = useState("");
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading, setLoading] = useState(false);
+  const completionTextFieldRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -63,6 +64,9 @@ const ChatBar: React.FC = () => {
       setLoading(false);
       setSubmitDisabled(false);
       setCompletion(msg.answer);
+      if (completionTextFieldRef.current) {
+        completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
+      }
     }
   });
 
@@ -90,6 +94,7 @@ const ChatBar: React.FC = () => {
       <Box className="chat-box">
         <TextField
           className="chat-display-field"
+          inputRef={completionTextFieldRef}
           multiline
           rows={5}
           value={completion}
