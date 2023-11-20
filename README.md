@@ -106,3 +106,10 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 ### Load Unpacked Extension (Install)
 
 https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
+
+## Use Cases
+- Summarize long threads on issue tracking sites, forums, and social media sites.
+- Summarize news articles.
+- Ask questions about reviews on business and product pages.
+- Ask questions about long, technical documentation.
+- ... what else?
