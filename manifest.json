@@ -17,13 +17,8 @@
     "background": {
         "service_worker": "js/background.js"
     },
-    "content_scripts": [
-        {
-            "matches": ["<all_urls>"],
-            "js": ["js/content.js"]
-        }
-    ],
     "permissions": [
-        "tabs"
+        "scripting",
+        "activeTab"
     ]
 }

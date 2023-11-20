@@ -14,10 +14,44 @@ const ChatBar: React.FC = () => {
     setPrompt(event.target.value);
   };
 
+  const htmlToString = (selector: any) => {
+    if (selector) {
+        selector = document.querySelector(selector);
+        if (!selector) return ""
+    } else {
+        selector = document.documentElement;
+    }
+
+    // strip HTML tags
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(selector.outerHTML, "text/html");
+    const textContent = doc.body.textContent || "";
+
+    return textContent.trim();
+}
+
   const handleSendButtonClick = async () => {
     setLoading(true);
     setSubmitDisabled(true);
     chrome.runtime.sendMessage({ prompt: prompt });
+
+    chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
+      var activeTab = tabs[0];
+      var activeTabId = activeTab.id;
+
+      return chrome.scripting.executeScript({
+         // @ts-ignore
+        target: { tabId: activeTabId },
+        injectImmediately: true,
+        func: htmlToString,
+        args: ["body"]
+      });
+    }).then(function (results) {
+      chrome.runtime.sendMessage({ context: results[0].result });
+      chrome.runtime.sendMessage({ prompt: prompt });
+    }).catch(function (error) {
+      console.log(`Error injecting script: ${error}`);
+    });
   };
 
   const handleBackgroundMessage = ((msg: any, error: any) => {

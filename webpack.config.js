@@ -38,7 +38,6 @@ module.exports = {
       patterns: [
         { from: "manifest.json", to: "../manifest.json" },
         { from: "./src/assets", to: "../assets" },
-        { from: "./src/scripts/content.js", to: "content.js" },     
       ],
     }),
     new webpack.ProvidePlugin({ // needed for @mlc-ai/web-llm
