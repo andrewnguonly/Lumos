@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
 
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1000,
+      chunkSize: 800,
       chunkOverlap: 200,
     });
     const documents = await splitter.createDocuments([context]);
@@ -36,7 +36,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
     );
 
     // search for most similar document based on prompt
-    const filtered_documents = await vectorStore.similaritySearch(prompt, 20);
+    const filtered_documents = await vectorStore.similaritySearch(prompt, 15);
     var filtered_context = "";
     filtered_documents.forEach((doc: Document) => {
       filtered_context += doc.pageContent + "\n\n";

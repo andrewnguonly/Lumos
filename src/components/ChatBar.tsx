@@ -13,6 +13,7 @@ const ChatBar: React.FC = () => {
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
+    chrome.storage.session.set({ prompt: event.target.value});
   };
 
   const htmlToString = (selector: any) => {
@@ -37,6 +38,8 @@ const ChatBar: React.FC = () => {
   const handleSendButtonClick = async () => {
     setLoading(true);
     setSubmitDisabled(true);
+    setCompletion("");
+    chrome.storage.session.set({ completion: "" });
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       var activeTab = tabs[0];
@@ -64,6 +67,7 @@ const ChatBar: React.FC = () => {
       setLoading(false);
       setSubmitDisabled(false);
       setCompletion(msg.answer);
+      chrome.storage.session.set({ completion: msg.answer });
       if (completionTextFieldRef.current) {
         completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
       }
@@ -72,6 +76,15 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+    
+    chrome.storage.session.get(["prompt", "completion"], (data) => {
+      if (data.prompt) {
+        setPrompt(data.prompt);
+      }
+      if (data.completion) {
+        setCompletion(data.completion);
+      }
+    });
   });
 
   return (
