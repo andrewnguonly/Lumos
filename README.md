@@ -6,6 +6,8 @@ This Chrome extension is powered by [Web LLM](https://webllm.mlc.ai/) and [Ollam
 
 - [Web LLM (Home)](https://webllm.mlc.ai/)
 - [Web LLM (GitHub)](https://github.com/mlc-ai/web-llm/tree/main)
+- [Ollama (Home)](https://ollama.ai/)
+- [Ollama (GitHub)](https://github.com/jmorganca/ollama)
 
 _Lumos. Nox. Lumos. Nox._
 
@@ -46,7 +48,7 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 
 ## Ollama Server
 
-A local Ollama server is needed for the embedding database. Download and install Ollama [here](https://ollama.ai/).
+A local Ollama server is needed for the embedding database. Download and install Ollama and the CLI [here](https://ollama.ai/).
 
 ### Start Server
 
