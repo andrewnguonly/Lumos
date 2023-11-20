@@ -25,7 +25,10 @@ const ChatBar: React.FC = () => {
     // strip HTML tags
     const parser = new DOMParser();
     const doc = parser.parseFromString(selector.outerHTML, "text/html");
-    const textContent = doc.body.textContent || "";
+    var textContent = doc.body.textContent || "";
+
+    // Use a regular expression to replace contiguous white spaces with a single space
+    textContent = textContent.replace(/\s+/g, " ");
 
     return textContent.trim();
 }
@@ -33,7 +36,6 @@ const ChatBar: React.FC = () => {
   const handleSendButtonClick = async () => {
     setLoading(true);
     setSubmitDisabled(true);
-    chrome.runtime.sendMessage({ prompt: prompt });
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       var activeTab = tabs[0];
@@ -48,9 +50,10 @@ const ChatBar: React.FC = () => {
       });
     }).then(async (results) => {
       const pageContent = results[0].result;
-      chrome.runtime.sendMessage({ context: pageContent });
-      chrome.runtime.sendMessage({ prompt: prompt });
-    }).catch(function (error) {
+      chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
+        chrome.runtime.sendMessage({ prompt: prompt });
+      });
+    }).catch((error) => {
       console.log(`Error: ${error}`);
     });
   };
