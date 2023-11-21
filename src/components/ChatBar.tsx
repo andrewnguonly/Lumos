@@ -27,7 +27,7 @@ const ChatBar: React.FC = () => {
     // strip HTML tags
     const parser = new DOMParser();
     const doc = parser.parseFromString(selector.outerHTML, "text/html");
-    var textContent = doc.body.textContent || "";
+    var textContent = doc.body.innerText || "";
 
     // Use a regular expression to replace contiguous white spaces with a single space
     textContent = textContent.replace(/\s+/g, " ");
