@@ -1,28 +1,36 @@
-import { ChatRestModule } from "@mlc-ai/web-llm";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { Document } from "langchain/document";
+import { PromptTemplate } from "langchain/prompts";
+import { Ollama } from "langchain/llms/ollama";
 import { OllamaEmbeddings } from "langchain/embeddings/ollama";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { StringOutputParser } from "langchain/schema/output_parser";
+import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
+import { formatDocumentsAsString } from "langchain/util/document";
 
 
-const cm = new ChatRestModule();
+const OLLAMA_BASE_URL = "http://localhost:11434";
+const OLLAMA_MODEL = "llama2";
 var context = "";
-
-// Set reponse callback for chat module
-const generateProgressCallback = (step: number, message: string) => {
-  // send the answer back to the content script
-  console.log(`messsage (${step}): ${message}`);
-  chrome.runtime.sendMessage({ answer: message });
-};
 
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
     var prompt = request.prompt;
+    console.log(`Received prompt: ${prompt}`);
+
+    // create model
+    const model = new Ollama({ baseUrl: OLLAMA_BASE_URL, model: OLLAMA_MODEL });
+
+    // create prompt template
+    const template = `Use only the following context when answering the question. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT\n\nQuestion: {question}\n\nAnswer: `;
+    const formatted_prompt = new PromptTemplate({
+      inputVariables: ["filtered_context", "question"],
+      template,
+    });
 
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 800,
-      chunkOverlap: 200,
+      chunkSize: 500,
+      chunkOverlap: 0,
     });
     const documents = await splitter.createDocuments([context]);
 
@@ -30,23 +38,26 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const vectorStore = await MemoryVectorStore.fromDocuments(
       documents,
       new OllamaEmbeddings({
-        model: "llama2", // default value
-        baseUrl: "http://localhost:11434", // default value
+        baseUrl: OLLAMA_BASE_URL,
+        model: OLLAMA_MODEL,
       }),
     );
+    const retriever = vectorStore.asRetriever();
 
-    // search for most similar document based on prompt
-    const filtered_documents = await vectorStore.similaritySearch(prompt, 15);
-    var filtered_context = "";
-    filtered_documents.forEach((doc: Document) => {
-      filtered_context += doc.pageContent + "\n\n";
-    });
-
-    if (filtered_context.length > 0) {
-      prompt = "Use only the following context when answering the question at the end. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n" + filtered_context + "\n\nEND CONTEXT\n\nQuestion: " + request.prompt + "\n\nAnswer: ";
-    }
-    console.log(`Prompt: ${prompt}`);
-    await cm.generate(prompt, generateProgressCallback);
+    // create chain
+    const chain = RunnableSequence.from([
+      {
+        filtered_context: retriever.pipe(formatDocumentsAsString),
+        question: new RunnablePassthrough(),
+      },
+      formatted_prompt,
+      model,
+      new StringOutputParser(),
+    ]);
+    
+    // invoke chain and return response
+    const result = await chain.invoke(prompt);
+    chrome.runtime.sendMessage({ answer: result });
   }
   if (request.context) {
     context = request.context;
