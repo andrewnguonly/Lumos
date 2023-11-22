@@ -33,7 +33,7 @@ const ChatBar: React.FC = () => {
     textContent = textContent.replace(/\s+/g, " ");
 
     return textContent.trim();
-}
+  };
 
   const handleSendButtonClick = async () => {
     setLoading(true);
