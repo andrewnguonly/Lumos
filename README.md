@@ -22,6 +22,16 @@ A local Ollama server is needed for the embedding database. Download and install
 ollama pull llama2
 ```
 
+To change models, pull the desired model and update the hardcoded model value.
+```
+ollama pull mistral
+```
+
+Update `src/scripts/background.ts`.
+```typescript
+const OLLAMA_MODEL = "mistral"; // change model name here
+```
+
 ### Start Server
 
 Example:
