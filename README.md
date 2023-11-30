@@ -15,6 +15,13 @@ _Lumos. Nox. Lumos. Nox._
 
 A local Ollama server is needed for the embedding database. Download and install Ollama and the CLI [here](https://ollama.ai/).
 
+### Pull Model
+
+`llama2` model is required. The implementation of Lumos is [hardcoded](https://github.com/andrewnguonly/Lumos/blob/main/src/scripts/background.ts#L12) to use `llama2`.
+```
+ollama pull llama2
+```
+
 ### Start Server
 
 Example:
