@@ -13,7 +13,7 @@ _Lumos. Nox. Lumos. Nox._
 
 ## Ollama Server
 
-A local Ollama server is needed for the embedding database. Download and install Ollama and the CLI [here](https://ollama.ai/).
+A local Ollama server is needed for the embedding database and LLM inference. Download and install Ollama and the CLI [here](https://ollama.ai/).
 
 ### Pull Model
 
@@ -47,6 +47,20 @@ Terminal output:
 ```
 
 Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://*` to allow requests originating from the Chrome extension.
+
+### Docker
+
+The Ollama server can also be [run in a Docker container](https://hub.docker.com/r/ollama/ollama). The container should have the `OLLAMA_ORIGINS` environment variable set to `chrome-extension://*`.
+
+Run `docker run` with the `-e` flag to set the `OLLAMA_ORIGINS` environment variable:
+```
+docker run -e OLLAMA_ORIGINS="chrome-extension://*" -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
+
+Update the host and port as needed (`src/scripts/background.ts`):
+```typescript
+const OLLAMA_BASE_URL = "http://0.0.0.0:11434";
+```
 
 ## Chrome Extension
 
