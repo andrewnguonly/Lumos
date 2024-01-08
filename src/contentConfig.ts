@@ -27,4 +27,13 @@ export const contentConfig: ContentConfig = {
     ],
     selectorsAll: [],
   },
+  "yelp.com": {
+    chunkSize: DEFAULT_CHUCK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    selectors: [
+      "#location-and-hours",
+      "#reviews",
+    ],
+    selectorsAll: [],
+  },
 }

@@ -17,6 +17,15 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ prompt: event.target.value});
   };
 
+  const getDomain = (hostname: string): string => {
+    const parts = hostname.split(".");
+    if (parts.length > 2) {
+      return parts.slice(-2).join(".");
+    } else {
+      return hostname;
+    }
+  };
+
   const getHtmlContent = (selectors: string[], selectorsAll: string[]) => {
 
     const parser = new DOMParser();
@@ -69,7 +78,7 @@ const ChatBar: React.FC = () => {
       const activeTab = tabs[0];
       const activeTabId = activeTab.id;
       const activeTabUrl = new URL(activeTab.url || "");
-      const domain = activeTabUrl.hostname;
+      const domain = getDomain(activeTabUrl.hostname);
 
       // get content config
       const config = domain in contentConfig ? contentConfig[domain] : contentConfig["default"];
