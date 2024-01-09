@@ -73,7 +73,7 @@ const ChatBar: React.FC = () => {
     setCompletion("");
     chrome.storage.session.set({ completion: "" });
 
-    // get default config config
+    // get default content config
     var config = contentConfig["default"];
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
