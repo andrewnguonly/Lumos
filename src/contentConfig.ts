@@ -44,6 +44,14 @@ export const contentConfig: ContentConfig = {
     ],
     selectorsAll: [],
   },
+  "wikipedia.org": {
+    chunkSize: 2000,
+    chunkOverlap: 500,
+    selectors: [
+      "#bodyContent",
+    ],
+    selectorsAll: [],
+  },
   "yelp.com": {
     chunkSize: DEFAULT_CHUCK_SIZE,
     chunkOverlap: DEFAULT_CHUNK_OVERLAP,
