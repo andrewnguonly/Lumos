@@ -92,17 +92,17 @@ Lumos's default content parser will extract all text content between a page's `<
 Example:
 ```typescript
 export const contentConfig: ContentConfig = {
-  // each domain can have it's own content parser
+  // each domain can have its own content parser
   "domain.com": {
     // number of characters to chunk page content into for indexing into RAG vectorstore
     chunkSize: 500, 
-    // number of characters to overlap in content chunks for indexing into RAG vectorstore
+    // number of characters to overlap in chunks for indexing into RAG vectorstore
     chunkOverlap: 100,
-    // document.querySelector() queries to perform to retreive page content
+    // document.querySelector() queries to perform to retrieve page content
     selectors: [
       "body",
     ],
-    // document.querySelectorAll() queries to perform to retreive page content
+    // document.querySelectorAll() queries to perform to retrieve page content
     selectorsAll: [
       "comment",
     ],
@@ -111,8 +111,6 @@ export const contentConfig: ContentConfig = {
 ```
 
 See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
-
-To maintain your own custom content parser, this repository can be forked and `contentConfig.ts` can be overridden.
 
 ## Use Cases
 - Summarize long threads on issue tracking sites, forums, and social media sites.
