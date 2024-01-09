@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
+import { contentConfig } from "../contentConfig";
 import "./ChatBar.css";
 
 
@@ -16,24 +17,55 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ prompt: event.target.value});
   };
 
-  const htmlToString = (selector: any) => {
-    if (selector) {
-        selector = document.querySelector(selector);
-        if (!selector) return ""
+  const getDomain = (hostname: string): string => {
+    const parts = hostname.split(".");
+    if (parts.length > 2) {
+      return parts.slice(-2).join(".");
     } else {
-        selector = document.documentElement;
+      return hostname;
+    }
+  };
+
+  const getHtmlContent = (selectors: string[], selectorsAll: string[]) => {
+
+    const parser = new DOMParser();
+    var content = "";
+    const elements: Element[] = [];
+
+    // process selector queries
+    if (selectors.length > 0) {
+      for (const selector of selectors) {
+        const selectedElement = document.querySelector(selector);
+        if (selectedElement !== null) {
+          elements.push(selectedElement);
+        }
+      }
     }
 
-    // strip HTML tags
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(selector.outerHTML, "text/html");
-    var textContent = doc.body.innerText || "";
+    // process selectorAll queries
+    if (selectorsAll.length > 0) {
+      for (const selectorAll of selectorsAll) {
+        const selectedElements = document.querySelectorAll(selectorAll);
+        for (let i = 0; i < selectedElements.length; i++) {
+          elements.push(selectedElements[i]);
+        }
+      }
+    }
 
-    // Use a regular expression to replace contiguous white spaces with a single space
-    textContent = textContent.replace(/\s+/g, " ");
+    // retrieve content from selected elements
+    for (const element of elements) {
+      const doc = parser.parseFromString(element.outerHTML, "text/html");
+      var textContent = doc.body.innerText || "";
 
-    return textContent.trim();
-  };
+      // Use a regular expression to replace contiguous white spaces with a single space
+      textContent = textContent.replace(/\s+/g, " ").trim();
+
+      // append textContent to overall content
+      content += textContent + "\n";
+    }
+
+    return content;
+  }
 
   const handleSendButtonClick = async () => {
     setLoading(true);
@@ -42,15 +74,20 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ completion: "" });
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      var activeTab = tabs[0];
-      var activeTabId = activeTab.id;
+      const activeTab = tabs[0];
+      const activeTabId = activeTab.id;
+      const activeTabUrl = new URL(activeTab.url || "");
+      const domain = getDomain(activeTabUrl.hostname);
+
+      // get content config
+      const config = domain in contentConfig ? contentConfig[domain] : contentConfig["default"];
 
       return chrome.scripting.executeScript({
         // @ts-ignore
         target: { tabId: activeTabId },
         injectImmediately: true,
-        func: htmlToString,
-        args: ["body"]
+        func: getHtmlContent,
+        args: [config.selectors, config.selectorsAll],
       });
     }).then(async (results) => {
       const pageContent = results[0].result;
