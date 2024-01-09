@@ -27,6 +27,23 @@ export const contentConfig: ContentConfig = {
     ],
     selectorsAll: [],
   },
+  "reddit.com": {
+    chunkSize: DEFAULT_CHUCK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    selectors: [],
+    selectorsAll: [
+      "shreddit-comment",
+    ],
+  },
+  "stackoverflow.com": {
+    chunkSize: DEFAULT_CHUCK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    selectors: [
+      "#question-header",
+      "#mainbar",
+    ],
+    selectorsAll: [],
+  },
   "yelp.com": {
     chunkSize: DEFAULT_CHUCK_SIZE,
     chunkOverlap: DEFAULT_CHUNK_OVERLAP,

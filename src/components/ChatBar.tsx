@@ -29,40 +29,39 @@ const ChatBar: React.FC = () => {
   const getHtmlContent = (selectors: string[], selectorsAll: string[]) => {
 
     const parser = new DOMParser();
-    var content = ""; // append relevant content to `content`
+    var content = "";
+    const elements: Element[] = [];
 
+    // process selector queries
     if (selectors.length > 0) {
       for (const selector of selectors) {
-        const element = document.querySelector(selector);
-        if (element !== null) {
-          const doc = parser.parseFromString(element.outerHTML, "text/html");
-          var textContent = doc.body.innerText || "";
-
-          // Use a regular expression to replace contiguous white spaces with a single space
-          textContent = textContent.replace(/\s+/g, " ").trim();
-
-          // append textContent to overall content
-          content += textContent + "\n";
+        const selectedElement = document.querySelector(selector);
+        if (selectedElement !== null) {
+          elements.push(selectedElement);
         }
       }
     }
 
+    // process selectorAll queries
     if (selectorsAll.length > 0) {
       for (const selectorAll of selectorsAll) {
-        const elements = document.querySelectorAll(selectorAll);
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i];
-          // Perform operations on each element
-          const doc = parser.parseFromString(element.outerHTML, "text/html");
-          textContent = doc.body.innerText || "";
-
-          // Use a regular expression to replace contiguous white spaces with a single space
-          textContent = textContent.replace(/\s+/g, " ").trim();
-
-          // append textContent to overall content
-          content += textContent + "\n";
+        const selectedElements = document.querySelectorAll(selectorAll);
+        for (let i = 0; i < selectedElements.length; i++) {
+          elements.push(selectedElements[i]);
         }
       }
+    }
+
+    // retrieve content from selected elements
+    for (const element of elements) {
+      const doc = parser.parseFromString(element.outerHTML, "text/html");
+      var textContent = doc.body.innerText || "";
+
+      // Use a regular expression to replace contiguous white spaces with a single space
+      textContent = textContent.replace(/\s+/g, " ").trim();
+
+      // append textContent to overall content
+      content += textContent + "\n";
     }
 
     return content;
