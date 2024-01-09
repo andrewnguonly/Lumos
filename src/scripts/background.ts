@@ -6,6 +6,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
+import { contentConfig } from "../contentConfig";
 
 
 const OLLAMA_BASE_URL = "http://localhost:11434";
@@ -16,6 +17,12 @@ chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
     var prompt = request.prompt;
     console.log(`Received prompt: ${prompt}`);
+
+    // get default content config
+    const config = contentConfig["default"];
+    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
+    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
+    console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // create model
     const model = new Ollama({ baseUrl: OLLAMA_BASE_URL, model: OLLAMA_MODEL });
@@ -29,8 +36,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
 
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 0,
+      chunkSize: chunkSize,
+      chunkOverlap: chunkOverlap,
     });
     const documents = await splitter.createDocuments([context]);
 

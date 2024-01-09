@@ -73,14 +73,17 @@ const ChatBar: React.FC = () => {
     setCompletion("");
     chrome.storage.session.set({ completion: "" });
 
+    // get default config config
+    var config = contentConfig["default"];
+
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       const activeTab = tabs[0];
       const activeTabId = activeTab.id;
       const activeTabUrl = new URL(activeTab.url || "");
       const domain = getDomain(activeTabUrl.hostname);
 
-      // get content config
-      const config = domain in contentConfig ? contentConfig[domain] : contentConfig["default"];
+      // get domain specific content config
+      config = domain in contentConfig ? contentConfig[domain] : config;
 
       return chrome.scripting.executeScript({
         // @ts-ignore
@@ -92,7 +95,11 @@ const ChatBar: React.FC = () => {
     }).then(async (results) => {
       const pageContent = results[0].result;
       chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
-        chrome.runtime.sendMessage({ prompt: prompt });
+        chrome.runtime.sendMessage({
+          prompt: prompt,
+          chunkSize: config.chunkSize,
+          chunkOverlap: config.chunkOverlap,
+        });
       });
     }).catch((error) => {
       console.log(`Error: ${error}`);
