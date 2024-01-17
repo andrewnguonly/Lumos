@@ -44,6 +44,14 @@ export const contentConfig: ContentConfig = {
     ],
     selectorsAll: [],
   },
+  "substack.com": {
+    chunkSize: DEFAULT_CHUCK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    selectors: [
+      "article",
+    ],
+    selectorsAll: [],
+  },
   "wikipedia.org": {
     chunkSize: 2000,
     chunkOverlap: 500,
