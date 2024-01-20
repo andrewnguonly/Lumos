@@ -62,9 +62,11 @@ chrome.runtime.onMessage.addListener(async function (request) {
       new StringOutputParser(),
     ]);
     
-    // invoke chain and return response
-    const result = await chain.invoke(prompt);
-    chrome.runtime.sendMessage({ answer: result });
+    // stream response chunks
+    const stream = await chain.stream(prompt);
+    for await (const chunk of stream) {
+      chrome.runtime.sendMessage({ chunk: chunk });
+    }
   }
   if (request.context) {
     context = request.context;

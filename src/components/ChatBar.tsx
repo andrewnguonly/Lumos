@@ -107,11 +107,11 @@ const ChatBar: React.FC = () => {
   };
 
   const handleBackgroundMessage = ((msg: any, error: any) => {
-    if (msg.answer) {
+    if (msg.chunk) {
       setLoading(false);
       setSubmitDisabled(false);
-      setCompletion(msg.answer);
-      chrome.storage.session.set({ completion: msg.answer });
+      setCompletion(completion + msg.chunk);
+      chrome.storage.session.set({ completion: completion + msg.chunk });
       if (completionTextFieldRef.current) {
         completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
       }
