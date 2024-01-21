@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
 import { ChatContainer, Message, MessageList } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
+import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
 
 

@@ -24,6 +24,14 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
+        include: path.resolve(__dirname, "node_modules/@chatscope/chat-ui-kit-styles/dist/default/styles.min.css"),
+        test: /\.css$/i,
+        use: [
+          "style-loader",
+          "css-loader",
+        ],
+      },
+      {
         exclude: /node_modules/,
         test: /\.css$/i,
         use: [
