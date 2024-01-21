@@ -1,13 +1,19 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
+import { ChatContainer, Message, MessageList } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
 import "./ChatBar.css";
 
+
+class LumosMessage {
+  constructor(public sender: string, public message: string) {}
+}
 
 const ChatBar: React.FC = () => {
 
   const [prompt, setPrompt] = useState("");
   const [completion, setCompletion] = useState("");
+  const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const completionTextFieldRef = useRef<HTMLTextAreaElement | null>(null);
@@ -71,7 +77,10 @@ const ChatBar: React.FC = () => {
     setLoading(true);
     setSubmitDisabled(true);
     setCompletion("");
-    chrome.storage.session.set({ completion: "" });
+
+    // save user message to messages list
+    const newMessages = [...messages, new LumosMessage("user", prompt)];
+    setMessages(newMessages);
 
     // get default content config
     var config = contentConfig["default"];
@@ -110,8 +119,22 @@ const ChatBar: React.FC = () => {
     if (msg.chunk) {
       setLoading(false);
       setSubmitDisabled(false);
-      setCompletion(completion + msg.chunk);
-      chrome.storage.session.set({ completion: completion + msg.chunk });
+
+      // save new completion value
+      const newCompletion = completion + msg.chunk;
+      setCompletion(newCompletion);
+
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage !== undefined && lastMessage.sender === "user") {
+        // append assistant message to messages list
+        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        setMessages([...messages, newAssistantMsg]);
+      } else {
+        // replace last assistant message with updated message
+        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        setMessages([...messages.slice(0, messages.length - 1), newAssistantMsg]);
+      }
+
       if (completionTextFieldRef.current) {
         completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
       }
@@ -121,18 +144,31 @@ const ChatBar: React.FC = () => {
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
     
-    chrome.storage.session.get(["prompt", "completion"], (data) => {
+    chrome.storage.session.get(["prompt"], (data) => {
       if (data.prompt) {
         setPrompt(data.prompt);
-      }
-      if (data.completion) {
-        setCompletion(data.completion);
       }
     });
   });
 
   return (
     <Box>
+      <div className="chat-container">
+        <ChatContainer>
+          <MessageList>
+            {messages.map((message, index) => (
+              <Message
+                model={{
+                  message: message.message,
+                  sender: message.sender,
+                  direction: message.sender === "user" ? "outgoing" : "incoming",
+                  position: "single",
+                }}
+              />
+            ))}
+          </MessageList>
+        </ChatContainer>
+      </div>
       <Box className="chat-bar">
         <TextField
           className="input-field"
@@ -152,15 +188,6 @@ const ChatBar: React.FC = () => {
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
-      </Box>
-      <Box className="chat-box">
-        <TextField
-          className="chat-display-field"
-          inputRef={completionTextFieldRef}
-          multiline
-          rows={5}
-          value={completion}
-        />
       </Box>
       {loading && <LinearProgress />}
     </Box>
