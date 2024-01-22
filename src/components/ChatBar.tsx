@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { Box, IconButton, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
