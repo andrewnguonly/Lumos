@@ -113,6 +113,7 @@ const ChatBar: React.FC = () => {
 
         // clear prompt after sending it to the background script
         setPrompt("");
+        chrome.storage.session.set({ prompt: "" });
       });
     }).catch((error) => {
       console.log(`Error: ${error}`);
@@ -142,6 +143,9 @@ const ChatBar: React.FC = () => {
       if (completionTextFieldRef.current) {
         completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
       }
+    } else if (msg.done) {
+      // save messages after response streaming is done
+      chrome.storage.session.set({ messages: messages });
     }
   });
 
@@ -150,9 +154,12 @@ const ChatBar: React.FC = () => {
   });
 
   useEffect(() => {
-    chrome.storage.session.get(["prompt"], (data) => {
+    chrome.storage.session.get(["prompt", "messages"], (data) => {
       if (data.prompt) {
         setPrompt(data.prompt);
+      }
+      if (data.messages) {
+        setMessages(data.messages);
       }
     });
   }, []);
