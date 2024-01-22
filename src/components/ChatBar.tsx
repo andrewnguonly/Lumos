@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Box, IconButton, TextField } from "@mui/material";
+import { Box, IconButton, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
@@ -121,6 +121,11 @@ const ChatBar: React.FC = () => {
     });
   };
 
+  const handleClearButtonClick = () => {
+    setMessages([]);
+    chrome.storage.session.set({ messages: [] });
+  };
+
   const handleBackgroundMessage = ((msg: any, error: any) => {
     if (msg.chunk) {
       setLoading1(false);
@@ -210,11 +215,20 @@ const ChatBar: React.FC = () => {
         />
         <IconButton
           className="submit-button"
-          disabled={submitDisabled}
+          disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
+        <Tooltip title="Clear messages">
+          <IconButton
+            className="clear-button"
+            disabled={submitDisabled}
+            onClick={handleClearButtonClick}
+          >
+            <img alt="Clear messages" src="../assets/hat_32.png" />
+          </IconButton>
+        </Tooltip>
       </Box>
     </Box>
   );

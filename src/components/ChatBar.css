@@ -18,6 +18,12 @@
   height: 40px;
 }
 
+.clear-button {
+  flex: 1;
+  width: 40px;
+  height: 40px;
+}
+
 /* Override @chatscope default styles */
 .cs-message--outgoing .cs-message__content {
   background-color: #fff8e1 !important;
