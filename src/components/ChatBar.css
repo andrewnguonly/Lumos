@@ -1,8 +1,11 @@
+.chat-container {
+  height: 200px;
+}
+
 .chat-bar {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  padding-bottom: 10px;
 }
 
 .input-field {
@@ -15,12 +18,50 @@
   height: 40px;
 }
 
-.chat-box {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+.clear-button {
+  flex: 1;
+  width: 40px;
+  height: 40px;
 }
 
-.chat-display-field {
-  flex: 1;
+/* Override @chatscope default styles */
+.cs-message--outgoing .cs-message__content {
+  background-color: #fff8e1 !important;
+  font-size: 11pt;
+}
+
+.cs-message--outgoing .cs-message__avatar {
+  margin: 0 0 0 4px;
+}
+
+.cs-message--incoming .cs-message__content {
+  background-color: #ffd54f !important;
+  font-size: 11pt;
+}
+
+.cs-message--incoming .cs-message__avatar {
+  margin: 0 4px 0 0;
+}
+
+.ps__rail-y {
+  background-color: #fff8e1 !important;  /* scrollbar background color */
+}
+
+.ps__thumb-y {
+  background-color: #ffd54f !important;  /* scrollbar color */
+}
+
+.cs-typing-indicator__text {
+  color: #ffb300 !important;
+}
+
+.cs-typing-indicator__dot {
+  background-color: #ffb300 !important;
+}
+
+.cs-avatar.cs-avatar--md {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
 }

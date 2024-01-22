@@ -2,7 +2,7 @@
 
 A RAG LLM co-pilot for browsing the web, powered by local LLMs.
 
-![Screenshot of Lumos](lumos_screenshot.png)
+![Screenshot of Lumos](lumos_screenshot_2.png)
 
 This Chrome extension is powered by [Ollama](https://ollama.ai/). Inference is done on your local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the [Web LLM project](https://webllm.mlc.ai/) and the [local LLM examples](https://js.langchain.com/docs/use_cases/question_answering/local_retrieval_qa) provided by LangChain.
 
@@ -118,3 +118,7 @@ See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/do
 - Ask questions about reviews on business and product pages.
 - Ask questions about long, technical documentation.
 - ... what else?
+
+## Reading
+- [Local LLM in the Browser Powered by Ollama](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-236817f335da)
+- [Local LLM in the Browser Powered by Ollama (Part 2)](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-part-2-6eb10caf39a1)

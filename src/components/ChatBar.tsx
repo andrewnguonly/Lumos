@@ -1,16 +1,23 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
+import { Box, IconButton, TextField, Tooltip } from "@mui/material";
+import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
+import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
 
+
+class LumosMessage {
+  constructor(public sender: string, public message: string) {}
+}
 
 const ChatBar: React.FC = () => {
 
   const [prompt, setPrompt] = useState("");
   const [completion, setCompletion] = useState("");
+  const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const completionTextFieldRef = useRef<HTMLTextAreaElement | null>(null);
+  const [loading1, setLoading1] = useState(false); // loading state during embedding process
+  const [loading2, setLoading2] = useState(false); // loading state during completion process
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -68,10 +75,13 @@ const ChatBar: React.FC = () => {
   }
 
   const handleSendButtonClick = async () => {
-    setLoading(true);
+    setLoading1(true);
     setSubmitDisabled(true);
     setCompletion("");
-    chrome.storage.session.set({ completion: "" });
+
+    // save user message to messages list
+    const newMessages = [...messages, new LumosMessage("user", prompt)];
+    setMessages(newMessages);
 
     // get default content config
     var config = contentConfig["default"];
@@ -100,44 +110,97 @@ const ChatBar: React.FC = () => {
           chunkSize: config.chunkSize,
           chunkOverlap: config.chunkOverlap,
         });
+
+        // clear prompt after sending it to the background script
+        setPrompt("");
+        chrome.storage.session.set({ prompt: "" });
       });
     }).catch((error) => {
       console.log(`Error: ${error}`);
     });
   };
 
+  const handleClearButtonClick = () => {
+    setMessages([]);
+    chrome.storage.session.set({ messages: [] });
+  };
+
   const handleBackgroundMessage = ((msg: any, error: any) => {
     if (msg.chunk) {
-      setLoading(false);
-      setSubmitDisabled(false);
-      setCompletion(completion + msg.chunk);
-      chrome.storage.session.set({ completion: completion + msg.chunk });
-      if (completionTextFieldRef.current) {
-        completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
+      setLoading1(false);
+      setLoading2(true);
+
+      // save new completion value
+      const newCompletion = completion + msg.chunk;
+      setCompletion(newCompletion);
+
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage !== undefined && lastMessage.sender === "user") {
+        // append assistant message to messages list
+        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        setMessages([...messages, newAssistantMsg]);
+      } else {
+        // replace last assistant message with updated message
+        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        setMessages([...messages.slice(0, messages.length - 1), newAssistantMsg]);
       }
+    } else if (msg.done) {
+      // save messages after response streaming is done
+      chrome.storage.session.set({ messages: messages });
+      setLoading2(false);
+      setSubmitDisabled(false);
     }
   });
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
-    
-    chrome.storage.session.get(["prompt", "completion"], (data) => {
+  });
+
+  useEffect(() => {
+    chrome.storage.session.get(["prompt", "messages"], (data) => {
       if (data.prompt) {
         setPrompt(data.prompt);
       }
-      if (data.completion) {
-        setCompletion(data.completion);
+      if (data.messages) {
+        setMessages(data.messages);
       }
     });
-  });
+  }, []);
 
   return (
     <Box>
+      <div className="chat-container">
+        <ChatContainer>
+          <MessageList
+            typingIndicator={
+              loading1
+                ? <TypingIndicator content="Lumos..." />
+                : (loading2
+                  ? <TypingIndicator content="Nox!" />
+                  : null)
+            }
+          >
+            {messages.map((message, index) => (
+              <Message
+                model={{
+                  message: message.message,
+                  sender: message.sender,
+                  direction: message.sender === "user" ? "outgoing" : "incoming",
+                  position: "single",
+                }}
+              >
+                {<Avatar src={message.sender === "user" ? "../assets/glasses_48.png" : "../assets/wand_48.png"} />}
+              </Message>  
+            ))}
+          </MessageList>
+        </ChatContainer>
+      </div>
       <Box className="chat-bar">
         <TextField
           className="input-field"
           placeholder="Enter your prompt here"
           value={prompt}
+          disabled={submitDisabled}
           onChange={handlePromptChange}
           onKeyUp={(event) => {
             if (event.key === "Enter") {
@@ -147,22 +210,21 @@ const ChatBar: React.FC = () => {
         />
         <IconButton
           className="submit-button"
-          disabled={submitDisabled}
+          disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
+        <Tooltip title="Clear messages">
+          <IconButton
+            className="clear-button"
+            disabled={submitDisabled}
+            onClick={handleClearButtonClick}
+          >
+            <img alt="Clear messages" src="../assets/hat_32.png" />
+          </IconButton>
+        </Tooltip>
       </Box>
-      <Box className="chat-box">
-        <TextField
-          className="chat-display-field"
-          inputRef={completionTextFieldRef}
-          multiline
-          rows={5}
-          value={completion}
-        />
-      </Box>
-      {loading && <LinearProgress />}
     </Box>
   );
 }

@@ -67,6 +67,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
     for await (const chunk of stream) {
       chrome.runtime.sendMessage({ chunk: chunk });
     }
+    chrome.runtime.sendMessage({ done: true });
   }
   if (request.context) {
     context = request.context;
