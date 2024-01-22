@@ -110,6 +110,9 @@ const ChatBar: React.FC = () => {
           chunkSize: config.chunkSize,
           chunkOverlap: config.chunkOverlap,
         });
+
+        // clear prompt after sending it to the background script
+        setPrompt("");
       });
     }).catch((error) => {
       console.log(`Error: ${error}`);
@@ -144,13 +147,15 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
-    
+  });
+
+  useEffect(() => {
     chrome.storage.session.get(["prompt"], (data) => {
       if (data.prompt) {
         setPrompt(data.prompt);
       }
     });
-  });
+  }, []);
 
   return (
     <Box>
