@@ -31,7 +31,7 @@
 }
 
 .cs-message--outgoing .cs-message__avatar {
-  margin-left: 4px;
+  margin: 0 0 0 4px;
 }
 
 .cs-message--incoming .cs-message__content {
@@ -40,7 +40,7 @@
 }
 
 .cs-message--incoming .cs-message__avatar {
-  margin-right: 4px;
+  margin: 0 4px 0 0;
 }
 
 .ps__rail-y {

@@ -18,7 +18,6 @@ const ChatBar: React.FC = () => {
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
   const [loading2, setLoading2] = useState(false); // loading state during completion process
-  const completionTextFieldRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -144,10 +143,6 @@ const ChatBar: React.FC = () => {
         // replace last assistant message with updated message
         const newAssistantMsg = new LumosMessage("assistant", newCompletion);
         setMessages([...messages.slice(0, messages.length - 1), newAssistantMsg]);
-      }
-
-      if (completionTextFieldRef.current) {
-        completionTextFieldRef.current.scrollTop = completionTextFieldRef.current.scrollHeight;
       }
     } else if (msg.done) {
       // save messages after response streaming is done
