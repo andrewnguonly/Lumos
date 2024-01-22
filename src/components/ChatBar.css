@@ -17,3 +17,22 @@
   width: 40px;
   height: 40px;
 }
+
+/* Override @chatscope default styles */
+.cs-message--outgoing .cs-message__content {
+  background-color: #fff8e1 !important;
+  font-size: 11pt;
+}
+
+.cs-message--incoming .cs-message__content {
+  background-color: #ffd54f !important;
+  font-size: 11pt;
+}
+
+.ps__rail-y {
+  background-color: #fff8e1 !important;  /* scrollbar background color */
+}
+
+.ps__thumb-y {
+  background-color: #ffd54f !important;  /* scrollbar color */
+}
