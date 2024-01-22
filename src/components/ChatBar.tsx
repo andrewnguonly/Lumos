@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Box, IconButton, LinearProgress, TextField } from "@mui/material";
-import { ChatContainer, Message, MessageList } from "@chatscope/chat-ui-kit-react";
+import { Box, IconButton, TextField } from "@mui/material";
+import { ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
@@ -16,7 +16,8 @@ const ChatBar: React.FC = () => {
   const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false); // loading state during embedding process
+  const [loading2, setLoading2] = useState(false); // loading state during completion process
   const completionTextFieldRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +76,7 @@ const ChatBar: React.FC = () => {
   }
 
   const handleSendButtonClick = async () => {
-    setLoading(true);
+    setLoading1(true);
     setSubmitDisabled(true);
     setCompletion("");
 
@@ -122,8 +123,8 @@ const ChatBar: React.FC = () => {
 
   const handleBackgroundMessage = ((msg: any, error: any) => {
     if (msg.chunk) {
-      setLoading(false);
-      setSubmitDisabled(false);
+      setLoading1(false);
+      setLoading2(true);
 
       // save new completion value
       const newCompletion = completion + msg.chunk;
@@ -146,6 +147,8 @@ const ChatBar: React.FC = () => {
     } else if (msg.done) {
       // save messages after response streaming is done
       chrome.storage.session.set({ messages: messages });
+      setLoading2(false);
+      setSubmitDisabled(false);
     }
   });
 
@@ -168,7 +171,15 @@ const ChatBar: React.FC = () => {
     <Box>
       <div className="chat-container">
         <ChatContainer>
-          <MessageList>
+          <MessageList
+            typingIndicator={
+              loading1
+                ? <TypingIndicator content="Lumos..." />
+                : (loading2
+                  ? <TypingIndicator content="Nox!" />
+                  : null)
+            }
+          >
             {messages.map((message, index) => (
               <Message
                 model={{
@@ -187,6 +198,7 @@ const ChatBar: React.FC = () => {
           className="input-field"
           placeholder="Enter your prompt here"
           value={prompt}
+          disabled={submitDisabled}
           onChange={handlePromptChange}
           onKeyUp={(event) => {
             if (event.key === "Enter") {
@@ -202,7 +214,6 @@ const ChatBar: React.FC = () => {
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
       </Box>
-      {loading && <LinearProgress />}
     </Box>
   );
 }

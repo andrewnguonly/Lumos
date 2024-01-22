@@ -36,3 +36,11 @@
 .ps__thumb-y {
   background-color: #ffd54f !important;  /* scrollbar color */
 }
+
+.cs-typing-indicator__text {
+  color: #ffb300 !important;
+}
+
+.cs-typing-indicator__dot {
+  background-color: #ffb300 !important;
+}
