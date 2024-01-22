@@ -24,9 +24,17 @@
   font-size: 11pt;
 }
 
+.cs-message--outgoing .cs-message__avatar {
+  margin-left: 4px;
+}
+
 .cs-message--incoming .cs-message__content {
   background-color: #ffd54f !important;
   font-size: 11pt;
+}
+
+.cs-message--incoming .cs-message__avatar {
+  margin-right: 4px;
 }
 
 .ps__rail-y {
@@ -43,4 +51,11 @@
 
 .cs-typing-indicator__dot {
   background-color: #ffb300 !important;
+}
+
+.cs-avatar.cs-avatar--md {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
 }

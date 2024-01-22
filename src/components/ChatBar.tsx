@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, TextField } from "@mui/material";
-import { ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
+import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
@@ -188,7 +188,9 @@ const ChatBar: React.FC = () => {
                   direction: message.sender === "user" ? "outgoing" : "incoming",
                   position: "single",
                 }}
-              />
+              >
+                {<Avatar src={message.sender === "user" ? "../assets/glasses_48.png" : "../assets/wand_48.png"} />}
+              </Message>  
             ))}
           </MessageList>
         </ChatContainer>
