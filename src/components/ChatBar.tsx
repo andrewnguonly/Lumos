@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { contentConfig } from "../contentConfig";
@@ -18,6 +18,7 @@ const ChatBar: React.FC = () => {
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
   const [loading2, setLoading2] = useState(false); // loading state during completion process
+  const textFieldRef = useRef<HTMLInputElement | null>(null);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -167,6 +168,12 @@ const ChatBar: React.FC = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (!submitDisabled && textFieldRef.current) {
+      textFieldRef.current.focus();
+    }
+  }, [submitDisabled]);
+
   return (
     <Box>
       <div className="chat-container">
@@ -202,6 +209,7 @@ const ChatBar: React.FC = () => {
           value={prompt}
           disabled={submitDisabled}
           onChange={handlePromptChange}
+          inputRef={textFieldRef}
           onKeyUp={(event) => {
             if (event.key === "Enter") {
               handleSendButtonClick();
