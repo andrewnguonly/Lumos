@@ -1,4 +1,3 @@
-const webpack = require("webpack");
 const path = require("path");
 const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -48,16 +47,10 @@ module.exports = {
         { from: "./src/assets", to: "../assets" },
       ],
     }),
-    new webpack.ProvidePlugin({ // needed for @mlc-ai/web-llm
-      Buffer: ["buffer", "Buffer"],
-    }),
     ...getHtmlPlugins(["index"]),
   ],
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
-    fallback: {
-      "perf_hooks": false, // needed for @mlc-ai/web-llm
-    }
   },
   output: {
     path: path.join(__dirname, "dist/js"),
