@@ -10,7 +10,6 @@ import { contentConfig } from "../contentConfig";
 
 
 const OLLAMA_BASE_URL = "http://localhost:11434";
-const OLLAMA_MODEL = "llama2";
 var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
@@ -25,7 +24,16 @@ chrome.runtime.onMessage.addListener(async function (request) {
     console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // create model
-    const model = new Ollama({ baseUrl: OLLAMA_BASE_URL, model: OLLAMA_MODEL });
+    const ollamaModel: string = await new Promise((resolve, reject) => {
+      chrome.storage.local.get("selectedModel", (data) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(data.selectedModel);
+        }
+      });
+    });
+    const model = new Ollama({ baseUrl: OLLAMA_BASE_URL, model: ollamaModel });
 
     // create prompt template
     const template = `Use only the following context when answering the question. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT\n\nQuestion: {question}\n\nAnswer: `;
@@ -46,7 +54,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
       documents,
       new OllamaEmbeddings({
         baseUrl: OLLAMA_BASE_URL,
-        model: OLLAMA_MODEL,
+        model: ollamaModel,
       }),
     );
     const retriever = vectorStore.asRetriever();
