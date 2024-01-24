@@ -21,5 +21,9 @@
         "activeTab",
         "scripting",
         "storage"
-    ]
+    ],
+    "options_ui": {
+        "page": "js/options.html",
+        "open_in_tab": false
+    }
 }
