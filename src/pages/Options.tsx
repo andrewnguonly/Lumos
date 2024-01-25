@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, ThemeProvider } from "@mui/material";
+import { ChangeEvent, useEffect, useState } from "react";
+import {
+  FormControl,
+  FormGroup,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
+  ThemeProvider,
+} from "@mui/material";
 import AppTheme from "../themes/AppTheme";
 import "./Options.css";
 
@@ -8,6 +17,7 @@ function Options() {
 
   const [model, setModel] = useState("");
   const [modelOptions, setModelOptions] = useState([]);
+  const [host, setHost] = useState("http://localhost:11434");
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -15,8 +25,24 @@ function Options() {
     chrome.storage.local.set({ selectedModel: selectedModel});
   };
 
+  const handleHostChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedHost = event.target.value;
+    setHost(selectedHost);
+    chrome.storage.local.set({ selectedHost: selectedHost});
+  }
+
   useEffect(() => {
-    fetch("http://localhost:11434/api/tags")
+    chrome.storage.local.get(["selectedHost"]).then((data) => {
+      if (data.selectedHost) {
+        setHost(data.selectedHost);
+      } else {
+        setHost("http://localhost:11434");
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    fetch(`${host}/api/tags`)
       .then((response) => response.json())
       .then((data) => {
         const modelOptions = data.models.map((model: any) => {
@@ -32,27 +58,36 @@ function Options() {
         });
       })
       .catch((error) => {
-        console.error("Error retrieving Ollama models: ", error);
+        console.warn("Error retrieving Ollama models: ", error);
       });
-  }, []);
+  }, [host]);
 
   return (
     <ThemeProvider theme={AppTheme}>
       <div className="options-popup">
         <FormControl fullWidth>
-          <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
-          <Select
-            labelId="ollama-model-select-label"
-            label="Ollama Model"
-            value={model}
-            onChange={handleModelChange}
-          >
-            {modelOptions.map((modelName, index) => (
-              <MenuItem key={index} value={modelName}>
-                {modelName}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormGroup>
+            <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
+            <Select
+              className="options-form-input"
+              labelId="ollama-model-select-label"
+              label="Ollama Model"
+              value={model}
+              onChange={handleModelChange}
+            >
+              {modelOptions.map((modelName, index) => (
+                <MenuItem key={index} value={modelName}>
+                  {modelName}
+                </MenuItem>
+              ))}
+            </Select>
+            <TextField
+              className="options-form-input"
+              label="Ollama Host"
+              value={host}
+              onChange={handleHostChange}
+            />
+          </FormGroup>
         </FormControl>
       </div>
     </ThemeProvider>

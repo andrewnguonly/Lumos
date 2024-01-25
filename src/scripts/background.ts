@@ -9,7 +9,6 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import { contentConfig } from "../contentConfig";
 
 
-const OLLAMA_BASE_URL = "http://localhost:11434";
 var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
@@ -24,16 +23,22 @@ chrome.runtime.onMessage.addListener(async function (request) {
     console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // create model
-    const ollamaModel: string = await new Promise((resolve, reject) => {
-      chrome.storage.local.get("selectedModel", (data) => {
+    const ollamaSettings: {
+      model: string,
+      host: string,
+    } = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(["selectedModel", "selectedHost"], (data) => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
-          resolve(data.selectedModel);
+          resolve({model: data.selectedModel, host: data.selectedHost});
         }
       });
     });
-    const model = new Ollama({ baseUrl: OLLAMA_BASE_URL, model: ollamaModel });
+    const model = new Ollama({
+      baseUrl: ollamaSettings.host,
+      model: ollamaSettings.model,
+    });
 
     // create prompt template
     const template = `Use only the following context when answering the question. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT\n\nQuestion: {question}\n\nAnswer: `;
@@ -53,8 +58,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const vectorStore = await MemoryVectorStore.fromDocuments(
       documents,
       new OllamaEmbeddings({
-        baseUrl: OLLAMA_BASE_URL,
-        model: ollamaModel,
+        baseUrl: ollamaSettings.host,
+        model: ollamaSettings.model,
       }),
     );
     const retriever = vectorStore.asRetriever();
