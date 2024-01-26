@@ -36,7 +36,7 @@ const OLLAMA_MODEL = "mistral"; // change model name here
 
 Example:
 ```
-OLLAMA_ORIGINS=chrome-extension://* ollama serve
+OLLAMA_ORIGINS=chrome-extension://lmohcgekefgleibgbinobnfeaaodjbjm ollama serve
 ```
 
 Terminal output:
@@ -46,15 +46,15 @@ Terminal output:
 2023/11/19 20:55:16 routes.go:777: Listening on 127.0.0.1:11434 (version 0.1.10)
 ```
 
-Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://*` to allow requests originating from the Chrome extension.
+Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://lmohcgekefgleibgbinobnfeaaodjbjm` to allow requests originating from the Chrome extension.
 
 ### Docker
 
-The Ollama server can also be [run in a Docker container](https://hub.docker.com/r/ollama/ollama). The container should have the `OLLAMA_ORIGINS` environment variable set to `chrome-extension://*`.
+The Ollama server can also be [run in a Docker container](https://hub.docker.com/r/ollama/ollama). The container should have the `OLLAMA_ORIGINS` environment variable set to `chrome-extension://lmohcgekefgleibgbinobnfeaaodjbjm`.
 
 Run `docker run` with the `-e` flag to set the `OLLAMA_ORIGINS` environment variable:
 ```
-docker run -e OLLAMA_ORIGINS="chrome-extension://*" -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+docker run -e OLLAMA_ORIGINS="chrome-extension://lmohcgekefgleibgbinobnfeaaodjbjm" -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 ```
 
 Update the host and port as needed (`src/scripts/background.ts`):

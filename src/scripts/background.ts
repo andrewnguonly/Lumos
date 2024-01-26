@@ -10,7 +10,7 @@ import { contentConfig } from "../contentConfig";
 
 
 const OLLAMA_BASE_URL = "http://localhost:11434";
-const OLLAMA_MODEL = "llama2";
+const OLLAMA_MODEL = "starling-lm";
 var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
@@ -61,7 +61,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
       model,
       new StringOutputParser(),
     ]);
-    
+
     // stream response chunks
     const stream = await chain.stream(prompt);
     for await (const chunk of stream) {
