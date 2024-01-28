@@ -1,8 +1,8 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "manifest_version": 3,
     "name": "Lumos",
-    "description": "A web-based LLM co-pilot for browsing the web. Your prompts never leave the browser.",
+    "description": "An LLM co-pilot for browsing the web, powered by local LLMs. Your prompts never leave the browser.",
     "action": {
         "default_popup": "js/index.html",
         "default_title": "Lumos",
