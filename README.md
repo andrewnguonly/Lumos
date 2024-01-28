@@ -82,7 +82,7 @@ Example:
     "chunkSize": 500,
     "chunkOverlap": 0,
     "selectors": [
-      "body",
+      "body"
     ],
     "selectorsAll": []
   },
@@ -90,7 +90,7 @@ Example:
     "chunkSize": 500,
     "chunkOverlap": 0,
     "selectors": [
-      "article",
+      "article"
     ],
     "selectorsAll": []
   },
@@ -99,7 +99,7 @@ Example:
     "chunkOverlap": 0,
     "selectors": [],
     "selectorsAll": [
-      "shreddit-comment",
+      "shreddit-comment"
     ]
   },
   "stackoverflow.com": {
@@ -107,7 +107,7 @@ Example:
     "chunkOverlap": 0,
     "selectors": [
       "#question-header",
-      "#mainbar",
+      "#mainbar"
     ],
     "selectorsAll": []
   },
@@ -115,7 +115,7 @@ Example:
     "chunkSize": 500,
     "chunkOverlap": 0,
     "selectors": [
-      "article",
+      "article"
     ],
     "selectorsAll": []
   },
@@ -123,7 +123,7 @@ Example:
     "chunkSize": 2000,
     "chunkOverlap": 500,
     "selectors": [
-      "#bodyContent",
+      "#bodyContent"
     ],
     "selectorsAll": []
   },
@@ -132,7 +132,7 @@ Example:
     "chunkOverlap": 0,
     "selectors": [
       "#location-and-hours",
-      "#reviews",
+      "#reviews"
     ],
     "selectorsAll": []
   }
