@@ -6,9 +6,11 @@
 
 1. Update `manifest.json`. Modify the `background` configuration. Example:
 
+    ```
     "background": {
         "scripts": ["js/background.js"]
     },
+    ```
 
 1. Rebuild the extension: `npm run build`
 

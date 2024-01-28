@@ -16,6 +16,11 @@ const AppTheme = createTheme({
         color: "primary"
       }
     },
+    MuiSelect: {
+      defaultProps: {
+        size: "small"
+      }
+    }
   }
 });
 
