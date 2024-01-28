@@ -6,7 +6,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { contentConfig } from "../contentConfig";
+import { ContentConfig } from "../contentConfig";
 
 
 var context = "";
@@ -16,28 +16,35 @@ chrome.runtime.onMessage.addListener(async function (request) {
     var prompt = request.prompt;
     console.log(`Received prompt: ${prompt}`);
 
+    // get Lumos options
+    const lumosOptions: {
+      ollamaModel: string,
+      ollamaHost: string,
+      contentConfig: ContentConfig,
+    } = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig"], (data) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve({
+            ollamaModel: data.selectedModel,
+            ollamaHost: data.selectedHost,
+            contentConfig: JSON.parse(data.selectedConfig) as ContentConfig,
+          });
+        }
+      });
+    });
+
     // get default content config
-    const config = contentConfig["default"];
+    const config = lumosOptions.contentConfig["default"];
     const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
     const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
     console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // create model
-    const ollamaSettings: {
-      model: string,
-      host: string,
-    } = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["selectedModel", "selectedHost"], (data) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve({model: data.selectedModel, host: data.selectedHost});
-        }
-      });
-    });
     const model = new Ollama({
-      baseUrl: ollamaSettings.host,
-      model: ollamaSettings.model,
+      baseUrl: lumosOptions.ollamaHost,
+      model: lumosOptions.ollamaModel,
     });
 
     // create prompt template
@@ -58,8 +65,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const vectorStore = await MemoryVectorStore.fromDocuments(
       documents,
       new OllamaEmbeddings({
-        baseUrl: ollamaSettings.host,
-        model: ollamaSettings.model,
+        baseUrl: lumosOptions.ollamaHost,
+        model: lumosOptions.ollamaModel,
       }),
     );
     const retriever = vectorStore.asRetriever();
