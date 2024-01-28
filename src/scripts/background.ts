@@ -6,6 +6,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
+import { DEFAULT_CONTENT_CONFIG, DEFAULT_HOST, DEFAULT_MODEL } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 
 
@@ -27,9 +28,9 @@ chrome.runtime.onMessage.addListener(async function (request) {
           reject(chrome.runtime.lastError);
         } else {
           resolve({
-            ollamaModel: data.selectedModel,
-            ollamaHost: data.selectedHost,
-            contentConfig: JSON.parse(data.selectedConfig) as ContentConfig,
+            ollamaModel: data.selectedModel || DEFAULT_MODEL,
+            ollamaHost: data.selectedHost || DEFAULT_HOST,
+            contentConfig: JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig,
           });
         }
       });
