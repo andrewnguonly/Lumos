@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Box, IconButton, TextField, Tooltip } from "@mui/material";
+import { Alert, Box, IconButton, Snackbar, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import { ContentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
@@ -18,6 +18,8 @@ const ChatBar: React.FC = () => {
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
   const [loading2, setLoading2] = useState(false); // loading state during completion process
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -142,6 +144,12 @@ const ChatBar: React.FC = () => {
     });
   };
 
+  const handleAvatarClick = (message: string) => {
+    navigator.clipboard.writeText(message);
+    setShowSnackbar(true);
+    setSnackbarMessage("Copied!");
+  }
+
   const handleClearButtonClick = () => {
     setMessages([]);
     chrome.storage.session.set({ messages: [] });
@@ -198,6 +206,16 @@ const ChatBar: React.FC = () => {
   return (
     <Box>
       <div className="chat-container">
+        <Snackbar
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          open={showSnackbar}
+          autoHideDuration={1500}
+          onClose={() => setShowSnackbar(false)}
+        >
+          <Alert onClose={() => setShowSnackbar(false)} severity="success" sx={{ width: "100%" }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
         <ChatContainer>
           <MessageList
             typingIndicator={
@@ -217,7 +235,10 @@ const ChatBar: React.FC = () => {
                   position: "single",
                 }}
               >
-                {<Avatar src={message.sender === "user" ? "../assets/glasses_48.png" : "../assets/wand_48.png"} />}
+                {<Avatar
+                  src={message.sender === "user" ? "../assets/glasses_48.png" : "../assets/wand_48.png"}
+                  onClick={() => handleAvatarClick(message.message)}
+                />}
               </Message>  
             ))}
           </MessageList>
