@@ -10,6 +10,7 @@ import {
   ThemeProvider,
 } from "@mui/material";
 import AppTheme from "../themes/AppTheme";
+import { defaultContentConfig, isContentConfig } from "../contentConfig";
 import "./Options.css";
 
 
@@ -18,6 +19,9 @@ function Options() {
   const [model, setModel] = useState("");
   const [modelOptions, setModelOptions] = useState([]);
   const [host, setHost] = useState("http://localhost:11434");
+  const [contentConfig, setContentConfig] = useState(JSON.stringify(defaultContentConfig, null, 2));
+  const [contentConfigError, setContentConfigError] = useState(false);
+  const [contentConfigHelpText, setContentConfigHelpText] = useState("");
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -29,14 +33,29 @@ function Options() {
     const selectedHost = event.target.value;
     setHost(selectedHost);
     chrome.storage.local.set({ selectedHost: selectedHost});
-  }
+  };
+
+  const handleContentConfigChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedConfig = event.target.value;
+    setContentConfig(selectedConfig);
+    chrome.storage.local.set({ selectedConfig: selectedConfig });
+
+    if (isContentConfig(selectedConfig)) {
+      setContentConfigError(false);
+      setContentConfigHelpText("");
+    } else {
+      setContentConfigError(true);
+      setContentConfigHelpText("Invalid JSON or content config. Please check the syntax and update the config.");
+    }
+  };
 
   useEffect(() => {
-    chrome.storage.local.get(["selectedHost"]).then((data) => {
+    chrome.storage.local.get(["selectedHost", "selectedConfig"]).then((data) => {
       if (data.selectedHost) {
         setHost(data.selectedHost);
-      } else {
-        setHost("http://localhost:11434");
+      }
+      if (data.selectedConfig) {
+        setContentConfig(data.selectedConfig);
       }
     });
   }, []);
@@ -69,7 +88,7 @@ function Options() {
           <FormGroup>
             <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
             <Select
-              className="options-form-input"
+              sx={{"margin-bottom": "15px"}}
               labelId="ollama-model-select-label"
               label="Ollama Model"
               value={model}
@@ -82,10 +101,20 @@ function Options() {
               ))}
             </Select>
             <TextField
-              className="options-form-input"
+              sx={{"margin-bottom": "15px"}}
               label="Ollama Host"
               value={host}
               onChange={handleHostChange}
+            />
+            <TextField
+              sx={{"margin-bottom": "15px"}}
+              label="Content Parser Config"
+              multiline
+              rows={10}
+              value={contentConfig}
+              error={contentConfigError}
+              helperText={contentConfigHelpText}
+              onChange={handleContentConfigChange}
             />
           </FormGroup>
         </FormControl>

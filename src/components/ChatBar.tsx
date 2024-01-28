@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Box, IconButton, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
-import { contentConfig } from "../contentConfig";
+import { ContentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
 
@@ -85,6 +85,15 @@ const ChatBar: React.FC = () => {
     setMessages(newMessages);
 
     // get default content config
+    const contentConfig: ContentConfig = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(["selectedConfig"], (data) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(JSON.parse(data.selectedConfig) as ContentConfig);
+        }
+      });
+    });
     var config = contentConfig["default"];
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
