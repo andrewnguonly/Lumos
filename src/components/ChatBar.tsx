@@ -34,8 +34,20 @@ const ChatBar: React.FC = () => {
     }
   };
 
-  const getHtmlContent = (selectors: string[], selectorsAll: string[]) => {
+  const getHighlightedContent = (): string => {
+    const selection = window.getSelection();
+    return selection ? selection.toString().trim() : "";
+  };
 
+  const getHtmlContent = (selectors: string[], selectorsAll: string[]): string => {
+
+    // if any content is highlighted, return the highlighted content
+    const highlightedContent = getHighlightedContent();
+    if (highlightedContent !== "") {
+      return highlightedContent;
+    } 
+
+    // otherwise, return content from selected elements
     const parser = new DOMParser();
     var content = "";
     const elements: Element[] = [];
@@ -73,7 +85,7 @@ const ChatBar: React.FC = () => {
     }
 
     return content;
-  }
+  };
 
   const handleSendButtonClick = async () => {
     setLoading1(true);

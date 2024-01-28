@@ -152,6 +152,9 @@ Example:
   }
 }
 ```
+### Highlighted Content
+
+Alternatively, if content is highlighted on a page (e.g. highlighted text), that content will be parsed instead of the content produced from the content parser configuration.
 
 ## Reading
 - [Local LLM in the Browser Powered by Ollama](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-236817f335da)
