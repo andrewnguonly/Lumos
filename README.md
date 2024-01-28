@@ -11,6 +11,13 @@ This Chrome extension is powered by [Ollama](https://ollama.ai/). Inference is d
 
 _Lumos. Nox. Lumos. Nox._
 
+## Use Cases
+- Summarize long threads on issue tracking sites, forums, and social media sites.
+- Summarize news articles.
+- Ask questions about reviews on business and product pages.
+- Ask questions about long, technical documentation.
+- ... what else?
+
 ## Ollama Server
 
 A local Ollama server is needed for the embedding database and LLM inference. Download and install Ollama and the CLI [here](https://ollama.ai/).
@@ -72,6 +79,13 @@ Right-click on the extension icon to and select `Options` to access the extensio
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
 
 ### Content Parser Config
+
+Each domain can have its own content parser.
+
+- **chunkSize**: Number of characters to chunk page content into for indexing into RAG vectorstore
+- **chunkOverlap**: Number of characters to overlap in chunks for indexing into RAG vectorstore
+- **selectors**: `document.querySelector()` queries to perform to retrieve page content
+- **selectorsAll**: `document.querySelectorAll()` queries to perform to retrieve page content
 
 See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
 
@@ -138,13 +152,6 @@ Example:
   }
 }
 ```
-
-## Use Cases
-- Summarize long threads on issue tracking sites, forums, and social media sites.
-- Summarize news articles.
-- Ask questions about reviews on business and product pages.
-- Ask questions about long, technical documentation.
-- ... what else?
 
 ## Reading
 - [Local LLM in the Browser Powered by Ollama](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-236817f335da)
