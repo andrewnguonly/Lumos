@@ -135,7 +135,7 @@ Example:
       "#reviews",
     ],
     "selectorsAll": []
-  },
+  }
 }
 ```
 
