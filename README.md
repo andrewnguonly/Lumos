@@ -70,6 +70,10 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
 
+### Releases
+
+If you don't have `npm` installed, you can download the pre-built extension package from the [Releases](https://github.com/andrewnguonly/Lumos/releases) page.
+
 ## Lumos Options
 
 Right-click on the extension icon to and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
