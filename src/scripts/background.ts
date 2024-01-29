@@ -95,3 +95,10 @@ chrome.runtime.onMessage.addListener(async function (request) {
     console.log(`Received context: ${context}`);
   }
 });
+
+const keepAlive = () => {
+  setInterval(chrome.runtime.getPlatformInfo, 20e3);
+  console.log("Keep alive...");
+}
+chrome.runtime.onStartup.addListener(keepAlive);
+keepAlive();
