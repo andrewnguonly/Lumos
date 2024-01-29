@@ -14,12 +14,16 @@ import { defaultContentConfig, isContentConfig } from "../contentConfig";
 import "./Options.css";
 
 
+export const DEFAULT_MODEL = "llama2";
+export const DEFAULT_HOST = "http://localhost:11434";
+export const DEFAULT_CONTENT_CONFIG = JSON.stringify(defaultContentConfig, null, 2);
+
 function Options() {
 
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState(DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([]);
-  const [host, setHost] = useState("http://localhost:11434");
-  const [contentConfig, setContentConfig] = useState(JSON.stringify(defaultContentConfig, null, 2));
+  const [host, setHost] = useState(DEFAULT_HOST);
+  const [contentConfig, setContentConfig] = useState(DEFAULT_CONTENT_CONFIG);
   const [contentConfigError, setContentConfigError] = useState(false);
   const [contentConfigHelpText, setContentConfigHelpText] = useState("");
 

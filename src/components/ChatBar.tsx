@@ -1,6 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Alert, Box, IconButton, Snackbar, TextField, Tooltip } from "@mui/material";
 import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
+import { DEFAULT_CONTENT_CONFIG } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import "./ChatBar.css";
@@ -104,7 +105,7 @@ const ChatBar: React.FC = () => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
-          resolve(JSON.parse(data.selectedConfig) as ContentConfig);
+          resolve(JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig);
         }
       });
     });
