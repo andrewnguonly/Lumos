@@ -15,13 +15,13 @@ import {
 import { ContentConfig } from "../contentConfig";
 
 
-interface vectorStoreMetadata {
+interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore
   createdAt: number
 }
 
 // map of url to vector store metadata
-const vectorStoreMap = new Map<string, vectorStoreMetadata>();
+const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 var context = "";
 
@@ -53,11 +53,13 @@ chrome.runtime.onMessage.addListener(async function (request) {
       });
     });
 
-    // evict vector store if it's older than 1 hour
-    if (vectorStoreMap.has(url) && Date.now() - vectorStoreMap.get(url)?.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
-      vectorStoreMap.delete(url);
-      console.log(`Deleting vector store for url: ${url}`);
-    }
+    // delete all vector stores that are older that 1 hour
+    vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
+      if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
+        vectorStoreMap.delete(url);
+        console.log(`Deleting vector store for url: ${url}`);
+      }
+    });
 
     // get default content config
     const config = lumosOptions.contentConfig["default"];
@@ -78,9 +80,9 @@ chrome.runtime.onMessage.addListener(async function (request) {
       template,
     });
 
+    // check if vector store already exists for url
     var vectorStore: MemoryVectorStore;
 
-    // check if vector store already exists for url
     if (vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
