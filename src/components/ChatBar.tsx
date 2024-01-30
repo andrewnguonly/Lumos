@@ -42,12 +42,19 @@ const ChatBar: React.FC = () => {
     return selection ? selection.toString().trim() : "";
   };
 
-  const getHtmlContent = (selectors: string[], selectorsAll: string[]): string => {
+  /**
+   * Get content from current tab.
+   * 
+   * @param {string[]} selectors - selector queries to get content, i.e. document.querySelector().
+   * @param {string[]} selectorsAll - selectorAll queries to get content, i.e. document.querySelectorAll().
+   * @returns {[string, boolean]} - Tuple of content and boolean indicating if content was highlighted content.
+   */
+  const getHtmlContent = (selectors: string[], selectorsAll: string[]): [string, boolean] => {
 
     // if any content is highlighted, return the highlighted content
     const highlightedContent = getHighlightedContent();
     if (highlightedContent !== "") {
-      return highlightedContent;
+      return [highlightedContent, true];
     } 
 
     // otherwise, return content from selected elements
@@ -87,7 +94,7 @@ const ChatBar: React.FC = () => {
       content += textContent + "\n";
     }
 
-    return content;
+    return [content, false];
   };
 
   const handleSendButtonClick = async () => {
@@ -130,13 +137,16 @@ const ChatBar: React.FC = () => {
         args: [config.selectors, config.selectorsAll],
       });
     }).then(async (results) => {
-      const pageContent = results[0].result;
+      const pageContent = results[0].result[0];
+      const isHighlightedContent = results[0].result[1];
+
       chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
         chrome.runtime.sendMessage({
           prompt: prompt,
           chunkSize: config.chunkSize,
           chunkOverlap: config.chunkOverlap,
           url: activeTabUrl.toString(),
+          skipCache: isHighlightedContent,
         });
 
         // clear prompt after sending it to the background script

@@ -29,6 +29,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
     const prompt = request.prompt;
     const url = request.url;
+    const skipCache = Boolean(request.skipCache);
     console.log(`Received url: ${url}`);
     console.log(`Received prompt: ${prompt}`);
 
@@ -53,7 +54,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
       });
     });
 
-    // delete all vector stores that are older that 1 hour
+    // delete all vector stores that are expired
     vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
       if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
         vectorStoreMap.delete(url);
@@ -83,13 +84,13 @@ chrome.runtime.onMessage.addListener(async function (request) {
     // check if vector store already exists for url
     var vectorStore: MemoryVectorStore;
 
-    if (vectorStoreMap.has(url)) {
+    if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
       vectorStore = vectorStoreMap.get(url)?.vectorStore!;
     } else {
       // create new vector store
-      console.log(`Creating new vector store for url: ${url}`);
+      console.log(`Creating ${skipCache ? "temporary" : "new"} vector store for url: ${url}`);
 
       // split page content into overlapping documents
       const splitter = new RecursiveCharacterTextSplitter({
@@ -108,13 +109,12 @@ chrome.runtime.onMessage.addListener(async function (request) {
       );
 
       // store vector store in vector store map
-      vectorStoreMap.set(
-        url,
-        {
+      if (!skipCache) {
+        vectorStoreMap.set(url, {
           vectorStore: vectorStore,
           createdAt: Date.now(),
-        }
-      );
+        });
+      }
     }
 
     const retriever = vectorStore.asRetriever();
