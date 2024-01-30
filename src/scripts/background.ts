@@ -6,7 +6,12 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { DEFAULT_CONTENT_CONFIG, DEFAULT_HOST, DEFAULT_MODEL } from "../pages/Options";
+import {
+  DEFAULT_CONTENT_CONFIG,
+  DEFAULT_HOST,
+  DEFAULT_MODEL,
+  DEFAULT_VECTOR_STORE_TTL_MINS,
+} from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 
 
@@ -22,7 +27,7 @@ var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
-    var prompt = request.prompt;
+    const prompt = request.prompt;
     const url = request.url;
     console.log(`Received url: ${url}`);
     console.log(`Received prompt: ${prompt}`);
@@ -32,8 +37,9 @@ chrome.runtime.onMessage.addListener(async function (request) {
       ollamaModel: string,
       ollamaHost: string,
       contentConfig: ContentConfig,
+      vectorStoreTTLMins: number,
     } = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig"], (data) => {
+      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"], (data) => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
@@ -41,10 +47,17 @@ chrome.runtime.onMessage.addListener(async function (request) {
             ollamaModel: data.selectedModel || DEFAULT_MODEL,
             ollamaHost: data.selectedHost || DEFAULT_HOST,
             contentConfig: JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig,
+            vectorStoreTTLMins: parseInt(data.selectedVectorStoreTTLMins, 10) || DEFAULT_VECTOR_STORE_TTL_MINS,
           });
         }
       });
     });
+
+    // evict vector store if it's older than 1 hour
+    if (vectorStoreMap.has(url) && Date.now() - vectorStoreMap.get(url)?.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
+      vectorStoreMap.delete(url);
+      console.log(`Deleting vector store for url: ${url}`);
+    }
 
     // get default content config
     const config = lumosOptions.contentConfig["default"];
