@@ -10,11 +10,21 @@ import { DEFAULT_CONTENT_CONFIG, DEFAULT_HOST, DEFAULT_MODEL } from "../pages/Op
 import { ContentConfig } from "../contentConfig";
 
 
+interface vectorStoreMetadata {
+  vectorStore: MemoryVectorStore
+  createdAt: number
+}
+
+// map of url to vector store metadata
+const vectorStoreMap = new Map<string, vectorStoreMetadata>();
+
 var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
     var prompt = request.prompt;
+    const url = request.url;
+    console.log(`Received url: ${url}`);
     console.log(`Received prompt: ${prompt}`);
 
     // get Lumos options
@@ -55,21 +65,43 @@ chrome.runtime.onMessage.addListener(async function (request) {
       template,
     });
 
-    // split page content into overlapping documents
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: chunkSize,
-      chunkOverlap: chunkOverlap,
-    });
-    const documents = await splitter.createDocuments([context]);
+    var vectorStore: MemoryVectorStore;
 
-    // load documents into vector store
-    const vectorStore = await MemoryVectorStore.fromDocuments(
-      documents,
-      new OllamaEmbeddings({
-        baseUrl: lumosOptions.ollamaHost,
-        model: lumosOptions.ollamaModel,
-      }),
-    );
+    // check if vector store already exists for url
+    if (vectorStoreMap.has(url)) {
+      // retrieve existing vector store
+      console.log(`Retrieving existing vector store for url: ${url}`);
+      vectorStore = vectorStoreMap.get(url)?.vectorStore!;
+    } else {
+      // create new vector store
+      console.log(`Creating new vector store for url: ${url}`);
+
+      // split page content into overlapping documents
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: chunkSize,
+        chunkOverlap: chunkOverlap,
+      });
+      const documents = await splitter.createDocuments([context]);
+
+      // load documents into vector store
+      vectorStore = await MemoryVectorStore.fromDocuments(
+        documents,
+        new OllamaEmbeddings({
+          baseUrl: lumosOptions.ollamaHost,
+          model: lumosOptions.ollamaModel,
+        }),
+      );
+
+      // store vector store in vector store map
+      vectorStoreMap.set(
+        url,
+        {
+          vectorStore: vectorStore,
+          createdAt: Date.now(),
+        }
+      );
+    }
+
     const retriever = vectorStore.asRetriever();
 
     // create chain

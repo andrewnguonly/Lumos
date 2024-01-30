@@ -109,12 +109,14 @@ const ChatBar: React.FC = () => {
         }
       });
     });
+
     var config = contentConfig["default"];
+    var activeTabUrl: URL;
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       const activeTab = tabs[0];
       const activeTabId = activeTab.id;
-      const activeTabUrl = new URL(activeTab.url || "");
+      activeTabUrl = new URL(activeTab.url || "");
       const domain = getDomain(activeTabUrl.hostname);
 
       // get domain specific content config
@@ -134,6 +136,7 @@ const ChatBar: React.FC = () => {
           prompt: prompt,
           chunkSize: config.chunkSize,
           chunkOverlap: config.chunkOverlap,
+          url: activeTabUrl.toString(),
         });
 
         // clear prompt after sending it to the background script
