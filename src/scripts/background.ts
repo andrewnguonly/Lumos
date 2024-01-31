@@ -1,11 +1,11 @@
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { PromptTemplate } from "langchain/prompts";
-import { Ollama } from "langchain/llms/ollama";
-import { OllamaEmbeddings } from "langchain/embeddings/ollama";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { StringOutputParser } from "langchain/schema/output_parser";
-import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { Ollama } from "@langchain/community/llms/ollama";
 import {
   DEFAULT_CONTENT_CONFIG,
   DEFAULT_HOST,
