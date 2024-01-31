@@ -1,6 +1,6 @@
 {
   "name": "lumos",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "dependencies": {
     "@chatscope/chat-ui-kit-react": "^1.10.1",
@@ -18,7 +18,7 @@
     "@types/react-dom": "^18.2.15",
     "@xenova/transformers": "^2.8.0",
     "buffer": "^6.0.3",
-    "langchain": "^0.0.193",
+    "langchain": "^0.1.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ts-loader": "^9.5.0",
