@@ -17,6 +17,7 @@ import "./Options.css";
 export const DEFAULT_MODEL = "llama2";
 export const DEFAULT_HOST = "http://localhost:11434";
 export const DEFAULT_CONTENT_CONFIG = JSON.stringify(defaultContentConfig, null, 2);
+export const DEFAULT_VECTOR_STORE_TTL_MINS = 60;
 
 function Options() {
 
@@ -26,6 +27,7 @@ function Options() {
   const [contentConfig, setContentConfig] = useState(DEFAULT_CONTENT_CONFIG);
   const [contentConfigError, setContentConfigError] = useState(false);
   const [contentConfigHelpText, setContentConfigHelpText] = useState("");
+  const [vectorStoreTTLMins, setVectorStoreTTLMins] = useState(DEFAULT_VECTOR_STORE_TTL_MINS);
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -53,13 +55,22 @@ function Options() {
     }
   };
 
+  const handleVectorStoreTTLMinsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
+    setVectorStoreTTLMins(selectedVectorStoreTTLMins);
+    chrome.storage.local.set({ selectedVectorStoreTTLMins: selectedVectorStoreTTLMins});
+  };
+
   useEffect(() => {
-    chrome.storage.local.get(["selectedHost", "selectedConfig"]).then((data) => {
+    chrome.storage.local.get(["selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"]).then((data) => {
       if (data.selectedHost) {
         setHost(data.selectedHost);
       }
       if (data.selectedConfig) {
         setContentConfig(data.selectedConfig);
+      }
+      if (data.selectedVectorStoreTTLMins) {
+        setVectorStoreTTLMins(parseInt(data.selectedVectorStoreTTLMins, 10));
       }
     });
   }, []);
@@ -109,6 +120,13 @@ function Options() {
               label="Ollama Host"
               value={host}
               onChange={handleHostChange}
+            />
+            <TextField
+              sx={{"margin-bottom": "15px"}}
+              type="number"
+              label="Vector Store TTL (minutes)"
+              value={vectorStoreTTLMins}
+              onChange={handleVectorStoreTTLMinsChange}
             />
             <TextField
               sx={{"margin-bottom": "15px"}}

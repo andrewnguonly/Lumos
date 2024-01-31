@@ -80,6 +80,7 @@ Right-click on the extension icon to and select `Options` to access the extensio
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
 - **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
+- **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
 
 ### Content Parser Config

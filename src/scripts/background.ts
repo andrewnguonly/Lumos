@@ -6,15 +6,31 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence, RunnablePassthrough } from "langchain/schema/runnable";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { DEFAULT_CONTENT_CONFIG, DEFAULT_HOST, DEFAULT_MODEL } from "../pages/Options";
+import {
+  DEFAULT_CONTENT_CONFIG,
+  DEFAULT_HOST,
+  DEFAULT_MODEL,
+  DEFAULT_VECTOR_STORE_TTL_MINS,
+} from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 
+
+interface VectorStoreMetadata {
+  vectorStore: MemoryVectorStore
+  createdAt: number
+}
+
+// map of url to vector store metadata
+const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 var context = "";
 
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
-    var prompt = request.prompt;
+    const prompt = request.prompt;
+    const url = request.url;
+    const skipCache = Boolean(request.skipCache);
+    console.log(`Received url: ${url}`);
     console.log(`Received prompt: ${prompt}`);
 
     // get Lumos options
@@ -22,8 +38,9 @@ chrome.runtime.onMessage.addListener(async function (request) {
       ollamaModel: string,
       ollamaHost: string,
       contentConfig: ContentConfig,
+      vectorStoreTTLMins: number,
     } = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig"], (data) => {
+      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"], (data) => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
@@ -31,9 +48,18 @@ chrome.runtime.onMessage.addListener(async function (request) {
             ollamaModel: data.selectedModel || DEFAULT_MODEL,
             ollamaHost: data.selectedHost || DEFAULT_HOST,
             contentConfig: JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig,
+            vectorStoreTTLMins: parseInt(data.selectedVectorStoreTTLMins, 10) || DEFAULT_VECTOR_STORE_TTL_MINS,
           });
         }
       });
+    });
+
+    // delete all vector stores that are expired
+    vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
+      if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
+        vectorStoreMap.delete(url);
+        console.log(`Deleting vector store for url: ${url}`);
+      }
     });
 
     // get default content config
@@ -55,21 +81,42 @@ chrome.runtime.onMessage.addListener(async function (request) {
       template,
     });
 
-    // split page content into overlapping documents
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: chunkSize,
-      chunkOverlap: chunkOverlap,
-    });
-    const documents = await splitter.createDocuments([context]);
+    // check if vector store already exists for url
+    var vectorStore: MemoryVectorStore;
 
-    // load documents into vector store
-    const vectorStore = await MemoryVectorStore.fromDocuments(
-      documents,
-      new OllamaEmbeddings({
-        baseUrl: lumosOptions.ollamaHost,
-        model: lumosOptions.ollamaModel,
-      }),
-    );
+    if (!skipCache && vectorStoreMap.has(url)) {
+      // retrieve existing vector store
+      console.log(`Retrieving existing vector store for url: ${url}`);
+      vectorStore = vectorStoreMap.get(url)?.vectorStore!;
+    } else {
+      // create new vector store
+      console.log(`Creating ${skipCache ? "temporary" : "new"} vector store for url: ${url}`);
+
+      // split page content into overlapping documents
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: chunkSize,
+        chunkOverlap: chunkOverlap,
+      });
+      const documents = await splitter.createDocuments([context]);
+
+      // load documents into vector store
+      vectorStore = await MemoryVectorStore.fromDocuments(
+        documents,
+        new OllamaEmbeddings({
+          baseUrl: lumosOptions.ollamaHost,
+          model: lumosOptions.ollamaModel,
+        }),
+      );
+
+      // store vector store in vector store map
+      if (!skipCache) {
+        vectorStoreMap.set(url, {
+          vectorStore: vectorStore,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
     const retriever = vectorStore.asRetriever();
 
     // create chain
