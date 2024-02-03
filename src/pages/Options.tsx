@@ -18,6 +18,7 @@ export const DEFAULT_MODEL = "llama2";
 export const DEFAULT_HOST = "http://localhost:11434";
 export const DEFAULT_CONTENT_CONFIG = JSON.stringify(defaultContentConfig, null, 2);
 export const DEFAULT_VECTOR_STORE_TTL_MINS = 60;
+export const MULTIMODAL_MODELS = ["llava", "bakllava"];
 
 function Options() {
 
