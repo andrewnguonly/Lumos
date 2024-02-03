@@ -34,11 +34,23 @@ var context = "";
  * false negatives. However, the approach greatly simplifies the user exprience when
  * using a multimodal model. With the approach, a user is able to issue prompts that
  * may or may not ask about an image without having to download the images on the page.
+ * 
+ * Additional, the function checks for a hardcoded prefix trigger: "based on the image".
+ * This is a simple mechanism that allows a user to override the classifcation feature.
+ * 
+ * Example: "Based on the image, describe what's going on in the background."
  */
 const isImagePrompt = async (baseURL: string, model: string, prompt: string): Promise<boolean> => {
+  // check for prefix trigger
+  if (prompt.trim().toLowerCase().startsWith("based on the image")) {
+    return new Promise((resolve) => resolve(true));
+  }
+
+  // otherwise, attempt to classify prompt
   const ollama = new Ollama({ baseUrl: baseURL, model: model });
-  const question = `Is the following prompt asking about an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
+    console.log(`Prompt classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
@@ -92,10 +104,14 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const base64EncodedImages: string[] = [];
 
     // download images
-    if (MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel) && await isImagePrompt(lumosOptions.ollamaHost, lumosOptions.ollamaModel, request.prompt)) {
+    if (
+      MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel) &&
+      await isImagePrompt(lumosOptions.ollamaHost, lumosOptions.ollamaModel, request.prompt)
+    ) {
       const urls: string[] = request.imageURLs;
 
-      for (const url of urls) {
+      // only download the first 10 images
+      for (const url of urls.slice(0, 10)) {
         console.log(`Downloading image: ${url}`);
         var response;
 
