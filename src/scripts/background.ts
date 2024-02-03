@@ -26,6 +26,24 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 var context = "";
 
+/**
+ * Determine if a prompt is asking about an image. If so, return true, else false.
+ * 
+ * This function uses the Ollama model to determine if the prompt is asking
+ * about an image or not. The classification approach is simplistic and may generate
+ * false negatives. However, the approach greatly simplifies the user exprience when
+ * using a multimodal model. With the approach, a user is able to issue prompts that
+ * may or may not ask about an image without having to download the images on the page.
+ */
+const isImagePrompt = async (baseURL: string, model: string, prompt: string): Promise<boolean> => {
+  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const question = `Is the following prompt asking about an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  return ollama.invoke(question).then((response) => {
+    const answer = response.trim().split(" ")[0].toLowerCase();
+    return answer.includes("yes");
+  });
+};
+
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
     const prompt = request.prompt;
@@ -74,8 +92,7 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const base64EncodedImages: string[] = [];
 
     // download images
-    // TODO: infer if prompt is asking about images
-    if (MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel)) {
+    if (MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel) && await isImagePrompt(lumosOptions.ollamaHost, lumosOptions.ollamaModel, request.prompt)) {
       const urls: string[] = request.imageURLs;
 
       for (const url of urls) {
