@@ -8,19 +8,17 @@ const getHighlightedContent = (): string => {
  * 
  * @param {string[]} selectors - selector queries to get content, i.e. document.querySelector().
  * @param {string[]} selectorsAll - selectorAll queries to get content, i.e. document.querySelectorAll().
- * @returns {[string, boolean]} - Tuple of content and boolean indicating if content was highlighted content.
+ * @returns {[string, boolean, string[]]} - Tuple of content, boolean indicating if content was highlighted content, and array of image URLs
  */
-export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [string, boolean] => {
+export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [string, boolean, string[]] => {
 
   // if any content is highlighted, return the highlighted content
   const highlightedContent = getHighlightedContent();
   if (highlightedContent !== "") {
-    return [highlightedContent, true];
+    return [highlightedContent, true, []];
   } 
 
   // otherwise, return content from selected elements
-  const parser = new DOMParser();
-  var content = "";
   const elements: Element[] = [];
 
   // process selector queries
@@ -44,6 +42,10 @@ export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [st
   }
 
   // retrieve content from selected elements
+  const parser = new DOMParser();
+  var content = "";
+  const imageURLs: string[] = [];
+
   for (const element of elements) {
     const doc = parser.parseFromString(element.outerHTML, "text/html");
     var textContent = doc.body.innerText || "";
@@ -53,7 +55,16 @@ export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [st
 
     // append textContent to overall content
     content += textContent + "\n";
+
+    // find img elements and add src (URL) to imageURLs list
+    const imageElements = doc.querySelectorAll("img");
+    imageElements.forEach((imageElement) => {
+      const imageURL = imageElement.getAttribute("src");
+      if (imageURL) {
+        imageURLs.push(imageURL);
+      }
+    })
   }
 
-  return [content, false];
+  return [content, false, imageURLs];
 };

@@ -11,6 +11,7 @@ import {
   DEFAULT_HOST,
   DEFAULT_MODEL,
   DEFAULT_VECTOR_STORE_TTL_MINS,
+  MULTIMODAL_MODELS,
 } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 
@@ -54,6 +55,12 @@ chrome.runtime.onMessage.addListener(async function (request) {
       });
     });
 
+    // get default content config
+    const config = lumosOptions.contentConfig["default"];
+    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
+    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
+    console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
+
     // delete all vector stores that are expired
     vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
       if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
@@ -62,16 +69,44 @@ chrome.runtime.onMessage.addListener(async function (request) {
       }
     });
 
-    // get default content config
-    const config = lumosOptions.contentConfig["default"];
-    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
-    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
-    console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
+    // declare model
+    var model;
+    const base64EncodedImages: string[] = [];
 
-    // create model
-    const model = new Ollama({
+    // download images
+    if (MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel)) {
+      const urls: string[] = request.imageURLs;
+
+      for (const url of urls) {
+        console.log(`Downloading image: ${url}`);
+        const response = await fetch(url);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          var base64String: string = await new Promise((resolve, reject) => {
+
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+              resolve(reader.result as string);
+            };
+          });
+
+          // remove leading data url prefix `data:*/*;base64,`
+          base64String = base64String.split(",")[1];
+          base64EncodedImages.push(base64String);
+        } else {
+          console.log(`Failed to download image: ${url}`);
+        }
+      }
+    }
+
+    // bind base64 encoded image data to model
+    model = new Ollama({
       baseUrl: lumosOptions.ollamaHost,
       model: lumosOptions.ollamaModel,
+    }).bind({
+      images: base64EncodedImages
     });
 
     // create prompt template

@@ -80,6 +80,7 @@ const ChatBar: React.FC = () => {
     }).then(async (results) => {
       const pageContent = results[0].result[0];
       const isHighlightedContent = results[0].result[1];
+      const imageURLs = results[0].result[2];
 
       chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
         chrome.runtime.sendMessage({
@@ -88,6 +89,7 @@ const ChatBar: React.FC = () => {
           chunkOverlap: config.chunkOverlap,
           url: activeTabUrl.toString(),
           skipCache: isHighlightedContent,
+          imageURLs: imageURLs,
         });
 
         // clear prompt after sending it to the background script
