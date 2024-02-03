@@ -17,11 +17,28 @@ Note: The container tag doesn't necessarily have to be a `<div>` tag. It can be 
 
 ## Determine Selector Query
 
-See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities and see more examples.
+Determine the selector (and selectorAll) queries and add them to the existing content parser configuration in the Lumos Options page. See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities and see more examples.
 
-Examples:
+Example queries:
 1. Select element by tag name: `tagName`
 1. Select element by id (leading `#`): `#elementId` 
 1. Select element by class name (leading `.`): `.className`
 
 `querySelector()` supports [complex selectors](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector#complex_selectors) and [negation](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector#negation).
+
+Example conifg for a single domain:
+```json
+{
+  "domain.com": {
+    "chunkSize": 500,
+    "chunkOverlap": 0,
+    "selectors": [
+      "tagName",
+      "#elementId"
+    ],
+    "selectorsAll": [
+      ".className"
+    ]
+  }
+}
+```
