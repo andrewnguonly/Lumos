@@ -74,12 +74,20 @@ chrome.runtime.onMessage.addListener(async function (request) {
     const base64EncodedImages: string[] = [];
 
     // download images
+    // TODO: infer if prompt is asking about images
     if (MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel)) {
       const urls: string[] = request.imageURLs;
 
       for (const url of urls) {
         console.log(`Downloading image: ${url}`);
-        const response = await fetch(url);
+        var response;
+
+        try {
+          response = await fetch(url);
+        } catch (error) {
+          console.log(`Failed to download image: ${url}`);
+          continue;
+        }
 
         if (response.ok) {
           const blob = await response.blob();
