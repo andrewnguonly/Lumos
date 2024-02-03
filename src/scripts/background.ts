@@ -11,6 +11,7 @@ import {
   DEFAULT_HOST,
   DEFAULT_MODEL,
   DEFAULT_VECTOR_STORE_TTL_MINS,
+  MULTIMODAL_MODELS,
 } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 
@@ -24,6 +25,41 @@ interface VectorStoreMetadata {
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 var context = "";
+
+/**
+ * Determine if a prompt is asking about an image. If so, return true.
+ * Otherwise, return false.
+ * 
+ * This function uses the Ollama model to determine if the prompt is
+ * asking about an image or not. The classification approach is simplistic and
+ * may generate false positives or false negatives. However, the approach
+ * greatly simplifies the user exprience when using a multimodal model. With
+ * this approach, a user is able to issue prompts that may or may not refer to
+ * an image without having to switch models or download the images when the
+ * current prompt does not refer to an image.
+ * 
+ * Additionally, the function checks for a hardcoded prefix trigger: "based on
+ * the image". This is a simple mechanism to allow a user to override the
+ * classifcation workflow and force the images to be downloaded and bound to
+ * the model.
+ * 
+ * Example: "Based on the image, describe what's going on in the background"
+ */
+const isImagePrompt = async (baseURL: string, model: string, prompt: string): Promise<boolean> => {
+  // check for prefix trigger
+  if (prompt.trim().toLowerCase().startsWith("based on the image")) {
+    return new Promise((resolve) => resolve(true));
+  }
+
+  // otherwise, attempt to classify prompt
+  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  return ollama.invoke(question).then((response) => {
+    console.log(`Prompt classification response: ${response}`);
+    const answer = response.trim().split(" ")[0].toLowerCase();
+    return answer.includes("yes");
+  });
+};
 
 chrome.runtime.onMessage.addListener(async function (request) {
   if (request.prompt) {
@@ -54,6 +90,12 @@ chrome.runtime.onMessage.addListener(async function (request) {
       });
     });
 
+    // get default content config
+    const config = lumosOptions.contentConfig["default"];
+    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
+    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
+    console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
+
     // delete all vector stores that are expired
     vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
       if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
@@ -62,16 +104,55 @@ chrome.runtime.onMessage.addListener(async function (request) {
       }
     });
 
-    // get default content config
-    const config = lumosOptions.contentConfig["default"];
-    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
-    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
-    console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
+    // declare model
+    var model;
+    const base64EncodedImages: string[] = [];
 
-    // create model
-    const model = new Ollama({
+    // download images
+    if (
+      MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel) &&
+      await isImagePrompt(lumosOptions.ollamaHost, lumosOptions.ollamaModel, request.prompt)
+    ) {
+      const urls: string[] = request.imageURLs;
+
+      // only download the first 10 images
+      for (const url of urls.slice(0, 10)) {
+        console.log(`Downloading image: ${url}`);
+        var response;
+
+        try {
+          response = await fetch(url);
+        } catch (error) {
+          console.log(`Failed to download image: ${url}`);
+          continue;
+        }
+
+        if (response.ok) {
+          const blob = await response.blob();
+          var base64String: string = await new Promise((resolve, reject) => {
+
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+              resolve(reader.result as string);
+            };
+          });
+
+          // remove leading data url prefix `data:*/*;base64,`
+          base64String = base64String.split(",")[1];
+          base64EncodedImages.push(base64String);
+        } else {
+          console.log(`Failed to download image: ${url}`);
+        }
+      }
+    }
+
+    // bind base64 encoded image data to model
+    model = new Ollama({
       baseUrl: lumosOptions.ollamaHost,
       model: lumosOptions.ollamaModel,
+    }).bind({
+      images: base64EncodedImages
     });
 
     // create prompt template
