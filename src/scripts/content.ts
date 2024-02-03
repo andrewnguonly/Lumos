@@ -8,7 +8,7 @@ const getHighlightedContent = (): string => {
  * 
  * @param {string[]} selectors - selector queries to get content, i.e. document.querySelector().
  * @param {string[]} selectorsAll - selectorAll queries to get content, i.e. document.querySelectorAll().
- * @returns {[string, boolean, string[]]} - Tuple of content, boolean indicating if content was highlighted content, and array of image URLs
+ * @returns {[string, boolean, string[]]} - Tuple of content, boolean indicating if content was highlighted content, and an array of image URLs
  */
 export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [string, boolean, string[]] => {
 

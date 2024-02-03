@@ -163,7 +163,7 @@ Alternatively, if content is highlighted on a page (e.g. highlighted text), that
 
 ## Multimodal
 
-Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for querying. See examples [here](./docs/multimodal.md).
+Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).
 
 ## Reading
 - [Local LLM in the Browser Powered by Ollama](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-236817f335da)

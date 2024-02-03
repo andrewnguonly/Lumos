@@ -27,18 +27,23 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 var context = "";
 
 /**
- * Determine if a prompt is asking about an image. If so, return true, else false.
+ * Determine if a prompt is asking about an image. If so, return true.
+ * Otherwise, return false.
  * 
- * This function uses the Ollama model to determine if the prompt is asking
- * about an image or not. The classification approach is simplistic and may generate
- * false negatives. However, the approach greatly simplifies the user exprience when
- * using a multimodal model. With the approach, a user is able to issue prompts that
- * may or may not ask about an image without having to download the images on the page.
+ * This function uses the Ollama model to determine if the prompt is
+ * asking about an image or not. The classification approach is simplistic and
+ * may generate false positives or false negatives. However, the approach
+ * greatly simplifies the user exprience when using a multimodal model. With
+ * this approach, a user is able to issue prompts that may or may not refer to
+ * an image without having to switch models or download the images when the
+ * current prompt does not refer to an image.
  * 
- * Additional, the function checks for a hardcoded prefix trigger: "based on the image".
- * This is a simple mechanism that allows a user to override the classifcation feature.
+ * Additionally, the function checks for a hardcoded prefix trigger: "based on
+ * the image". This is a simple mechanism to allow a user to override the
+ * classifcation workflow and force the images to be downloaded and bound to
+ * the model.
  * 
- * Example: "Based on the image, describe what's going on in the background."
+ * Example: "Based on the image, describe what's going on in the background"
  */
 const isImagePrompt = async (baseURL: string, model: string, prompt: string): Promise<boolean> => {
   // check for prefix trigger
