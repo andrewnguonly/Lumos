@@ -61,13 +61,50 @@ const isImagePrompt = async (baseURL: string, model: string, prompt: string): Pr
   });
 };
 
-chrome.runtime.onMessage.addListener(async function (request) {
-  if (request.prompt) {
+chrome.runtime.onMessage.addListener(async (request) => {
+  // process prompt (RAG disabled)
+  if (request.prompt && request.skipRAG) {
+    const prompt = request.prompt;
+    console.log(`Received prompt (RAG disabled): ${prompt}`);
+
+    // get Lumos options
+    const lumosOptions: {
+      ollamaModel: string,
+      ollamaHost: string,
+    } = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(["selectedModel", "selectedHost"], (data) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve({
+            ollamaModel: data.selectedModel || DEFAULT_MODEL,
+            ollamaHost: data.selectedHost || DEFAULT_HOST,
+          });
+        }
+      });
+    });
+
+    // create model
+    const model = new Ollama({
+      baseUrl: lumosOptions.ollamaHost,
+      model: lumosOptions.ollamaModel,
+    });
+
+    // stream response chunks
+    const stream = await model.stream(prompt);
+    for await (const chunk of stream) {
+      chrome.runtime.sendMessage({ chunk: chunk });
+    }
+    chrome.runtime.sendMessage({ done: true });
+  }
+
+  // process prompt (RAG enabled)
+  if (request.prompt && !request.skipRAG) {
     const prompt = request.prompt;
     const url = request.url;
     const skipCache = Boolean(request.skipCache);
+    console.log(`Received prompt (RAG enabled): ${prompt}`);
     console.log(`Received url: ${url}`);
-    console.log(`Received prompt: ${prompt}`);
 
     // get Lumos options
     const lumosOptions: {
@@ -218,6 +255,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
     }
     chrome.runtime.sendMessage({ done: true });
   }
+
+  // process parsed context
   if (request.context) {
     context = request.context;
     console.log(`Received context: ${context}`);

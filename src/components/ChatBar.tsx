@@ -60,7 +60,7 @@ const ChatBar: React.FC = () => {
     }
   };
 
-  const handleSendButtonClick = async () => {
+  const promptWithContent = async () => {
     setLoading1(true);
     setSubmitDisabled(true);
     setCompletion("");
@@ -107,6 +107,7 @@ const ChatBar: React.FC = () => {
       chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
         chrome.runtime.sendMessage({
           prompt: prompt,
+          skipRAG: false,
           chunkSize: config.chunkSize,
           chunkOverlap: config.chunkOverlap,
           url: activeTabUrl.toString(),
@@ -122,6 +123,31 @@ const ChatBar: React.FC = () => {
       console.log(`Error: ${error}`);
     });
   };
+
+  const promptWithoutContent = async () => {
+    setLoading1(true);
+    setSubmitDisabled(true);
+    setCompletion("");
+
+    // save user message to messages list
+    const newMessages = [...messages, new LumosMessage("user", prompt)];
+    setMessages(newMessages);
+
+    // send prompt to background script
+    chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
+
+    // clear prompt after sending it to the background script
+    setPrompt("");
+    chrome.storage.session.set({ prompt: "" });
+  }
+
+  const handleSendButtonClick = async () => {
+    if (parsingDisabled) {
+      promptWithoutContent();
+    } else {
+      promptWithContent();
+    }
+  }
 
   const handleAvatarClick = (message: string) => {
     navigator.clipboard.writeText(message);
