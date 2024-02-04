@@ -92,7 +92,7 @@ Each domain can have its own content parser.
 - **selectors**: `document.querySelector()` queries to perform to retrieve page content
 - **selectorsAll**: `document.querySelectorAll()` queries to perform to retrieve page content
 
-See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
+See docs for [How to Create a Custom Content Parser](./docs/content_parser.md). See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
 
 Example:
 ```json

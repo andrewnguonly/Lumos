@@ -16,6 +16,13 @@ import {
 import { ContentConfig } from "../contentConfig";
 
 
+interface LumosOptions {
+  ollamaModel: string,
+  ollamaHost: string,
+  contentConfig: ContentConfig,
+  vectorStoreTTLMins: number,
+}
+
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore
   createdAt: number
@@ -24,7 +31,25 @@ interface VectorStoreMetadata {
 // map of url to vector store metadata
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
+ // global variable for storing parsed content from current tab
 var context = "";
+
+const getLumosOptions = async (): Promise<LumosOptions> => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"], (data) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve({
+          ollamaModel: data.selectedModel || DEFAULT_MODEL,
+          ollamaHost: data.selectedHost || DEFAULT_HOST,
+          contentConfig: JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig,
+          vectorStoreTTLMins: parseInt(data.selectedVectorStoreTTLMins, 10) || DEFAULT_VECTOR_STORE_TTL_MINS,
+        });
+      }
+    });
+  });
+}
 
 /**
  * Determine if a prompt is asking about an image. If so, return true.
@@ -61,44 +86,45 @@ const isImagePrompt = async (baseURL: string, model: string, prompt: string): Pr
   });
 };
 
-chrome.runtime.onMessage.addListener(async function (request) {
-  if (request.prompt) {
+chrome.runtime.onMessage.addListener(async (request) => {
+  // process prompt (RAG disabled)
+  if (request.prompt && request.skipRAG) {
+    const prompt = request.prompt;
+    console.log(`Received prompt (RAG disabled): ${prompt}`);
+
+    // create model
+    const options = await getLumosOptions();
+    const model = new Ollama({
+      baseUrl: options.ollamaHost,
+      model: options.ollamaModel,
+    });
+
+    // stream response chunks
+    const stream = await model.stream(prompt);
+    for await (const chunk of stream) {
+      chrome.runtime.sendMessage({ chunk: chunk });
+    }
+    chrome.runtime.sendMessage({ done: true });
+  }
+
+  // process prompt (RAG enabled)
+  if (request.prompt && !request.skipRAG) {
     const prompt = request.prompt;
     const url = request.url;
     const skipCache = Boolean(request.skipCache);
+    console.log(`Received prompt (RAG enabled): ${prompt}`);
     console.log(`Received url: ${url}`);
-    console.log(`Received prompt: ${prompt}`);
-
-    // get Lumos options
-    const lumosOptions: {
-      ollamaModel: string,
-      ollamaHost: string,
-      contentConfig: ContentConfig,
-      vectorStoreTTLMins: number,
-    } = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["selectedModel", "selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"], (data) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve({
-            ollamaModel: data.selectedModel || DEFAULT_MODEL,
-            ollamaHost: data.selectedHost || DEFAULT_HOST,
-            contentConfig: JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig,
-            vectorStoreTTLMins: parseInt(data.selectedVectorStoreTTLMins, 10) || DEFAULT_VECTOR_STORE_TTL_MINS,
-          });
-        }
-      });
-    });
 
     // get default content config
-    const config = lumosOptions.contentConfig["default"];
+    const options = await getLumosOptions();
+    const config = options.contentConfig["default"];
     const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
     const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
     console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // delete all vector stores that are expired
     vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
-      if (Date.now() - vectorStoreMetdata.createdAt! > lumosOptions.vectorStoreTTLMins * 60 * 1000) {
+      if (Date.now() - vectorStoreMetdata.createdAt! > options.vectorStoreTTLMins * 60 * 1000) {
         vectorStoreMap.delete(url);
         console.log(`Deleting vector store for url: ${url}`);
       }
@@ -110,8 +136,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
 
     // download images
     if (
-      MULTIMODAL_MODELS.includes(lumosOptions.ollamaModel) &&
-      await isImagePrompt(lumosOptions.ollamaHost, lumosOptions.ollamaModel, request.prompt)
+      MULTIMODAL_MODELS.includes(options.ollamaModel) &&
+      await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt)
     ) {
       const urls: string[] = request.imageURLs;
 
@@ -149,8 +175,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
 
     // bind base64 encoded image data to model
     model = new Ollama({
-      baseUrl: lumosOptions.ollamaHost,
-      model: lumosOptions.ollamaModel,
+      baseUrl: options.ollamaHost,
+      model: options.ollamaModel,
     }).bind({
       images: base64EncodedImages
     });
@@ -184,8 +210,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
       vectorStore = await MemoryVectorStore.fromDocuments(
         documents,
         new OllamaEmbeddings({
-          baseUrl: lumosOptions.ollamaHost,
-          model: lumosOptions.ollamaModel,
+          baseUrl: options.ollamaHost,
+          model: options.ollamaModel,
         }),
       );
 
@@ -218,6 +244,8 @@ chrome.runtime.onMessage.addListener(async function (request) {
     }
     chrome.runtime.sendMessage({ done: true });
   }
+
+  // process parsed context
   if (request.context) {
     context = request.context;
     console.log(`Received context: ${context}`);
