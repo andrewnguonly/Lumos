@@ -237,7 +237,7 @@ const ChatBar: React.FC = () => {
             {messages.map((message, index) => (
               <Message
                 model={{
-                  message: message.message,
+                  message: message.message.trim(),
                   sender: message.sender,
                   direction: message.sender === "user" ? "outgoing" : "incoming",
                   position: "single",
