@@ -1,6 +1,22 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Alert, Box, IconButton, Snackbar, TextField, Tooltip } from "@mui/material";
-import { Avatar, ChatContainer, Message, MessageList, TypingIndicator } from "@chatscope/chat-ui-kit-react";
+import {
+  Alert,
+  Box,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+  Snackbar,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  Avatar,
+  ChatContainer,
+  Message,
+  MessageList,
+  TypingIndicator,
+} from "@chatscope/chat-ui-kit-react";
 import { DEFAULT_CONTENT_CONFIG } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
@@ -15,6 +31,7 @@ class LumosMessage {
 const ChatBar: React.FC = () => {
 
   const [prompt, setPrompt] = useState("");
+  const [parsingDisabled, setParsingDisabled] = useState(false);
   const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
@@ -26,8 +43,13 @@ const ChatBar: React.FC = () => {
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
-    chrome.storage.session.set({ prompt: event.target.value});
+    chrome.storage.session.set({ prompt: event.target.value });
   };
+
+  const handleParsingDisabledChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setParsingDisabled(event.target.checked);
+    chrome.storage.session.set({ parsingDisabled: event.target.checked });
+  }
 
   const getDomain = (hostname: string): string => {
     const parts = hostname.split(".");
@@ -144,9 +166,12 @@ const ChatBar: React.FC = () => {
   });
 
   useEffect(() => {
-    chrome.storage.session.get(["prompt", "messages"], (data) => {
+    chrome.storage.session.get(["prompt", "parsingDisabled", "messages"], (data) => {
       if (data.prompt) {
         setPrompt(data.prompt);
+      }
+      if (data.parsingDisabled) {
+        setParsingDisabled(data.parsingDisabled);
       }
       if (data.messages) {
         setMessages(data.messages);
@@ -201,6 +226,16 @@ const ChatBar: React.FC = () => {
           </MessageList>
         </ChatContainer>
       </div>
+      <FormControlLabel
+        control={
+          <Checkbox checked={parsingDisabled} onChange={handleParsingDisabledChange}/>
+        }
+        label={
+          <Typography sx={{ color: "gray", fontSize: 12 }}>
+            Disable content parsing
+          </Typography>
+        }
+      />
       <Box className="chat-bar">
         <TextField
           className="input-field"
