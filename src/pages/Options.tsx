@@ -29,6 +29,7 @@ function Options() {
   const [contentConfigError, setContentConfigError] = useState(false);
   const [contentConfigHelpText, setContentConfigHelpText] = useState("");
   const [vectorStoreTTLMins, setVectorStoreTTLMins] = useState(DEFAULT_VECTOR_STORE_TTL_MINS);
+  const [vectorStoreTTLMinsError, setVectorStoreTTLMinsError] = useState(false);
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -57,7 +58,18 @@ function Options() {
   };
 
   const handleVectorStoreTTLMinsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
+    var selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
+
+    if (isNaN(selectedVectorStoreTTLMins)) {
+      selectedVectorStoreTTLMins = 0;
+    }
+
+    if (selectedVectorStoreTTLMins < 1) {
+      setVectorStoreTTLMinsError(true);
+    } else {
+      setVectorStoreTTLMinsError(false);
+    }
+
     setVectorStoreTTLMins(selectedVectorStoreTTLMins);
     chrome.storage.local.set({ selectedVectorStoreTTLMins: selectedVectorStoreTTLMins});
   };
@@ -127,6 +139,7 @@ function Options() {
               type="number"
               label="Vector Store TTL (minutes)"
               value={vectorStoreTTLMins}
+              error={vectorStoreTTLMinsError}
               onChange={handleVectorStoreTTLMinsChange}
             />
             <TextField
