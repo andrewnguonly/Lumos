@@ -130,9 +130,3 @@ dist
 .pnp.*
 
 .DS_Store
-
-# python
-env
-
-# mlc-llm
-models/
