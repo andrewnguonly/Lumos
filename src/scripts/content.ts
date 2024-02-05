@@ -43,12 +43,12 @@ export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [st
 
   // retrieve content from selected elements
   const parser = new DOMParser();
-  var content = "";
+  let content = "";
   const imageURLs: string[] = [];
 
   for (const element of elements) {
     const doc = parser.parseFromString(element.outerHTML, "text/html");
-    var textContent = doc.body.innerText || "";
+    let textContent = doc.body.innerText || "";
 
     // Use a regular expression to replace contiguous white spaces with a single space
     textContent = textContent.replace(/\s+/g, " ").trim();

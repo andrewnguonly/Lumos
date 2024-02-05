@@ -32,7 +32,7 @@ interface VectorStoreMetadata {
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
  // global variable for storing parsed content from current tab
-var context = "";
+let context = "";
 
 const getLumosOptions = async (): Promise<LumosOptions> => {
   return new Promise((resolve, reject) => {
@@ -131,7 +131,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     });
 
     // declare model
-    var model;
+    let model;
     const base64EncodedImages: string[] = [];
 
     // download images
@@ -144,7 +144,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
       // only download the first 10 images
       for (const url of urls.slice(0, 10)) {
         console.log(`Downloading image: ${url}`);
-        var response;
+        let response;
 
         try {
           response = await fetch(url);
@@ -155,7 +155,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
         if (response.ok) {
           const blob = await response.blob();
-          var base64String: string = await new Promise((resolve, reject) => {
+          let base64String: string = await new Promise((resolve, reject) => {
 
             const reader = new FileReader();
             reader.readAsDataURL(blob);
@@ -189,7 +189,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     });
 
     // check if vector store already exists for url
-    var vectorStore: MemoryVectorStore;
+    let vectorStore: MemoryVectorStore;
 
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store

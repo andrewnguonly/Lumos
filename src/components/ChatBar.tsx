@@ -80,8 +80,8 @@ const ChatBar: React.FC = () => {
       });
     });
 
-    var config = contentConfig["default"];
-    var activeTabUrl: URL;
+    let config = contentConfig["default"];
+    let activeTabUrl: URL;
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       const activeTab = tabs[0];

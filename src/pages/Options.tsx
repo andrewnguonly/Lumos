@@ -58,7 +58,7 @@ function Options() {
   };
 
   const handleVectorStoreTTLMinsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    var selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
+    let selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
 
     if (isNaN(selectedVectorStoreTTLMins)) {
       selectedVectorStoreTTLMins = 0;
