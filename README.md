@@ -76,7 +76,7 @@ If you don't have `npm` installed, you can download the pre-built extension pack
 
 ## Lumos Options
 
-Right-click on the extension icon to and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
+Right-click on the extension icon and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
 - **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
