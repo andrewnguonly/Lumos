@@ -9,5 +9,9 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "ignorePatterns": ["node_modules", "dist"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "webpack.config.js"
+  ]
 }

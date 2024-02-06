@@ -92,7 +92,7 @@ function Options() {
     fetch(`${host}/api/tags`)
       .then((response) => response.json())
       .then((data) => {
-        const modelOptions = data.models.map((model: any) => {
+        const modelOptions = data.models.map((model: { name: string }) => {
           return model.name.split(":")[0];
         })
         setModelOptions(modelOptions);

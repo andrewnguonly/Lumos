@@ -118,23 +118,21 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // get default content config
     const options = await getLumosOptions();
     const config = options.contentConfig["default"];
-    const chunkSize = !!request.chunkSize ? request.chunkSize : config.chunkSize;
-    const chunkOverlap = !!request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
+    const chunkSize = request.chunkSize ? request.chunkSize : config.chunkSize;
+    const chunkOverlap = request.chunkOverlap ? request.chunkOverlap : config.chunkOverlap;
     console.log(`Received chunk size: ${chunkSize} and chunk overlap: ${chunkOverlap}`);
 
     // delete all vector stores that are expired
     vectorStoreMap.forEach((vectorStoreMetdata: VectorStoreMetadata, url: string) => {
-      if (Date.now() - vectorStoreMetdata.createdAt! > options.vectorStoreTTLMins * 60 * 1000) {
+      if (Date.now() - vectorStoreMetdata.createdAt > options.vectorStoreTTLMins * 60 * 1000) {
         vectorStoreMap.delete(url);
         console.log(`Deleting vector store for url: ${url}`);
       }
     });
 
-    // declare model
-    let model;
+    // download images
     const base64EncodedImages: string[] = [];
 
-    // download images
     if (
       MULTIMODAL_MODELS.includes(options.ollamaModel) &&
       await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt)
@@ -155,7 +153,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
         if (response.ok) {
           const blob = await response.blob();
-          let base64String: string = await new Promise((resolve, reject) => {
+          let base64String: string = await new Promise((resolve) => {
 
             const reader = new FileReader();
             reader.readAsDataURL(blob);
@@ -173,8 +171,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
-    // bind base64 encoded image data to model
-    model = new Ollama({
+    // create model and bind base64 encoded image data
+    const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
     }).bind({
@@ -194,6 +192,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
       vectorStore = vectorStoreMap.get(url)?.vectorStore!;
     } else {
       // create new vector store
