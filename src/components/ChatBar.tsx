@@ -80,12 +80,12 @@ const ChatBar: React.FC = () => {
       });
     });
 
-    var config = contentConfig["default"];
-    var activeTabUrl: URL;
+    let config = contentConfig["default"];
+    let activeTabUrl: URL;
 
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       const activeTab = tabs[0];
-      const activeTabId = activeTab.id;
+      const activeTabId = activeTab.id || 0;
       activeTabUrl = new URL(activeTab.url || "");
       const domain = getDomain(activeTabUrl.hostname);
 
@@ -93,7 +93,6 @@ const ChatBar: React.FC = () => {
       config = domain in contentConfig ? contentConfig[domain] : config;
 
       return chrome.scripting.executeScript({
-        // @ts-ignore
         target: { tabId: activeTabId },
         injectImmediately: true,
         func: getHtmlContent,
@@ -104,7 +103,7 @@ const ChatBar: React.FC = () => {
       const isHighlightedContent = results[0].result[1];
       const imageURLs = results[0].result[2];
 
-      chrome.runtime.sendMessage({ context: pageContent }).then((_response) => {
+      chrome.runtime.sendMessage({ context: pageContent }).then(() => {
         chrome.runtime.sendMessage({
           prompt: prompt,
           skipRAG: false,
@@ -160,7 +159,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: [] });
   };
 
-  const handleBackgroundMessage = ((msg: any, error: any) => {
+  const handleBackgroundMessage = ((msg: {chunk: string, done: boolean}) => {
     if (msg.chunk) {
       setLoading1(false);
       setLoading2(true);
@@ -236,6 +235,7 @@ const ChatBar: React.FC = () => {
           >
             {messages.map((message, index) => (
               <Message
+                key={index}
                 model={{
                   message: message.message.trim(),
                   sender: message.sender,

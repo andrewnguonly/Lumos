@@ -58,7 +58,7 @@ function Options() {
   };
 
   const handleVectorStoreTTLMinsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    var selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
+    let selectedVectorStoreTTLMins = parseInt(event.target.value, 10);
 
     if (isNaN(selectedVectorStoreTTLMins)) {
       selectedVectorStoreTTLMins = 0;
@@ -92,7 +92,7 @@ function Options() {
     fetch(`${host}/api/tags`)
       .then((response) => response.json())
       .then((data) => {
-        const modelOptions = data.models.map((model: any) => {
+        const modelOptions = data.models.map((model: { name: string }) => {
           return model.name.split(":")[0];
         })
         setModelOptions(modelOptions);
