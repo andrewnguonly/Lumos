@@ -20,16 +20,17 @@ import {
 import { DEFAULT_CONTENT_CONFIG } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
-import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
+import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
-
 class LumosMessage {
-  constructor(public sender: string, public message: string) {}
+  constructor(
+    public sender: string,
+    public message: string,
+  ) {}
 }
 
 const ChatBar: React.FC = () => {
-
   const [prompt, setPrompt] = useState("");
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [completion, setCompletion] = useState("");
@@ -46,10 +47,12 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ prompt: event.target.value });
   };
 
-  const handleParsingDisabledChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleParsingDisabledChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
     setParsingDisabled(event.target.checked);
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
-  }
+  };
 
   const getDomain = (hostname: string): string => {
     const parts = hostname.split(".");
@@ -70,57 +73,67 @@ const ChatBar: React.FC = () => {
     setMessages(newMessages);
 
     // get default content config
-    const contentConfig: ContentConfig = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["selectedConfig"], (data) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(JSON.parse(data.selectedConfig || DEFAULT_CONTENT_CONFIG) as ContentConfig);
-        }
-      });
-    });
+    const contentConfig: ContentConfig = await new Promise(
+      (resolve, reject) => {
+        chrome.storage.local.get(["selectedConfig"], (data) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(
+              JSON.parse(
+                data.selectedConfig || DEFAULT_CONTENT_CONFIG,
+              ) as ContentConfig,
+            );
+          }
+        });
+      },
+    );
 
     let config = contentConfig["default"];
     let activeTabUrl: URL;
 
-    chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      const activeTab = tabs[0];
-      const activeTabId = activeTab.id || 0;
-      activeTabUrl = new URL(activeTab.url || "");
-      const domain = getDomain(activeTabUrl.hostname);
+    chrome.tabs
+      .query({ active: true, currentWindow: true })
+      .then((tabs) => {
+        const activeTab = tabs[0];
+        const activeTabId = activeTab.id || 0;
+        activeTabUrl = new URL(activeTab.url || "");
+        const domain = getDomain(activeTabUrl.hostname);
 
-      // get domain specific content config
-      config = domain in contentConfig ? contentConfig[domain] : config;
+        // get domain specific content config
+        config = domain in contentConfig ? contentConfig[domain] : config;
 
-      return chrome.scripting.executeScript({
-        target: { tabId: activeTabId },
-        injectImmediately: true,
-        func: getHtmlContent,
-        args: [config.selectors, config.selectorsAll],
-      });
-    }).then(async (results) => {
-      const pageContent = results[0].result[0];
-      const isHighlightedContent = results[0].result[1];
-      const imageURLs = results[0].result[2];
-
-      chrome.runtime.sendMessage({ context: pageContent }).then(() => {
-        chrome.runtime.sendMessage({
-          prompt: prompt,
-          skipRAG: false,
-          chunkSize: config.chunkSize,
-          chunkOverlap: config.chunkOverlap,
-          url: activeTabUrl.toString(),
-          skipCache: isHighlightedContent,
-          imageURLs: imageURLs,
+        return chrome.scripting.executeScript({
+          target: { tabId: activeTabId },
+          injectImmediately: true,
+          func: getHtmlContent,
+          args: [config.selectors, config.selectorsAll],
         });
+      })
+      .then(async (results) => {
+        const pageContent = results[0].result[0];
+        const isHighlightedContent = results[0].result[1];
+        const imageURLs = results[0].result[2];
 
-        // clear prompt after sending it to the background script
-        setPrompt("");
-        chrome.storage.session.set({ prompt: "" });
+        chrome.runtime.sendMessage({ context: pageContent }).then(() => {
+          chrome.runtime.sendMessage({
+            prompt: prompt,
+            skipRAG: false,
+            chunkSize: config.chunkSize,
+            chunkOverlap: config.chunkOverlap,
+            url: activeTabUrl.toString(),
+            skipCache: isHighlightedContent,
+            imageURLs: imageURLs,
+          });
+
+          // clear prompt after sending it to the background script
+          setPrompt("");
+          chrome.storage.session.set({ prompt: "" });
+        });
+      })
+      .catch((error) => {
+        console.log(`Error: ${error}`);
       });
-    }).catch((error) => {
-      console.log(`Error: ${error}`);
-    });
   };
 
   const promptWithoutContent = async () => {
@@ -138,7 +151,7 @@ const ChatBar: React.FC = () => {
     // clear prompt after sending it to the background script
     setPrompt("");
     chrome.storage.session.set({ prompt: "" });
-  }
+  };
 
   const handleSendButtonClick = async () => {
     if (parsingDisabled) {
@@ -146,20 +159,20 @@ const ChatBar: React.FC = () => {
     } else {
       promptWithContent();
     }
-  }
+  };
 
   const handleAvatarClick = (message: string) => {
     navigator.clipboard.writeText(message);
     setShowSnackbar(true);
     setSnackbarMessage("Copied!");
-  }
+  };
 
   const handleClearButtonClick = () => {
     setMessages([]);
     chrome.storage.session.set({ messages: [] });
   };
 
-  const handleBackgroundMessage = ((msg: {chunk: string, done: boolean}) => {
+  const handleBackgroundMessage = (msg: { chunk: string; done: boolean }) => {
     if (msg.chunk) {
       setLoading1(false);
       setLoading2(true);
@@ -176,7 +189,10 @@ const ChatBar: React.FC = () => {
       } else {
         // replace last assistant message with updated message
         const newAssistantMsg = new LumosMessage("assistant", newCompletion);
-        setMessages([...messages.slice(0, messages.length - 1), newAssistantMsg]);
+        setMessages([
+          ...messages.slice(0, messages.length - 1),
+          newAssistantMsg,
+        ]);
       }
     } else if (msg.done) {
       // save messages after response streaming is done
@@ -184,24 +200,27 @@ const ChatBar: React.FC = () => {
       setLoading2(false);
       setSubmitDisabled(false);
     }
-  });
+  };
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
   });
 
   useEffect(() => {
-    chrome.storage.session.get(["prompt", "parsingDisabled", "messages"], (data) => {
-      if (data.prompt) {
-        setPrompt(data.prompt);
-      }
-      if (data.parsingDisabled) {
-        setParsingDisabled(data.parsingDisabled);
-      }
-      if (data.messages) {
-        setMessages(data.messages);
-      }
-    });
+    chrome.storage.session.get(
+      ["prompt", "parsingDisabled", "messages"],
+      (data) => {
+        if (data.prompt) {
+          setPrompt(data.prompt);
+        }
+        if (data.parsingDisabled) {
+          setParsingDisabled(data.parsingDisabled);
+        }
+        if (data.messages) {
+          setMessages(data.messages);
+        }
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -219,18 +238,22 @@ const ChatBar: React.FC = () => {
           autoHideDuration={1500}
           onClose={() => setShowSnackbar(false)}
         >
-          <Alert onClose={() => setShowSnackbar(false)} severity="success" sx={{ width: "100%" }}>
+          <Alert
+            onClose={() => setShowSnackbar(false)}
+            severity="success"
+            sx={{ width: "100%" }}
+          >
             {snackbarMessage}
           </Alert>
         </Snackbar>
         <ChatContainer>
           <MessageList
             typingIndicator={
-              loading1
-                ? <TypingIndicator content="Lumos..." />
-                : (loading2
-                  ? <TypingIndicator content="Nox!" />
-                  : null)
+              loading1 ? (
+                <TypingIndicator content="Lumos..." />
+              ) : loading2 ? (
+                <TypingIndicator content="Nox!" />
+              ) : null
             }
           >
             {messages.map((message, index) => (
@@ -239,22 +262,32 @@ const ChatBar: React.FC = () => {
                 model={{
                   message: message.message.trim(),
                   sender: message.sender,
-                  direction: message.sender === "user" ? "outgoing" : "incoming",
+                  direction:
+                    message.sender === "user" ? "outgoing" : "incoming",
                   position: "single",
                 }}
               >
-                {<Avatar
-                  src={message.sender === "user" ? "../assets/glasses_48.png" : "../assets/wand_48.png"}
-                  onClick={() => handleAvatarClick(message.message)}
-                />}
-              </Message>  
+                {
+                  <Avatar
+                    src={
+                      message.sender === "user"
+                        ? "../assets/glasses_48.png"
+                        : "../assets/wand_48.png"
+                    }
+                    onClick={() => handleAvatarClick(message.message)}
+                  />
+                }
+              </Message>
             ))}
           </MessageList>
         </ChatContainer>
       </div>
       <FormControlLabel
         control={
-          <Checkbox checked={parsingDisabled} onChange={handleParsingDisabledChange}/>
+          <Checkbox
+            checked={parsingDisabled}
+            onChange={handleParsingDisabledChange}
+          />
         }
         label={
           <Typography sx={{ color: "gray", fontSize: 12 }}>
@@ -295,6 +328,6 @@ const ChatBar: React.FC = () => {
       </Box>
     </Box>
   );
-}
+};
 
 export default ChatBar;

@@ -5,18 +5,20 @@ const getHighlightedContent = (): string => {
 
 /**
  * Get content from current tab.
- * 
+ *
  * @param {string[]} selectors - selector queries to get content, i.e. document.querySelector().
  * @param {string[]} selectorsAll - selectorAll queries to get content, i.e. document.querySelectorAll().
  * @returns {[string, boolean, string[]]} - Tuple of content, boolean indicating if content was highlighted content, and an array of image URLs
  */
-export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [string, boolean, string[]] => {
-
+export const getHtmlContent = (
+  selectors: string[],
+  selectorsAll: string[],
+): [string, boolean, string[]] => {
   // if any content is highlighted, return the highlighted content
   const highlightedContent = getHighlightedContent();
   if (highlightedContent !== "") {
     return [highlightedContent, true, []];
-  } 
+  }
 
   // otherwise, return content from selected elements
   const elements: Element[] = [];
@@ -63,7 +65,7 @@ export const getHtmlContent = (selectors: string[], selectorsAll: string[]): [st
       if (imageURL) {
         imageURLs.push(imageURL);
       }
-    })
+    });
   }
 
   return [content, false, imageURLs];

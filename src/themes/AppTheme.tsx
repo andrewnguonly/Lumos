@@ -1,5 +1,5 @@
 import { createTheme } from "@mui/material/styles";
-import { amber } from '@mui/material/colors';
+import { amber } from "@mui/material/colors";
 
 const AppTheme = createTheme({
   palette: {
@@ -8,25 +8,25 @@ const AppTheme = createTheme({
   components: {
     MuiCheckbox: {
       defaultProps: {
-        size: "small"
-      }
+        size: "small",
+      },
     },
     MuiTextField: {
       defaultProps: {
-        size: "small"
-      }
+        size: "small",
+      },
     },
     MuiIconButton: {
       defaultProps: {
-        color: "primary"
-      }
+        color: "primary",
+      },
     },
     MuiSelect: {
       defaultProps: {
-        size: "small"
-      }
-    }
-  }
+        size: "small",
+      },
+    },
+  },
 });
 
 export default AppTheme;
