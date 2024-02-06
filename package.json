@@ -26,7 +26,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx & npx prettier src --check",
     "test": "jest",
     "build": "webpack --config webpack.config.js",
     "watch": "webpack -w --config webpack.config.js"

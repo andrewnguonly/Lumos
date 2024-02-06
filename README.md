@@ -58,7 +58,7 @@ See the section about [running tests](https://facebook.github.io/create-react-ap
 
 ### `npm run lint`
 
-Runs `eslint`.
+Runs `eslint` and `prettier` on `src` files.
 
 ### `npm run build`
 

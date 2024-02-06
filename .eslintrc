@@ -14,11 +14,7 @@
     "plugin:react-hooks/recommended",
     "prettier"
   ],
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    "webpack.config.js"
-  ],
+  "ignorePatterns": [],
   "rules": {
     "react/react-in-jsx-scope": "off"
   },
