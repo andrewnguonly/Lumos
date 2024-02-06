@@ -22,6 +22,8 @@ export const DEFAULT_CONTENT_CONFIG = JSON.stringify(
 );
 export const DEFAULT_VECTOR_STORE_TTL_MINS = 60;
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
+export const CHAT_CONTAINER_HEIGHT_MIN = 200;
+export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
 function Options() {
   const [model, setModel] = useState(DEFAULT_MODEL);

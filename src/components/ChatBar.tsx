@@ -19,7 +19,11 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
-import { DEFAULT_CONTENT_CONFIG } from "../pages/Options";
+import {
+  CHAT_CONTAINER_HEIGHT_MAX,
+  CHAT_CONTAINER_HEIGHT_MIN,
+  DEFAULT_CONTENT_CONFIG,
+} from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
@@ -58,7 +62,15 @@ const ChatBar: React.FC = () => {
   };
 
   const handleChangetHeight = (pixels: number) => {
-    const newChatContainerHeight = chatContainerHeight + pixels;
+    let newChatContainerHeight = chatContainerHeight + pixels;
+
+    // constrain height between CHAT_CONTAINER_HEIGHT_MIN and CHAT_CONTAINER_HEIGHT_MAX
+    if (newChatContainerHeight > CHAT_CONTAINER_HEIGHT_MAX) {
+      newChatContainerHeight = CHAT_CONTAINER_HEIGHT_MAX;
+    } else if (newChatContainerHeight < CHAT_CONTAINER_HEIGHT_MIN) {
+      newChatContainerHeight = CHAT_CONTAINER_HEIGHT_MIN;
+    }
+
     setChatContainerHeight(newChatContainerHeight);
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
