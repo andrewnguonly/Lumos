@@ -6,6 +6,16 @@ const AppTheme = createTheme({
     primary: amber,
   },
   components: {
+    MuiButton: {
+      defaultProps: {
+        size: "small",
+      },
+    },
+    MuiButtonGroup: {
+      defaultProps: {
+        size: "small",
+      },
+    },
     MuiCheckbox: {
       defaultProps: {
         size: "small",
