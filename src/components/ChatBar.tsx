@@ -233,8 +233,9 @@ const ChatBar: React.FC = () => {
                   : null)
             }
           >
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <Message
+                key={index}
                 model={{
                   message: message.message.trim(),
                   sender: message.sender,
