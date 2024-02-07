@@ -2,6 +2,8 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
+  Button,
+  ButtonGroup,
   Checkbox,
   FormControlLabel,
   IconButton,
@@ -17,7 +19,11 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
-import { DEFAULT_CONTENT_CONFIG } from "../pages/Options";
+import {
+  CHAT_CONTAINER_HEIGHT_MAX,
+  CHAT_CONTAINER_HEIGHT_MIN,
+  DEFAULT_CONTENT_CONFIG,
+} from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
@@ -41,6 +47,7 @@ const ChatBar: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
+  const [chatContainerHeight, setChatContainerHeight] = useState(300);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -52,6 +59,20 @@ const ChatBar: React.FC = () => {
   ) => {
     setParsingDisabled(event.target.checked);
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
+  };
+
+  const handleChangetHeight = (pixels: number) => {
+    let newChatContainerHeight = chatContainerHeight + pixels;
+
+    // constrain height between CHAT_CONTAINER_HEIGHT_MIN and CHAT_CONTAINER_HEIGHT_MAX
+    if (newChatContainerHeight > CHAT_CONTAINER_HEIGHT_MAX) {
+      newChatContainerHeight = CHAT_CONTAINER_HEIGHT_MAX;
+    } else if (newChatContainerHeight < CHAT_CONTAINER_HEIGHT_MIN) {
+      newChatContainerHeight = CHAT_CONTAINER_HEIGHT_MIN;
+    }
+
+    setChatContainerHeight(newChatContainerHeight);
+    chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
   const getDomain = (hostname: string): string => {
@@ -207,6 +228,12 @@ const ChatBar: React.FC = () => {
   });
 
   useEffect(() => {
+    chrome.storage.local.get(["chatContainerHeight"], (data) => {
+      if (data.chatContainerHeight) {
+        setChatContainerHeight(data.chatContainerHeight);
+      }
+    });
+
     chrome.storage.session.get(
       ["prompt", "parsingDisabled", "messages"],
       (data) => {
@@ -231,7 +258,7 @@ const ChatBar: React.FC = () => {
 
   return (
     <Box>
-      <div className="chat-container">
+      <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
           open={showSnackbar}
@@ -281,20 +308,39 @@ const ChatBar: React.FC = () => {
             ))}
           </MessageList>
         </ChatContainer>
-      </div>
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={parsingDisabled}
-            onChange={handleParsingDisabledChange}
-          />
-        }
-        label={
-          <Typography sx={{ color: "gray", fontSize: 12 }}>
-            Disable content parsing
-          </Typography>
-        }
-      />
+      </Box>
+      <Box sx={{ display: "flex" }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={parsingDisabled}
+              onChange={handleParsingDisabledChange}
+            />
+          }
+          label={
+            <Typography sx={{ color: "gray", fontSize: 12 }}>
+              Disable content parsing
+            </Typography>
+          }
+        />
+        <div style={{ flex: 1 }}></div>
+        <ButtonGroup variant="text">
+          <Tooltip title="Increase window height" placement="top">
+            <Button onClick={() => handleChangetHeight(50)}>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
+                +
+              </Typography>
+            </Button>
+          </Tooltip>
+          <Tooltip title="Decrease window height" placement="top">
+            <Button onClick={() => handleChangetHeight(-50)}>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
+                -
+              </Typography>
+            </Button>
+          </Tooltip>
+        </ButtonGroup>
+      </Box>
       <Box className="chat-bar">
         <TextField
           className="input-field"
