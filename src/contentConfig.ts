@@ -15,12 +15,16 @@ export const isContentConfig = (input: string): boolean => {
     const parsedConfig: ContentConfig = JSON.parse(input);
     for (const key in parsedConfig) {
       if (
-        typeof parsedConfig[key].chunkSize !== 'number' ||
-        typeof parsedConfig[key].chunkOverlap !== 'number' ||
+        typeof parsedConfig[key].chunkSize !== "number" ||
+        typeof parsedConfig[key].chunkOverlap !== "number" ||
         !Array.isArray(parsedConfig[key].selectors) ||
         !Array.isArray(parsedConfig[key].selectorsAll) ||
-        !parsedConfig[key].selectors.every((selector) => typeof selector === 'string') ||
-        !parsedConfig[key].selectorsAll.every((selector) => typeof selector === 'string')
+        !parsedConfig[key].selectors.every(
+          (selector) => typeof selector === "string",
+        ) ||
+        !parsedConfig[key].selectorsAll.every(
+          (selector) => typeof selector === "string",
+        )
       ) {
         return false;
       }
@@ -29,15 +33,13 @@ export const isContentConfig = (input: string): boolean => {
   } catch (error) {
     return false;
   }
-}
+};
 
 export const defaultContentConfig: ContentConfig = {
-  "default": {
+  default: {
     chunkSize: DEFAULT_CHUCK_SIZE,
     chunkOverlap: DEFAULT_CHUNK_OVERLAP,
-    selectors: [
-      "body",
-    ],
+    selectors: ["body"],
     selectorsAll: [],
   },
 };

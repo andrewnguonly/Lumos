@@ -1,6 +1,6 @@
 {
   "name": "lumos",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "dependencies": {
     "@chatscope/chat-ui-kit-react": "^1.10.1",
@@ -26,6 +26,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx & npx prettier src --check",
     "test": "jest",
     "build": "webpack --config webpack.config.js",
     "watch": "webpack -w --config webpack.config.js"
@@ -50,9 +51,16 @@
   },
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
+    "@typescript-eslint/parser": "^5.62.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "html-webpack-plugin": "^5.5.3",
+    "prettier": "^3.2.5",
     "react-scripts": "5.0.1",
     "ts-node": "^10.9.1",
     "webpack": "^5.89.0",

@@ -56,6 +56,10 @@ In the project directory, you can run:
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
+### `npm run lint`
+
+Runs `eslint` and `prettier` on `src` files.
+
 ### `npm run build`
 
 Builds the app for production to the `dist` folder.\
@@ -76,7 +80,7 @@ If you don't have `npm` installed, you can download the pre-built extension pack
 
 ## Lumos Options
 
-Right-click on the extension icon to and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
+Right-click on the extension icon and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
 - **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
@@ -92,7 +96,7 @@ Each domain can have its own content parser.
 - **selectors**: `document.querySelector()` queries to perform to retrieve page content
 - **selectorsAll**: `document.querySelectorAll()` queries to perform to retrieve page content
 
-See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
+See docs for [How to Create a Custom Content Parser](./docs/content_parser.md). See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
 
 Example:
 ```json
