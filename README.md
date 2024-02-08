@@ -1,5 +1,7 @@
 # Lumos
 
+[![CI](https://github.com/andrewnguonly/Lumos/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewnguonly/Lumos/actions/workflows/ci.yml)
+
 A RAG LLM co-pilot for browsing the web, powered by local LLMs.
 
 ![Screenshot of Lumos](./screenshots/lumos_screenshot_2.png)
