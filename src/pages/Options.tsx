@@ -106,9 +106,9 @@ function Options() {
     fetch(`${host}/api/tags`)
       .then((response) => response.json())
       .then((data) => {
-        const modelOptions = data.models.map((model: { name: string }) => {
-          return model.name.split(":")[0];
-        });
+        const modelOptions = data.models.map(
+          (model: { name: string }) => model.name,
+        );
         setModelOptions(modelOptions);
         chrome.storage.local.get(["selectedModel"]).then((data) => {
           if (data.selectedModel) {
@@ -136,9 +136,9 @@ function Options() {
               value={model}
               onChange={handleModelChange}
             >
-              {modelOptions.map((modelName, index) => (
+              {modelOptions.map((modelName: string, index) => (
                 <MenuItem key={index} value={modelName}>
-                  {modelName}
+                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
                 </MenuItem>
               ))}
             </Select>
