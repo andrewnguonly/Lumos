@@ -1,14 +1,17 @@
-export function evaluateArithmeticExpression(characters: string[]): number {
-  const precedence: { [key: string]: number } = {
-    "^": 3,
-    "*": 2,
-    "/": 2,
-    "+": 1,
-    "-": 1,
-    "(": 0,
-  };
+const OPERATOR_ORDER: { [key: string]: number } = {
+  "^": 3,
+  "*": 2,
+  "/": 2,
+  "+": 1,
+  "-": 1,
+  "(": 0,
+};
 
-  function applyOperator(operators: string[], operands: number[]): void {
+/**
+ * This code was produced by ChatGPT.
+ */
+export const evaluateExpression = (characters: string[]): number => {
+  const applyOperator = (operators: string[], operands: number[]): void => {
     const operator = operators.pop();
     const operand2 = operands.pop();
     const operand1 = operands.pop();
@@ -38,7 +41,7 @@ export function evaluateArithmeticExpression(characters: string[]): number {
         operands.push(Math.pow(operand1, operand2));
         break;
     }
-  }
+  };
 
   const operators: string[] = [];
   const operands: number[] = [];
@@ -66,11 +69,11 @@ export function evaluateArithmeticExpression(characters: string[]): number {
       }
       // Pop the left parenthesis
       operators.pop();
-    } else if (precedence[char] !== undefined) {
+    } else if (OPERATOR_ORDER[char] !== undefined) {
       // Operator found
       while (
         operators.length > 0 &&
-        precedence[char] <= precedence[operators[operators.length - 1]]
+        OPERATOR_ORDER[char] <= OPERATOR_ORDER[operators[operators.length - 1]]
       ) {
         applyOperator(operators, operands);
       }
@@ -91,4 +94,4 @@ export function evaluateArithmeticExpression(characters: string[]): number {
   }
 
   return operands[0];
-}
+};
