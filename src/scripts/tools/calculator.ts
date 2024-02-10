@@ -10,6 +10,24 @@ const OPERATOR_ORDER: { [key: string]: number } = {
 /**
  * This code was produced by ChatGPT.
  */
+export const extractTokens = (input: string): string[] => {
+  const tokens: string[] = [];
+
+  // Regular expression pattern to match valid arithmetic operators and operands
+  const pattern = /-?\d+(\.\d+)?|\+|-|\*|\/|\^|\(|\)/g;
+
+  // Extract tokens from the input string
+  let match;
+  while ((match = pattern.exec(input)) !== null) {
+    tokens.push(match[0]);
+  }
+
+  return tokens;
+};
+
+/**
+ * This code was produced by ChatGPT.
+ */
 export const evaluateExpression = (characters: string[]): number => {
   const applyOperator = (operators: string[], operands: number[]): void => {
     const operator = operators.pop();

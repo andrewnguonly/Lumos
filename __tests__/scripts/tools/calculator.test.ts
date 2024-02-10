@@ -1,4 +1,39 @@
-import { evaluateExpression } from "../../../src/scripts/tools/calculator";
+import {
+  evaluateExpression,
+  extractTokens,
+} from "../../../src/scripts/tools/calculator";
+
+describe("extractArithmeticTokens", () => {
+  test("should return the correct list of tokens", () => {
+    const input = "What's (5+5)*0.8?";
+    const expectedOutput = ["(", "5", "+", "5", ")", "*", "0.8"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+
+  test("should handle negative numbers", () => {
+    const input = "-10+(-2)*3";
+    const expectedOutput = ["-10", "+", "(", "-2", ")", "*", "3"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+
+  test("should handle decimal numbers", () => {
+    const input = "2.5 + 3.7 / 0.5";
+    const expectedOutput = ["2.5", "+", "3.7", "/", "0.5"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+
+  test("should handle calculate: trigger", () => {
+    const input = "calculate: 2.5 + 3.7 / 0.5 =";
+    const expectedOutput = ["2.5", "+", "3.7", "/", "0.5"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+
+  test("should handle double minus", () => {
+    const input = "2.5 - -3.7";
+    const expectedOutput = ["2.5", "-", "-3.7"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+});
 
 describe("evaluateExpression", () => {
   test("should evaluate addition expression correctly", () => {

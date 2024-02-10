@@ -9,6 +9,7 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
+import { evaluateExpression, extractTokens } from "../scripts/tools/calculator";
 import {
   DEFAULT_CONTENT_CONFIG,
   DEFAULT_HOST,
@@ -98,7 +99,27 @@ const isImagePrompt = async (
   const ollama = new Ollama({ baseUrl: baseURL, model: model });
   const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
-    console.log(`Prompt classification response: ${response}`);
+    console.log(`isImagePrompt classification response: ${response}`);
+    const answer = response.trim().split(" ")[0].toLowerCase();
+    return answer.includes("yes");
+  });
+};
+
+const isArithmeticExpression = async (
+  baseURL: string,
+  model: string,
+  prompt: string,
+): Promise<boolean> => {
+  // check for prefix trigger
+  if (prompt.trim().toLowerCase().startsWith("calculate:")) {
+    return new Promise((resolve) => resolve(true));
+  }
+
+  // otherwise, attempt to classify prompt
+  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const question = `Is the following prompt an arithmetic expression or question? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  return ollama.invoke(question).then((response) => {
+    console.log(`isArithmeticExpression classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
@@ -110,8 +131,30 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const prompt = request.prompt;
     console.log(`Received prompt (RAG disabled): ${prompt}`);
 
-    // create model
+    // get options
     const options = await getLumosOptions();
+
+    // classify prompt and optionally execute tools
+    if (
+      await isArithmeticExpression(
+        options.ollamaHost,
+        options.ollamaModel,
+        prompt,
+      )
+    ) {
+      // execute calculator tool
+      const tokens = extractTokens(prompt);
+      console.log(`Executing calculator tool for expression: ${tokens}`);
+      const answer = evaluateExpression(tokens);
+
+      // return answer immediately
+      chrome.runtime.sendMessage({ chunk: answer }).then(() => {
+        chrome.runtime.sendMessage({ done: true });
+      });
+      return;
+    }
+
+    // create model
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
@@ -157,9 +200,10 @@ chrome.runtime.onMessage.addListener(async (request) => {
       },
     );
 
-    // download images
+    // define model bindings (e.g. images, functions)
     const base64EncodedImages: string[] = [];
 
+    // classify prompt and optionally execute tools
     if (
       MULTIMODAL_MODELS.includes(options.ollamaModel) &&
       (await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt))
@@ -195,6 +239,23 @@ chrome.runtime.onMessage.addListener(async (request) => {
           console.log(`Failed to download image: ${url}`);
         }
       }
+    } else if (
+      await isArithmeticExpression(
+        options.ollamaHost,
+        options.ollamaModel,
+        prompt,
+      )
+    ) {
+      // execute calculator tool
+      const tokens = extractTokens(prompt);
+      console.log(`Executing calculator tool for expression: ${tokens}`);
+      const answer = evaluateExpression(tokens);
+
+      // return answer immediately
+      chrome.runtime.sendMessage({ chunk: answer }).then(() => {
+        chrome.runtime.sendMessage({ done: true });
+      });
+      return;
     }
 
     // create model and bind base64 encoded image data
