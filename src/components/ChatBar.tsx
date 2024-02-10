@@ -23,6 +23,7 @@ import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
   DEFAULT_CONTENT_CONFIG,
+  DEFAULT_HOST,
 } from "../pages/Options";
 import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
@@ -38,6 +39,8 @@ class LumosMessage {
 
 const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
+  const [promptError, setPromptError] = useState(false);
+  const [promptPlaceholderText, setPromptPlaceholderText] = useState("Enter your prompt here");
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
@@ -48,6 +51,7 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
+  const [selectedHost, setSelectedHost] = useState(DEFAULT_HOST);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -228,9 +232,12 @@ const ChatBar: React.FC = () => {
   });
 
   useEffect(() => {
-    chrome.storage.local.get(["chatContainerHeight"], (data) => {
+    chrome.storage.local.get(["chatContainerHeight", "selectedHost"], (data) => {
       if (data.chatContainerHeight) {
         setChatContainerHeight(data.chatContainerHeight);
+      }
+      if (data.selectedHost) {
+        setSelectedHost(data.selectedHost);
       }
     });
 
@@ -249,6 +256,23 @@ const ChatBar: React.FC = () => {
       },
     );
   }, []);
+
+  // API connectivity check
+  useEffect(() => {
+    fetch(`${selectedHost}/api/tags`)
+      .then((response) => {
+        if (response.ok) {
+          setPromptError(false);
+          setPromptPlaceholderText("Enter your prompt here");
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => {
+        setPromptError(true);
+        setPromptPlaceholderText("Unable to connect to Ollama API. Check Ollama server.");
+      });
+  }, [selectedHost]);
 
   useEffect(() => {
     if (!submitDisabled && textFieldRef.current) {
@@ -344,15 +368,21 @@ const ChatBar: React.FC = () => {
       <Box className="chat-bar">
         <TextField
           className="input-field"
-          placeholder="Enter your prompt here"
+          placeholder={promptPlaceholderText}
           value={prompt}
           disabled={submitDisabled}
+          error={promptError}
           onChange={handlePromptChange}
           inputRef={textFieldRef}
           onKeyUp={(event) => {
             if (event.key === "Enter") {
               handleSendButtonClick();
             }
+          }}
+          sx={{
+            "& .MuiInputBase-root.Mui-error": {
+              WebkitTextFillColor: "red",
+            },
           }}
         />
         <IconButton
