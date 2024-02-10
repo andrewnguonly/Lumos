@@ -4,6 +4,12 @@ import {
 } from "../../../src/scripts/tools/calculator";
 
 describe("extractArithmeticTokens", () => {
+  test("should handle subtraction", () => {
+    const input = "25-1?";
+    const expectedOutput = ["25", "-", "1"];
+    expect(extractTokens(input)).toEqual(expectedOutput);
+  });
+
   test("should return the correct list of tokens", () => {
     const input = "What's (5+5)*0.8?";
     const expectedOutput = ["(", "5", "+", "5", ")", "*", "0.8"];
