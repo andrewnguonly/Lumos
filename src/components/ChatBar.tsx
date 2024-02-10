@@ -40,7 +40,9 @@ class LumosMessage {
 const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
   const [promptError, setPromptError] = useState(false);
-  const [promptPlaceholderText, setPromptPlaceholderText] = useState("Enter your prompt here");
+  const [promptPlaceholderText, setPromptPlaceholderText] = useState(
+    "Enter your prompt here",
+  );
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
@@ -232,14 +234,17 @@ const ChatBar: React.FC = () => {
   });
 
   useEffect(() => {
-    chrome.storage.local.get(["chatContainerHeight", "selectedHost"], (data) => {
-      if (data.chatContainerHeight) {
-        setChatContainerHeight(data.chatContainerHeight);
-      }
-      if (data.selectedHost) {
-        setSelectedHost(data.selectedHost);
-      }
-    });
+    chrome.storage.local.get(
+      ["chatContainerHeight", "selectedHost"],
+      (data) => {
+        if (data.chatContainerHeight) {
+          setChatContainerHeight(data.chatContainerHeight);
+        }
+        if (data.selectedHost) {
+          setSelectedHost(data.selectedHost);
+        }
+      },
+    );
 
     chrome.storage.session.get(
       ["prompt", "parsingDisabled", "messages"],
@@ -270,7 +275,9 @@ const ChatBar: React.FC = () => {
       })
       .catch(() => {
         setPromptError(true);
-        setPromptPlaceholderText("Unable to connect to Ollama API. Check Ollama server.");
+        setPromptPlaceholderText(
+          "Unable to connect to Ollama API. Check Ollama server.",
+        );
       });
   }, [selectedHost]);
 
