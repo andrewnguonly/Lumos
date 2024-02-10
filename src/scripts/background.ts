@@ -9,7 +9,7 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
-import { evaluateExpression, extractTokens } from "../scripts/tools/calculator";
+import { Calculator } from "../tools/calculator";
 import {
   DEFAULT_CONTENT_CONFIG,
   DEFAULT_HOST,
@@ -96,7 +96,7 @@ const isImagePrompt = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
   const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isImagePrompt classification response: ${response}`);
@@ -116,7 +116,7 @@ const isArithmeticExpression = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
   const question = `Is the following prompt an arithmetic expression or question? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isArithmeticExpression classification response: ${response}`);
@@ -143,9 +143,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
       )
     ) {
       // execute calculator tool
-      const tokens = extractTokens(prompt);
-      console.log(`Executing calculator tool for expression: ${tokens}`);
-      const answer = evaluateExpression(tokens);
+      const calculator = new Calculator();
+      const answer = await calculator.invoke(prompt);
 
       // return answer immediately
       chrome.runtime.sendMessage({ chunk: answer }).then(() => {
@@ -247,9 +246,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
       )
     ) {
       // execute calculator tool
-      const tokens = extractTokens(prompt);
-      console.log(`Executing calculator tool for expression: ${tokens}`);
-      const answer = evaluateExpression(tokens);
+      const calculator = new Calculator();
+      const answer = await calculator.invoke(prompt);
 
       // return answer immediately
       chrome.runtime.sendMessage({ chunk: answer }).then(() => {
