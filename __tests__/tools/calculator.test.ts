@@ -8,33 +8,69 @@ describe("Calculator", () => {
   });
 
   describe("extractArithmeticTokens", () => {
-    test("should handle subtraction", () => {
+    test("should handle addition operator", () => {
+      const input = "25+1?";
+      const expectedOutput = ["25", "+", "1"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle subtraction operator", () => {
       const input = "25-1?";
       const expectedOutput = ["25", "+", "-1"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
-    test("should return the correct list of tokens", () => {
-      const input = "What's (5+5)*0.8?";
-      const expectedOutput = ["(", "5", "+", "5", ")", "*", "0.8"];
+    test("should handle multiplication operator", () => {
+      const input = "25*1?";
+      const expectedOutput = ["25", "*", "1"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
-    test("should handle negative numbers", () => {
-      const input = "-10+(-2)*3";
-      const expectedOutput = ["-10", "+", "(", "-2", ")", "*", "3"];
+    test("should handle division operator", () => {
+      const input = "25/1?";
+      const expectedOutput = ["25", "/", "1"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle exponent operator", () => {
+      const input = "25^1?";
+      const expectedOutput = ["25", "^", "1"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
     test("should handle decimal numbers", () => {
-      const input = "2.5 + 3.7 / 0.5";
-      const expectedOutput = ["2.5", "+", "3.7", "/", "0.5"];
+      const input = "25.222+1.0092?";
+      const expectedOutput = ["25.222", "+", "1.0092"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
-    test("should handle calculate: trigger", () => {
-      const input = "calculate: 2.5 + 3.7 / 0.5 =";
-      const expectedOutput = ["2.5", "+", "3.7", "/", "0.5"];
+    test("should handle negative numbers", () => {
+      const input = "-25 * -2?";
+      const expectedOutput = ["-25", "*", "-2"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle negative decimal numbers", () => {
+      const input = "-25 * -2.88?";
+      const expectedOutput = ["-25", "*", "-2.88"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle parentheses", () => {
+      const input = "(5+5)*0.8?";
+      const expectedOutput = ["(", "5", "+", "5", ")", "*", "0.8"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle nested parentheses", () => {
+      const input = "(5+(2^3))*0.8?";
+      const expectedOutput = ["(", "5", "+", "(", "2", "^", "3", ")",  ")", "*", "0.8"];
+      expect(calculator._extractTokens(input)).toEqual(expectedOutput);
+    });
+
+    test("should handle 3+ operands and operators", () => {
+      const input = "2.5 + 3.7 / 0.5 - 20 + 55 ^ 4 =";
+      const expectedOutput = ["2.5", "+", "3.7", "/", "0.5", "-", "20", "+", "55", "^", "4"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
@@ -46,47 +82,47 @@ describe("Calculator", () => {
   });
 
   describe("evaluateExpression", () => {
-    test("should evaluate addition expression correctly", () => {
+    test("should evaluate addition expression", () => {
       const expression = ["1", "+", "5"];
       expect(calculator._evaluateExpression(expression)).toBe(6);
     });
 
-    test("should evaluate subtraction expression correctly", () => {
+    test("should evaluate subtraction expression", () => {
       const expression = ["1", "-", "5"];
       expect(calculator._evaluateExpression(expression)).toBe(-4);
     });
 
-    test("should evaluate multiplication expression correctly", () => {
+    test("should evaluate multiplication expression", () => {
       const expression = ["1", "*", "5"];
       expect(calculator._evaluateExpression(expression)).toBe(5);
     });
 
-    test("should evaluate division expression correctly", () => {
+    test("should evaluate division expression", () => {
       const expression = ["5", "/", "5"];
       expect(calculator._evaluateExpression(expression)).toBe(1);
     });
 
-    test("should evaluate exponent expression correctly", () => {
+    test("should evaluate exponent expression", () => {
       const expression = ["5", "^", "5"];
       expect(calculator._evaluateExpression(expression)).toBe(3125);
     });
 
-    test("should evaluate negative numbers correctly", () => {
+    test("should evaluate negative numbers expression", () => {
       const expression = ["-5", "+", "-5"];
       expect(calculator._evaluateExpression(expression)).toBe(-10);
     });
 
-    test("should evaluate decimal numbers correctly", () => {
+    test("should evaluate decimal numbers expression", () => {
       const expression = ["-5.5", "+", "-5.6"];
       expect(calculator._evaluateExpression(expression)).toBe(-11.1);
     });
 
-    test("should evaluate simple arithmetic expression correctly", () => {
+    test("should evaluate simple arithmetic expression", () => {
       const expression = ["1", "+", "5", "*", "8"];
       expect(calculator._evaluateExpression(expression)).toBe(41);
     });
 
-    test("should evaluate complex arithmetic expression correctly", () => {
+    test("should evaluate complex arithmetic expression", () => {
       const expression = [
         "1",
         "+",
@@ -103,9 +139,14 @@ describe("Calculator", () => {
       expect(calculator._evaluateExpression(expression)).toBe(2);
     });
 
-    test("should handle parentheses correctly", () => {
+    test("should handle parentheses expression", () => {
       const expression = ["(", "1", "+", "5", ")", "*", "8"];
       expect(calculator._evaluateExpression(expression)).toBe(48);
+    });
+
+    test("should handle nesteed parentheses expression", () => {
+      const expression = ["(", "5", "+", "(", "2", "^", "3", ")",  ")", "*", "0.8"];
+      expect(calculator._evaluateExpression(expression)).toBe(10.4);
     });
   });
 });

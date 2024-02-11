@@ -52,6 +52,8 @@ export class Calculator extends Tool {
 
       if (!isNaN(tokenFloat)) {
         if (prevTokenIsOperand && tokenFloat < 0) {
+          // Push plus (+) operator if the current token is a negative number
+          // and the previous token is an operand (a number).
           finalTokens.push("+");
         }
         prevTokenIsOperand = true;
