@@ -10,10 +10,7 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
-import {
-  getLumosOptions,
-  MULTIMODAL_MODELS,
-} from "../pages/Options";
+import { getLumosOptions, MULTIMODAL_MODELS } from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;

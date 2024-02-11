@@ -211,6 +211,6 @@ const Options: React.FC = () => {
       </div>
     </ThemeProvider>
   );
-}
+};
 
 export default Options;
