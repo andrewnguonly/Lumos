@@ -35,8 +35,13 @@
   max-width: 24px;
 }
 
-.cs-message--incoming .cs-message__content {
+.cs-message--incoming[aria-label="assistant"] .cs-message__content {
   background-color: #ffd54f !important;
+  font-size: 11pt;
+}
+
+.cs-message--incoming[aria-label="tool"] .cs-message__content {
+  background-color: #c1d7ec !important;
   font-size: 11pt;
 }
 

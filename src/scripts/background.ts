@@ -139,7 +139,7 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   const calculator = new Calculator();
   const answer = await calculator.invoke(prompt);
 
-  await chrome.runtime.sendMessage({ chunk: answer });
+  await chrome.runtime.sendMessage({ chunk: answer, sender: "tool" });
   await sleep(300); // hack to allow messages to be saved
   chrome.runtime.sendMessage({ done: true });
   return;
@@ -174,7 +174,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // stream response chunks
     const stream = await model.stream(prompt);
     for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk });
+      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
     }
     chrome.runtime.sendMessage({ done: true });
   }
@@ -330,7 +330,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // stream response chunks
     const stream = await chain.stream(prompt);
     for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk });
+      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
     }
     chrome.runtime.sendMessage({ done: true });
   }
