@@ -22,9 +22,9 @@ import {
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
-  DEFAULT_CONTENT_CONFIG,
+  DEFAULT_HOST,
+  getLumosOptions,
 } from "../pages/Options";
-import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
@@ -38,6 +38,10 @@ class LumosMessage {
 
 const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
+  const [promptError, setPromptError] = useState(false);
+  const [promptPlaceholderText, setPromptPlaceholderText] = useState(
+    "Enter your prompt here",
+  );
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
@@ -48,6 +52,7 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
+  const [selectedHost, setSelectedHost] = useState(DEFAULT_HOST);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -93,23 +98,9 @@ const ChatBar: React.FC = () => {
     const newMessages = [...messages, new LumosMessage("user", prompt)];
     setMessages(newMessages);
 
-    // get default content config
-    const contentConfig: ContentConfig = await new Promise(
-      (resolve, reject) => {
-        chrome.storage.local.get(["selectedConfig"], (data) => {
-          if (chrome.runtime.lastError) {
-            reject(chrome.runtime.lastError);
-          } else {
-            resolve(
-              JSON.parse(
-                data.selectedConfig || DEFAULT_CONTENT_CONFIG,
-              ) as ContentConfig,
-            );
-          }
-        });
-      },
-    );
-
+    // get default options
+    const options = await getLumosOptions();
+    const contentConfig = options.contentConfig;
     let config = contentConfig["default"];
     let activeTabUrl: URL;
 
@@ -124,12 +115,19 @@ const ChatBar: React.FC = () => {
         // get domain specific content config
         config = domain in contentConfig ? contentConfig[domain] : config;
 
-        return chrome.scripting.executeScript({
-          target: { tabId: activeTabId },
-          injectImmediately: true,
-          func: getHtmlContent,
-          args: [config.selectors, config.selectorsAll],
-        });
+        if (activeTabUrl.protocol === "chrome:") {
+          // skip script injection for chrome:// urls
+          const result = new Array(1);
+          result[0] = { result: [prompt, false, []] };
+          return result;
+        } else {
+          return chrome.scripting.executeScript({
+            target: { tabId: activeTabId },
+            injectImmediately: true,
+            func: getHtmlContent,
+            args: [config.selectors, config.selectorsAll],
+          });
+        }
       })
       .then(async (results) => {
         const pageContent = results[0].result[0];
@@ -193,8 +191,19 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: [] });
   };
 
-  const handleBackgroundMessage = (msg: { chunk: string; done: boolean }) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.metaKey && event.key === "k") {
+      handleClearButtonClick();
+    }
+  };
+
+  const handleBackgroundMessage = (msg: {
+    chunk: string;
+    sender: string;
+    done: boolean;
+  }) => {
     if (msg.chunk) {
+      const sender = msg.sender;
       setLoading1(false);
       setLoading2(true);
 
@@ -204,12 +213,12 @@ const ChatBar: React.FC = () => {
 
       const lastMessage = messages[messages.length - 1];
       if (lastMessage !== undefined && lastMessage.sender === "user") {
-        // append assistant message to messages list
-        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        // append assistant/tool message to messages list
+        const newAssistantMsg = new LumosMessage(sender, newCompletion);
         setMessages([...messages, newAssistantMsg]);
       } else {
-        // replace last assistant message with updated message
-        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        // replace last assistant/tool message with updated message
+        const newAssistantMsg = new LumosMessage(sender, newCompletion);
         setMessages([
           ...messages.slice(0, messages.length - 1),
           newAssistantMsg,
@@ -225,14 +234,21 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+    document.addEventListener("keydown", handleKeyDown);
   });
 
   useEffect(() => {
-    chrome.storage.local.get(["chatContainerHeight"], (data) => {
-      if (data.chatContainerHeight) {
-        setChatContainerHeight(data.chatContainerHeight);
-      }
-    });
+    chrome.storage.local.get(
+      ["chatContainerHeight", "selectedHost"],
+      (data) => {
+        if (data.chatContainerHeight) {
+          setChatContainerHeight(data.chatContainerHeight);
+        }
+        if (data.selectedHost) {
+          setSelectedHost(data.selectedHost);
+        }
+      },
+    );
 
     chrome.storage.session.get(
       ["prompt", "parsingDisabled", "messages"],
@@ -249,6 +265,25 @@ const ChatBar: React.FC = () => {
       },
     );
   }, []);
+
+  // API connectivity check
+  useEffect(() => {
+    fetch(`${selectedHost}/api/tags`)
+      .then((response) => {
+        if (response.ok) {
+          setPromptError(false);
+          setPromptPlaceholderText("Enter your prompt here");
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => {
+        setPromptError(true);
+        setPromptPlaceholderText(
+          "Unable to connect to Ollama API. Check Ollama server.",
+        );
+      });
+  }, [selectedHost]);
 
   useEffect(() => {
     if (!submitDisabled && textFieldRef.current) {
@@ -299,7 +334,9 @@ const ChatBar: React.FC = () => {
                     src={
                       message.sender === "user"
                         ? "../assets/glasses_48.png"
-                        : "../assets/wand_48.png"
+                        : message.sender === "assistant"
+                          ? "../assets/wand_48.png"
+                          : "../assets/hammer_48.png"
                     }
                     onClick={() => handleAvatarClick(message.message)}
                   />
@@ -344,15 +381,21 @@ const ChatBar: React.FC = () => {
       <Box className="chat-bar">
         <TextField
           className="input-field"
-          placeholder="Enter your prompt here"
+          placeholder={promptPlaceholderText}
           value={prompt}
           disabled={submitDisabled}
+          error={promptError}
           onChange={handlePromptChange}
           inputRef={textFieldRef}
           onKeyUp={(event) => {
             if (event.key === "Enter") {
               handleSendButtonClick();
             }
+          }}
+          sx={{
+            "& .MuiInputBase-root.Mui-error": {
+              WebkitTextFillColor: "red",
+            },
           }}
         />
         <IconButton
@@ -362,13 +405,13 @@ const ChatBar: React.FC = () => {
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
-        <Tooltip title="Clear messages">
+        <Tooltip title="Clear messages (cmd + k)">
           <IconButton
             className="clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
           >
-            <img alt="Clear messages" src="../assets/hat_32.png" />
+            <img alt="Clear messages (cmd + k)" src="../assets/hat_32.png" />
           </IconButton>
         </Tooltip>
       </Box>

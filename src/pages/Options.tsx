@@ -10,7 +10,11 @@ import {
   ThemeProvider,
 } from "@mui/material";
 import AppTheme from "../themes/AppTheme";
-import { defaultContentConfig, isContentConfig } from "../contentConfig";
+import {
+  ContentConfig,
+  defaultContentConfig,
+  isContentConfig,
+} from "../contentConfig";
 import "./Options.css";
 
 export const DEFAULT_MODEL = "llama2";
@@ -25,7 +29,49 @@ export const MULTIMODAL_MODELS = ["llava", "bakllava"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
-function Options() {
+interface LumosOptions {
+  ollamaModel: string;
+  ollamaHost: string;
+  contentConfig: ContentConfig;
+  vectorStoreTTLMins: number;
+}
+
+export const getLumosOptions = async (): Promise<LumosOptions> => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(
+      [
+        "selectedModel",
+        "selectedHost",
+        "selectedConfig",
+        "selectedVectorStoreTTLMins",
+      ],
+      (data) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve({
+            ollamaModel: data.selectedModel || DEFAULT_MODEL,
+            ollamaHost: data.selectedHost || DEFAULT_HOST,
+            contentConfig: JSON.parse(
+              data.selectedConfig || DEFAULT_CONTENT_CONFIG,
+            ) as ContentConfig,
+            vectorStoreTTLMins:
+              parseInt(data.selectedVectorStoreTTLMins, 10) ||
+              DEFAULT_VECTOR_STORE_TTL_MINS,
+          });
+        }
+      },
+    );
+  });
+};
+
+export const isMultimodal = (model: string): boolean => {
+  return MULTIMODAL_MODELS.some((multimodalModel) =>
+    model.includes(multimodalModel),
+  );
+};
+
+const Options: React.FC = () => {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([]);
   const [host, setHost] = useState(DEFAULT_HOST);
@@ -106,9 +152,9 @@ function Options() {
     fetch(`${host}/api/tags`)
       .then((response) => response.json())
       .then((data) => {
-        const modelOptions = data.models.map((model: { name: string }) => {
-          return model.name.split(":")[0];
-        });
+        const modelOptions = data.models.map(
+          (model: { name: string }) => model.name,
+        );
         setModelOptions(modelOptions);
         chrome.storage.local.get(["selectedModel"]).then((data) => {
           if (data.selectedModel) {
@@ -136,9 +182,9 @@ function Options() {
               value={model}
               onChange={handleModelChange}
             >
-              {modelOptions.map((modelName, index) => (
+              {modelOptions.map((modelName: string, index) => (
                 <MenuItem key={index} value={modelName}>
-                  {modelName}
+                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
                 </MenuItem>
               ))}
             </Select>
@@ -171,6 +217,6 @@ function Options() {
       </div>
     </ThemeProvider>
   );
-}
+};
 
 export default Options;

@@ -1,5 +1,5 @@
 {
-    "version": "1.0.5",
+    "version": "1.0.6",
     "manifest_version": 3,
     "name": "Lumos",
     "description": "An LLM co-pilot for browsing the web, powered by local LLMs. Your prompts never leave the browser.",

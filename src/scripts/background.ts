@@ -9,21 +9,8 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
-import {
-  DEFAULT_CONTENT_CONFIG,
-  DEFAULT_HOST,
-  DEFAULT_MODEL,
-  DEFAULT_VECTOR_STORE_TTL_MINS,
-  MULTIMODAL_MODELS,
-} from "../pages/Options";
-import { ContentConfig } from "../contentConfig";
-
-interface LumosOptions {
-  ollamaModel: string;
-  ollamaHost: string;
-  contentConfig: ContentConfig;
-  vectorStoreTTLMins: number;
-}
+import { Calculator } from "../tools/calculator";
+import { getLumosOptions, isMultimodal } from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -36,34 +23,9 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 // global variable for storing parsed content from current tab
 let context = "";
 
-const getLumosOptions = async (): Promise<LumosOptions> => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(
-      [
-        "selectedModel",
-        "selectedHost",
-        "selectedConfig",
-        "selectedVectorStoreTTLMins",
-      ],
-      (data) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve({
-            ollamaModel: data.selectedModel || DEFAULT_MODEL,
-            ollamaHost: data.selectedHost || DEFAULT_HOST,
-            contentConfig: JSON.parse(
-              data.selectedConfig || DEFAULT_CONTENT_CONFIG,
-            ) as ContentConfig,
-            vectorStoreTTLMins:
-              parseInt(data.selectedVectorStoreTTLMins, 10) ||
-              DEFAULT_VECTOR_STORE_TTL_MINS,
-          });
-        }
-      },
-    );
-  });
-};
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * Determine if a prompt is asking about an image. If so, return true.
@@ -95,13 +57,59 @@ const isImagePrompt = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({ baseUrl: baseURL, model: model });
+  const ollama = new Ollama({
+    baseUrl: baseURL,
+    model: model,
+    temperature: 0,
+    stop: [".", ","],
+  });
   const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
-    console.log(`Prompt classification response: ${response}`);
+    console.log(`isImagePrompt classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+/**
+ * Determine if a prompt is an arithmetic expression. If so, return true.
+ * Otherwise, return false.
+ *
+ * This function follows the same implementation as the isImagePrompt function.
+ */
+const isArithmeticExpression = async (
+  baseURL: string,
+  model: string,
+  prompt: string,
+): Promise<boolean> => {
+  // check for prefix trigger
+  if (prompt.trim().toLowerCase().startsWith("calculate:")) {
+    return new Promise((resolve) => resolve(true));
+  }
+
+  // otherwise, attempt to classify prompt
+  const ollama = new Ollama({
+    baseUrl: baseURL,
+    model: model,
+    temperature: 0,
+    stop: [".", ","],
+  });
+  const question = `Is the following prompt a math equation with numbers and operators? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  return ollama.invoke(question).then((response) => {
+    console.log(`isArithmeticExpression classification response: ${response}`);
+    const answer = response.trim().split(" ")[0].toLowerCase();
+    return answer.includes("yes");
+  });
+};
+
+const executeCalculatorTool = async (prompt: string): Promise<void> => {
+  const calculator = new Calculator();
+  const answer = await calculator.invoke(prompt);
+
+  await chrome.runtime.sendMessage({ chunk: answer, sender: "tool" });
+  await sleep(300); // hack to allow messages to be saved
+  chrome.runtime.sendMessage({ done: true });
+  return;
 };
 
 chrome.runtime.onMessage.addListener(async (request) => {
@@ -110,8 +118,21 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const prompt = request.prompt;
     console.log(`Received prompt (RAG disabled): ${prompt}`);
 
-    // create model
+    // get options
     const options = await getLumosOptions();
+
+    // classify prompt and optionally execute tools
+    if (
+      await isArithmeticExpression(
+        options.ollamaHost,
+        options.ollamaModel,
+        prompt,
+      )
+    ) {
+      return executeCalculatorTool(prompt);
+    }
+
+    // create model
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
@@ -120,7 +141,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // stream response chunks
     const stream = await model.stream(prompt);
     for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk });
+      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
     }
     chrome.runtime.sendMessage({ done: true });
   }
@@ -157,11 +178,12 @@ chrome.runtime.onMessage.addListener(async (request) => {
       },
     );
 
-    // download images
+    // define model bindings (e.g. images, functions)
     const base64EncodedImages: string[] = [];
 
+    // classify prompt and optionally execute tools
     if (
-      MULTIMODAL_MODELS.includes(options.ollamaModel) &&
+      isMultimodal(options.ollamaModel) &&
       (await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt))
     ) {
       const urls: string[] = request.imageURLs;
@@ -195,6 +217,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
           console.log(`Failed to download image: ${url}`);
         }
       }
+    } else if (
+      await isArithmeticExpression(
+        options.ollamaHost,
+        options.ollamaModel,
+        prompt,
+      )
+    ) {
+      return executeCalculatorTool(prompt);
     }
 
     // create model and bind base64 encoded image data
@@ -267,7 +297,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // stream response chunks
     const stream = await chain.stream(prompt);
     for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk });
+      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
     }
     chrome.runtime.sendMessage({ done: true });
   }
