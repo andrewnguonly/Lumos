@@ -10,21 +10,7 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
-import {
-  DEFAULT_CONTENT_CONFIG,
-  DEFAULT_HOST,
-  DEFAULT_MODEL,
-  DEFAULT_VECTOR_STORE_TTL_MINS,
-  MULTIMODAL_MODELS,
-} from "../pages/Options";
-import { ContentConfig } from "../contentConfig";
-
-interface LumosOptions {
-  ollamaModel: string;
-  ollamaHost: string;
-  contentConfig: ContentConfig;
-  vectorStoreTTLMins: number;
-}
+import { getLumosOptions, MULTIMODAL_MODELS } from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -40,35 +26,6 @@ let context = "";
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-const getLumosOptions = async (): Promise<LumosOptions> => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(
-      [
-        "selectedModel",
-        "selectedHost",
-        "selectedConfig",
-        "selectedVectorStoreTTLMins",
-      ],
-      (data) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve({
-            ollamaModel: data.selectedModel || DEFAULT_MODEL,
-            ollamaHost: data.selectedHost || DEFAULT_HOST,
-            contentConfig: JSON.parse(
-              data.selectedConfig || DEFAULT_CONTENT_CONFIG,
-            ) as ContentConfig,
-            vectorStoreTTLMins:
-              parseInt(data.selectedVectorStoreTTLMins, 10) ||
-              DEFAULT_VECTOR_STORE_TTL_MINS,
-          });
-        }
-      },
-    );
-  });
-};
 
 /**
  * Determine if a prompt is asking about an image. If so, return true.
