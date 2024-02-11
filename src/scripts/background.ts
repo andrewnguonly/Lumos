@@ -108,7 +108,7 @@ const isImagePrompt = async (
 /**
  * Determine if a prompt is an arithmetic expression. If so, return true.
  * Otherwise, return false.
- * 
+ *
  * This function follows the same implementation as the isImagePrompt function.
  */
 const isArithmeticExpression = async (

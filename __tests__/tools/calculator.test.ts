@@ -64,13 +64,37 @@ describe("Calculator", () => {
 
     test("should handle nested parentheses", () => {
       const input = "(5+(2^3))*0.8?";
-      const expectedOutput = ["(", "5", "+", "(", "2", "^", "3", ")",  ")", "*", "0.8"];
+      const expectedOutput = [
+        "(",
+        "5",
+        "+",
+        "(",
+        "2",
+        "^",
+        "3",
+        ")",
+        ")",
+        "*",
+        "0.8",
+      ];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
     test("should handle 3+ operands and operators", () => {
       const input = "2.5 + 3.7 / 0.5 - 20 + 55 ^ 4 =";
-      const expectedOutput = ["2.5", "+", "3.7", "/", "0.5", "-", "20", "+", "55", "^", "4"];
+      const expectedOutput = [
+        "2.5",
+        "+",
+        "3.7",
+        "/",
+        "0.5",
+        "-",
+        "20",
+        "+",
+        "55",
+        "^",
+        "4",
+      ];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 
@@ -145,7 +169,19 @@ describe("Calculator", () => {
     });
 
     test("should handle nesteed parentheses expression", () => {
-      const expression = ["(", "5", "+", "(", "2", "^", "3", ")",  ")", "*", "0.8"];
+      const expression = [
+        "(",
+        "5",
+        "+",
+        "(",
+        "2",
+        "^",
+        "3",
+        ")",
+        ")",
+        "*",
+        "0.8",
+      ];
       expect(calculator._evaluateExpression(expression)).toBe(10.4);
     });
   });
