@@ -130,12 +130,19 @@ const ChatBar: React.FC = () => {
         // get domain specific content config
         config = domain in contentConfig ? contentConfig[domain] : config;
 
-        return chrome.scripting.executeScript({
-          target: { tabId: activeTabId },
-          injectImmediately: true,
-          func: getHtmlContent,
-          args: [config.selectors, config.selectorsAll],
-        });
+        if (activeTabUrl.protocol === "chrome:") {
+          // skip script injection for chrome:// urls
+          const result = new Array(1);
+          result[0] = { result: [prompt, false, []] };
+          return result;
+        } else {
+          return chrome.scripting.executeScript({
+            target: { tabId: activeTabId },
+            injectImmediately: true,
+            func: getHtmlContent,
+            args: [config.selectors, config.selectorsAll],
+          });
+        }
       })
       .then(async (results) => {
         const pageContent = results[0].result[0];
