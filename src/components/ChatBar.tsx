@@ -199,8 +199,13 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: [] });
   };
 
-  const handleBackgroundMessage = (msg: { chunk: string; done: boolean }) => {
+  const handleBackgroundMessage = (msg: {
+    chunk: string;
+    sender: string;
+    done: boolean;
+  }) => {
     if (msg.chunk) {
+      const sender = msg.sender;
       setLoading1(false);
       setLoading2(true);
 
@@ -210,12 +215,12 @@ const ChatBar: React.FC = () => {
 
       const lastMessage = messages[messages.length - 1];
       if (lastMessage !== undefined && lastMessage.sender === "user") {
-        // append assistant message to messages list
-        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        // append assistant/tool message to messages list
+        const newAssistantMsg = new LumosMessage(sender, newCompletion);
         setMessages([...messages, newAssistantMsg]);
       } else {
-        // replace last assistant message with updated message
-        const newAssistantMsg = new LumosMessage("assistant", newCompletion);
+        // replace last assistant/tool message with updated message
+        const newAssistantMsg = new LumosMessage(sender, newCompletion);
         setMessages([
           ...messages.slice(0, messages.length - 1),
           newAssistantMsg,
@@ -330,7 +335,9 @@ const ChatBar: React.FC = () => {
                     src={
                       message.sender === "user"
                         ? "../assets/glasses_48.png"
-                        : "../assets/wand_48.png"
+                        : message.sender === "assistant"
+                          ? "../assets/wand_48.png"
+                          : "../assets/hammer_48.png"
                     }
                     onClick={() => handleAvatarClick(message.message)}
                   />
