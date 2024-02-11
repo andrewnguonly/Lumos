@@ -22,10 +22,9 @@ import {
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
-  DEFAULT_CONTENT_CONFIG,
   DEFAULT_HOST,
+  getLumosOptions,
 } from "../pages/Options";
-import { ContentConfig } from "../contentConfig";
 import { getHtmlContent } from "../scripts/content";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
@@ -99,23 +98,9 @@ const ChatBar: React.FC = () => {
     const newMessages = [...messages, new LumosMessage("user", prompt)];
     setMessages(newMessages);
 
-    // get default content config
-    const contentConfig: ContentConfig = await new Promise(
-      (resolve, reject) => {
-        chrome.storage.local.get(["selectedConfig"], (data) => {
-          if (chrome.runtime.lastError) {
-            reject(chrome.runtime.lastError);
-          } else {
-            resolve(
-              JSON.parse(
-                data.selectedConfig || DEFAULT_CONTENT_CONFIG,
-              ) as ContentConfig,
-            );
-          }
-        });
-      },
-    );
-
+    // get default options
+    const options = await getLumosOptions();
+    const contentConfig = options.contentConfig;
     let config = contentConfig["default"];
     let activeTabUrl: URL;
 
