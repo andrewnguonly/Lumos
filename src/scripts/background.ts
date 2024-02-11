@@ -117,7 +117,7 @@ const isArithmeticExpression = async (
 
   // otherwise, attempt to classify prompt
   const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
-  const question = `Is the following prompt an arithmetic expression or question? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  const question = `Is the following prompt an arithmetic expression? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isArithmeticExpression classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();

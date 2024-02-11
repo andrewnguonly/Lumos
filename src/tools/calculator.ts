@@ -10,7 +10,6 @@ const OPERATOR_ORDER: { [key: string]: number } = {
 };
 
 export class Calculator extends Tool {
-
   name = "calculator";
   description = "A tool for evaluting arithmetic expressions";
 
@@ -22,20 +21,20 @@ export class Calculator extends Tool {
     const tokens = this._extractTokens(expression);
     const answer = this._evaluateExpression(tokens);
     return Promise.resolve(answer.toString());
-  }
+  };
 
   _extractTokens = (expression: string): string[] => {
     const tokens: string[] = [];
-  
+
     // Regular expression pattern to match valid arithmetic operators and operands
     const pattern = /-?\d+(\.\d+)?|\+|-|\*|\/|\^|\(|\)/g;
-  
+
     // Extract tokens from the input string
     let match;
     while ((match = pattern.exec(expression)) !== null) {
       tokens.push(match[0]);
     }
-  
+
     return tokens;
   };
 
@@ -44,7 +43,7 @@ export class Calculator extends Tool {
       const operator = operators.pop();
       const operand2 = operands.pop();
       const operand1 = operands.pop();
-  
+
       if (
         operand1 === undefined ||
         operand2 === undefined ||
@@ -52,7 +51,7 @@ export class Calculator extends Tool {
       ) {
         throw new Error("Invalid expression");
       }
-  
+
       switch (operator) {
         case "+":
           operands.push(operand1 + operand2);
@@ -71,13 +70,13 @@ export class Calculator extends Tool {
           break;
       }
     };
-  
+
     const operators: string[] = [];
     const operands: number[] = [];
-  
+
     for (let i = 0; i < tokens.length; i++) {
       const char = tokens[i];
-  
+
       if (/\d/.test(char) || char === ".") {
         // Operand found, parse entire number including decimal points
         let operand = "";
@@ -86,14 +85,17 @@ export class Calculator extends Tool {
           i++;
         }
         i--; // Move back one step to adjust for loop increment
-  
+
         operands.push(parseFloat(operand));
       } else if (char === "(") {
         // Left parenthesis found, push onto operators stack
         operators.push(char);
       } else if (char === ")") {
         // Right parenthesis found, apply operators until matching left parenthesis
-        while (operators.length > 0 && operators[operators.length - 1] !== "(") {
+        while (
+          operators.length > 0 &&
+          operators[operators.length - 1] !== "("
+        ) {
           applyOperator(operators, operands);
         }
         // Pop the left parenthesis
@@ -102,7 +104,8 @@ export class Calculator extends Tool {
         // Operator found
         while (
           operators.length > 0 &&
-          OPERATOR_ORDER[char] <= OPERATOR_ORDER[operators[operators.length - 1]]
+          OPERATOR_ORDER[char] <=
+            OPERATOR_ORDER[operators[operators.length - 1]]
         ) {
           applyOperator(operators, operands);
         }
@@ -111,17 +114,17 @@ export class Calculator extends Tool {
         throw new Error("Invalid character: " + char);
       }
     }
-  
+
     // Apply remaining operators
     while (operators.length > 0) {
       applyOperator(operators, operands);
     }
-  
+
     // At this point, operands stack should contain only the result
     if (operands.length !== 1) {
       throw new Error("Invalid expression");
     }
-  
+
     return operands[0];
   };
 }
