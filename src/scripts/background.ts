@@ -37,6 +37,10 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 // global variable for storing parsed content from current tab
 let context = "";
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const getLumosOptions = async (): Promise<LumosOptions> => {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(
@@ -123,12 +127,22 @@ const isArithmeticExpression = async (
 
   // otherwise, attempt to classify prompt
   const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
-  const question = `Is the following prompt an arithmetic expression or arithmetic question? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
+  const question = `Is the following prompt a math equation with numbers and operators? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isArithmeticExpression classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const executeCalculatorTool = async (prompt: string): Promise<void> => {
+  const calculator = new Calculator();
+  const answer = await calculator.invoke(prompt);
+
+  await chrome.runtime.sendMessage({ chunk: answer });
+  await sleep(300); // hack to allow messages to be saved
+  chrome.runtime.sendMessage({ done: true });
+  return;
 };
 
 chrome.runtime.onMessage.addListener(async (request) => {
@@ -148,15 +162,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         prompt,
       )
     ) {
-      // execute calculator tool
-      const calculator = new Calculator();
-      const answer = await calculator.invoke(prompt);
-
-      // return answer immediately
-      chrome.runtime.sendMessage({ chunk: answer }).then(() => {
-        chrome.runtime.sendMessage({ done: true });
-      });
-      return;
+      return executeCalculatorTool(prompt);
     }
 
     // create model
@@ -251,15 +257,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         prompt,
       )
     ) {
-      // execute calculator tool
-      const calculator = new Calculator();
-      const answer = await calculator.invoke(prompt);
-
-      // return answer immediately
-      chrome.runtime.sendMessage({ chunk: answer }).then(() => {
-        chrome.runtime.sendMessage({ done: true });
-      });
-      return;
+      return executeCalculatorTool(prompt);
     }
 
     // create model and bind base64 encoded image data
