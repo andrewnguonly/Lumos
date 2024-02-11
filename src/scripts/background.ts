@@ -10,7 +10,7 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
-import { getLumosOptions, MULTIMODAL_MODELS } from "../pages/Options";
+import { getLumosOptions, isMultimodal } from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -57,7 +57,12 @@ const isImagePrompt = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
+  const ollama = new Ollama({
+    baseUrl: baseURL,
+    model: model,
+    temperature: 0,
+    stop: [".", ","],
+  });
   const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isImagePrompt classification response: ${response}`);
@@ -83,7 +88,12 @@ const isArithmeticExpression = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0 });
+  const ollama = new Ollama({
+    baseUrl: baseURL,
+    model: model,
+    temperature: 0,
+    stop: [".", ","],
+  });
   const question = `Is the following prompt a math equation with numbers and operators? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
   return ollama.invoke(question).then((response) => {
     console.log(`isArithmeticExpression classification response: ${response}`);
@@ -173,7 +183,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // classify prompt and optionally execute tools
     if (
-      MULTIMODAL_MODELS.includes(options.ollamaModel) &&
+      isMultimodal(options.ollamaModel) &&
       (await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt))
     ) {
       const urls: string[] = request.imageURLs;

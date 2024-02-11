@@ -65,6 +65,12 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
   });
 };
 
+export const isMultimodal = (model: string): boolean => {
+  return MULTIMODAL_MODELS.some((multimodalModel) =>
+    model.includes(multimodalModel),
+  );
+};
+
 const Options: React.FC = () => {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([]);
