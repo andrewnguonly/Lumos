@@ -26,16 +26,43 @@ export class Calculator extends Tool {
   _extractTokens = (expression: string): string[] => {
     const tokens: string[] = [];
 
-    // Regular expression pattern to match valid arithmetic operators and operands
+    // A regular expression pattern to match valid arithmetic operators and
+    // operands. The pattern matches negative numbers, but does not match
+    // minus (-) operators. All minus signs are considered part of a negative
+    // number.
     const pattern = /-?\d+(\.\d+)?|\+|-|\*|\/|\^|\(|\)/g;
 
-    // Extract tokens from the input string
+    // extract tokens from the expression
     let match;
     while ((match = pattern.exec(expression)) !== null) {
       tokens.push(match[0]);
     }
 
-    return tokens;
+    // Insert plus (+) operator if a negative number immediately follows
+    // another number. This produces a mathematically equivalent equation.
+    // For example:
+    //
+    // ["25", "-1"] --> ["25", "+", "-1"]
+    const finalTokens: string[] = [];
+    let prevTokenIsOperand = false;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const tokenFloat = parseFloat(token);
+
+      if (!isNaN(tokenFloat)) {
+        if (prevTokenIsOperand && tokenFloat < 0) {
+          finalTokens.push("+");
+        }
+        prevTokenIsOperand = true;
+      } else {
+        prevTokenIsOperand = false;
+      }
+
+      finalTokens.push(token);
+    }
+
+    return finalTokens;
   };
 
   _evaluateExpression = (tokens: string[]): number => {

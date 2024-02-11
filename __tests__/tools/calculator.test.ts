@@ -10,7 +10,7 @@ describe("Calculator", () => {
   describe("extractArithmeticTokens", () => {
     test("should handle subtraction", () => {
       const input = "25-1?";
-      const expectedOutput = ["25", "-", "1"];
+      const expectedOutput = ["25", "+", "-1"];
       expect(calculator._extractTokens(input)).toEqual(expectedOutput);
     });
 

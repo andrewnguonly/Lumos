@@ -171,9 +171,9 @@ Alternatively, if content is highlighted on a page (e.g. highlighted text), that
 
 Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).
 
-## Tools
+## Tools (Experimental)
 
-Lumos invokes tools automatically based on the provided prompt. See documentation and examples [here](./docs/tools.md).
+Lumos invokes [Tools](https://js.langchain.com/docs/modules/agents/tools/) automatically based on the provided prompt. See documentation and examples [here](./docs/tools.md).
 
 ## Reading
 - [Local LLM in the Browser Powered by Ollama](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-236817f335da)
