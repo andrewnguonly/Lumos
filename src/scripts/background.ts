@@ -38,7 +38,7 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 let context = "";
 
 function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 const getLumosOptions = async (): Promise<LumosOptions> => {
