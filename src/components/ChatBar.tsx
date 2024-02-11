@@ -199,6 +199,12 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: [] });
   };
 
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.metaKey && event.key === "k") {
+      handleClearButtonClick();
+    }
+  };
+
   const handleBackgroundMessage = (msg: {
     chunk: string;
     sender: string;
@@ -236,6 +242,7 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+    document.addEventListener("keydown", handleKeyDown);
   });
 
   useEffect(() => {
@@ -406,13 +413,13 @@ const ChatBar: React.FC = () => {
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
-        <Tooltip title="Clear messages">
+        <Tooltip title="Clear messages (cmd + k)">
           <IconButton
             className="clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
           >
-            <img alt="Clear messages" src="../assets/hat_32.png" />
+            <img alt="Clear messages (cmd + k)" src="../assets/hat_32.png" />
           </IconButton>
         </Tooltip>
       </Box>
