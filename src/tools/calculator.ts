@@ -19,7 +19,16 @@ export class Calculator extends Tool {
 
   protected _call = (expression: string): Promise<string> => {
     const tokens = this._extractTokens(expression);
-    const answer = this._evaluateExpression(tokens);
+    let answer;
+    try {
+      answer = this._evaluateExpression(tokens);
+    } catch (error) {
+      if (error instanceof Error) {
+        answer = `Error: ${error.message}`;
+      } else {
+        answer = "Error: Unable to execute calculator tool.";
+      }
+    }
     return Promise.resolve(answer.toString());
   };
 
