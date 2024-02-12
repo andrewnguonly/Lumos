@@ -26,7 +26,7 @@ Example queries:
 
 `querySelector()` supports [complex selectors](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector#complex_selectors) and [negation](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector#negation).
 
-Example conifg for a single domain:
+Example config for a single domain:
 ```json
 {
   "domain.com": {
