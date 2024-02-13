@@ -91,7 +91,7 @@ Right-click on the extension icon and select `Options` to access the extension's
 
 ### Content Parser Config
 
-Each URL path can have its own content parser. The content parser for the longest URL path will be matched.
+Each URL path can have its own content parser. The content parser config for the longest URL path will be matched.
 
 - **chunkSize**: Number of characters to chunk page content into for indexing into RAG vectorstore
 - **chunkOverlap**: Number of characters to overlap in chunks for indexing into RAG vectorstore

@@ -83,21 +83,24 @@ const ChatBar: React.FC = () => {
 
   /**
    * Return the content config that matches the current URL path.
-   * 
+   *
    * Each URL path can have a custom content config. For example,
    * domain.com/path1 and domain.com/path2 can have different content
    * configs. Additionally, content config paths can be nested. For
    * example, domain.com/path1/subpath1 and domain.com/path1. In
    * this case, the function will try to match the longest path first.
-   * 
+   *
    * Subdomains are also matched. If no matching path is found, null is
    * returned.
    */
-  const getContentConfig = (url: URL, contentConfig: ContentConfig): null | {
-    chunkSize: number,
-    chunkOverlap: number,
-    selectors: string[],
-    selectorsAll: string[],
+  const getContentConfig = (
+    url: URL,
+    contentConfig: ContentConfig,
+  ): null | {
+    chunkSize: number;
+    chunkOverlap: number;
+    selectors: string[];
+    selectorsAll: string[];
   } => {
     const searchPath = `${url.hostname}${url.pathname}`;
 
