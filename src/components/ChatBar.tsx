@@ -28,6 +28,7 @@ import {
 import { getHtmlContent } from "../scripts/content";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
+import { ContentConfig } from "../contentConfig";
 
 class LumosMessage {
   constructor(
@@ -80,13 +81,33 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const getDomain = (hostname: string): string => {
-    const parts = hostname.split(".");
-    if (parts.length > 2) {
-      return parts.slice(-2).join(".");
-    } else {
-      return hostname;
-    }
+  /**
+   * Return the content config that matches the current URL path.
+   * 
+   * Each URL path can have a custom content config. For example,
+   * domain.com/path1 and domain.com/path2 can have different content
+   * configs. Additionally, content config paths can be nested. For
+   * example, domain.com/path1/subpath1 and domain.com/path1. In
+   * this case, the function will try to match the longest path first.
+   * 
+   * Subdomains are also matched. If no matching path is found, null is
+   * returned.
+   */
+  const getContentConfig = (url: URL, contentConfig: ContentConfig): null | {
+    chunkSize: number,
+    chunkOverlap: number,
+    selectors: string[],
+    selectorsAll: string[],
+  } => {
+    const searchPath = `${url.hostname}${url.pathname}`;
+
+    // Order keys (paths) of contentConfig in reverse order and check if any
+    // key is a substring of searchPath. This will find the longest matching
+    // key (path).
+    const paths = Object.keys(contentConfig).sort().reverse();
+    const matchingPath = paths.find((path) => searchPath.includes(path));
+
+    return matchingPath ? contentConfig[matchingPath] : null;
   };
 
   const promptWithContent = async () => {
@@ -110,10 +131,9 @@ const ChatBar: React.FC = () => {
         const activeTab = tabs[0];
         const activeTabId = activeTab.id || 0;
         activeTabUrl = new URL(activeTab.url || "");
-        const domain = getDomain(activeTabUrl.hostname);
 
-        // get domain specific content config
-        config = domain in contentConfig ? contentConfig[domain] : config;
+        // get path specific content config
+        config = getContentConfig(activeTabUrl, contentConfig) || config;
 
         if (activeTabUrl.protocol === "chrome:") {
           // skip script injection for chrome:// urls

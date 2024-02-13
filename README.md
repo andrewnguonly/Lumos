@@ -91,12 +91,35 @@ Right-click on the extension icon and select `Options` to access the extension's
 
 ### Content Parser Config
 
-Each domain can have its own content parser.
+Each URL path can have its own content parser. The content parser for the longest URL path will be matched.
 
 - **chunkSize**: Number of characters to chunk page content into for indexing into RAG vectorstore
 - **chunkOverlap**: Number of characters to overlap in chunks for indexing into RAG vectorstore
 - **selectors**: `document.querySelector()` queries to perform to retrieve page content
 - **selectorsAll**: `document.querySelectorAll()` queries to perform to retrieve page content
+
+For example, given the following config, if the URL path of the current tab is `domain.com/path1/subpath1/subsubpath1`, then the config for `domain.com/path1/subpath1` will be used (i.e. `chunkSize=600`).
+
+```json
+{
+  "domain.com/path1/subpath1": {
+    "chunkSize": 600,
+    "chunkOverlap": 200,
+    "selectors": [
+      "#id"
+    ],
+    "selectorsAll": []
+  },
+  "domain.com/path1": {
+    "chunkSize": 500,
+    "chunkOverlap": 0,
+    "selectors": [
+      ".className"
+    ],
+    "selectorsAll": []
+  }
+}
+```
 
 See docs for [How to Create a Custom Content Parser](./docs/content_parser.md). See documentation for [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) and [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) to confirm all querying capabilities.
 
@@ -133,14 +156,6 @@ Example:
     "selectors": [
       "#question-header",
       "#mainbar"
-    ],
-    "selectorsAll": []
-  },
-  "substack.com": {
-    "chunkSize": 500,
-    "chunkOverlap": 0,
-    "selectors": [
-      "article"
     ],
     "selectorsAll": []
   },
