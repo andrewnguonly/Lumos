@@ -26,6 +26,7 @@ import {
   getLumosOptions,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
+import { getContentConfig } from "../contentConfig";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -80,15 +81,6 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const getDomain = (hostname: string): string => {
-    const parts = hostname.split(".");
-    if (parts.length > 2) {
-      return parts.slice(-2).join(".");
-    } else {
-      return hostname;
-    }
-  };
-
   const promptWithContent = async () => {
     setLoading1(true);
     setSubmitDisabled(true);
@@ -110,10 +102,9 @@ const ChatBar: React.FC = () => {
         const activeTab = tabs[0];
         const activeTabId = activeTab.id || 0;
         activeTabUrl = new URL(activeTab.url || "");
-        const domain = getDomain(activeTabUrl.hostname);
 
-        // get domain specific content config
-        config = domain in contentConfig ? contentConfig[domain] : config;
+        // get path specific content config
+        config = getContentConfig(activeTabUrl, contentConfig) || config;
 
         if (activeTabUrl.protocol === "chrome:") {
           // skip script injection for chrome:// urls
