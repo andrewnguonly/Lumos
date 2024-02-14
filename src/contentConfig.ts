@@ -71,7 +71,7 @@ export const getContentConfig = (
   // key is a substring of searchPath. This will find the longest matching
   // key (path).
   const paths = Object.keys(contentConfig).sort().reverse();
-  const matchingPath = paths.find((path) => searchPath.includes(path));
+  const matchingPath = paths.find((path) => searchPath.startsWith(path));
 
   return matchingPath ? contentConfig[matchingPath] : null;
 };
