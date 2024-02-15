@@ -56,7 +56,7 @@ const classifyPrompt = async (
   originalPrompt: string,
   classifcationPrompt: string,
   prefixTrigger?: string,
-) => {
+): Promise<boolean> => {
   // check for prefix trigger
   if (prefixTrigger) {
     if (originalPrompt.trim().toLowerCase().startsWith(prefixTrigger)) {
