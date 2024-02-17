@@ -95,7 +95,7 @@ const streamChunks = async (stream: IterableReadableStream<string>) => {
     chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
   }
   chrome.runtime.sendMessage({ done: true });
-}
+};
 
 chrome.runtime.onMessage.addListener(async (request) => {
   // process prompt (RAG disabled)
@@ -264,10 +264,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
         }),
-      )
+      );
       documents.forEach(async (doc, index) => {
         await vectorStore.addDocuments([doc]);
-        chrome.runtime.sendMessage({ docNo: index + 1, docCount: documents.length });
+        chrome.runtime.sendMessage({
+          docNo: index + 1,
+          docCount: documents.length,
+        });
       });
 
       // store vector store in vector store map
