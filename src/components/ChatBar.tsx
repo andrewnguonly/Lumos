@@ -48,6 +48,7 @@ const ChatBar: React.FC = () => {
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
+  const [loading1Text, setLoading1Text] = useState("");
   const [loading2, setLoading2] = useState(false); // loading state during completion process
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -83,6 +84,7 @@ const ChatBar: React.FC = () => {
 
   const promptWithContent = async () => {
     setLoading1(true);
+    setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
     setCompletion("");
 
@@ -148,6 +150,7 @@ const ChatBar: React.FC = () => {
 
   const promptWithoutContent = async () => {
     setLoading1(true);
+    setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
     setCompletion("");
 
@@ -189,11 +192,16 @@ const ChatBar: React.FC = () => {
   };
 
   const handleBackgroundMessage = (msg: {
+    docNo: number;
+    docCount: number;
     chunk: string;
     sender: string;
     done: boolean;
   }) => {
-    if (msg.chunk) {
+    if (msg.docNo) {
+      setLoading1(true);
+      setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}`);
+    } else if (msg.chunk) {
       const sender = msg.sender;
       setLoading1(false);
       setLoading2(true);
@@ -303,9 +311,9 @@ const ChatBar: React.FC = () => {
           <MessageList
             typingIndicator={
               loading1 ? (
-                <TypingIndicator content="Lumos..." />
+                <TypingIndicator content={loading1Text} />
               ) : loading2 ? (
-                <TypingIndicator content="Nox!" />
+                <TypingIndicator content="Lumos!" />
               ) : null
             }
           >

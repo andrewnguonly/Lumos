@@ -4,6 +4,7 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -89,6 +90,13 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   return;
 };
 
+const streamChunks = async (stream: IterableReadableStream<string>) => {
+  for await (const chunk of stream) {
+    chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
+  }
+  chrome.runtime.sendMessage({ done: true });
+}
+
 chrome.runtime.onMessage.addListener(async (request) => {
   // process prompt (RAG disabled)
   if (request.prompt && request.skipRAG) {
@@ -120,10 +128,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await model.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process prompt (RAG enabled)
@@ -254,13 +259,16 @@ chrome.runtime.onMessage.addListener(async (request) => {
       const documents = await splitter.createDocuments([context]);
 
       // load documents into vector store
-      vectorStore = await MemoryVectorStore.fromDocuments(
-        documents,
+      vectorStore = new MemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
         }),
-      );
+      )
+      documents.forEach(async (doc, index) => {
+        await vectorStore.addDocuments([doc]);
+        chrome.runtime.sendMessage({ docNo: index + 1, docCount: documents.length });
+      });
 
       // store vector store in vector store map
       if (!skipCache) {
@@ -286,10 +294,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await chain.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process parsed context
