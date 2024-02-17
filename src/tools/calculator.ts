@@ -11,7 +11,7 @@ const OPERATOR_ORDER: { [key: string]: number } = {
 
 export class Calculator extends Tool {
   name = "calculator";
-  description = "A tool for evaluting arithmetic expressions";
+  description = "A tool for evaluating arithmetic expressions";
 
   constructor() {
     super();
