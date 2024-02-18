@@ -134,11 +134,6 @@ const ChatBar: React.FC = () => {
       });
   };
 
-  const promptWithoutContent = async () => {
-    // send prompt to background script
-    chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
-  };
-
   const handleSendButtonClick = async () => {
     setLoading1(true);
     setLoading1Text("Raise your wand...");
@@ -150,7 +145,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: newMessages });
 
     if (parsingDisabled) {
-      promptWithoutContent();
+      chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
     } else {
       promptWithContent();
     }

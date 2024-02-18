@@ -85,10 +85,16 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   const calculator = new Calculator();
   const answer = await calculator.invoke(prompt);
 
-  await chrome.runtime.sendMessage({ completion: answer, sender: "tool" });
+  await chrome.runtime
+    .sendMessage({ completion: answer, sender: "tool" })
+    .catch(() => {
+      console.log("Sending partial completion, but popup is closed...");
+    });
   await sleep(300); // hack to allow messages to be saved
-  chrome.runtime.sendMessage({ done: true });
-  return;
+  chrome.runtime.sendMessage({ done: true }).catch(() => {
+    console.log("Sending done message, but popup is closed...");
+    chrome.storage.sync.set({ completion: answer, sender: "tool" });
+  });
 };
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
