@@ -250,7 +250,35 @@ const ChatBar: React.FC = () => {
           setParsingDisabled(data.parsingDisabled);
         }
         if (data.messages) {
-          setMessages(data.messages);
+          const currentMsgs = data.messages;
+          setMessages(currentMsgs);
+
+          // check if there is a completion in storage to append to the messages list
+          chrome.storage.sync.get(["completion", "sender"], (data) => {
+            if (data.completion && data.sender) {
+              const newMsg = new LumosMessage(data.sender, data.completion);
+              const lastMessage = currentMsgs[currentMsgs.length - 1];
+              let newMessages;
+
+              if (lastMessage !== undefined && lastMessage.sender === "user") {
+                // append assistant/tool message to messages list
+                newMessages = [...currentMsgs, newMsg];
+              } else {
+                // replace last assistant/tool message with updated message
+                newMessages = [
+                  ...currentMsgs.slice(0, currentMsgs.length - 1),
+                  newMsg,
+                ];
+              }
+
+              setMessages(newMessages);
+              chrome.storage.session.set({ messages: newMessages });
+              setLoading2(false);
+              setSubmitDisabled(false);
+
+              chrome.storage.sync.remove(["completion", "sender"]);
+            }
+          });
         }
       },
     );
