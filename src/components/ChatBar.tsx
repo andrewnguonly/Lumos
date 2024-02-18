@@ -44,7 +44,6 @@ const ChatBar: React.FC = () => {
     "Enter your prompt here",
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
-  const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -86,11 +85,11 @@ const ChatBar: React.FC = () => {
     setLoading1(true);
     setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
-    setCompletion("");
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
     setMessages(newMessages);
+    chrome.storage.session.set({ messages: newMessages });
 
     // get default options
     const options = await getLumosOptions();
@@ -152,11 +151,11 @@ const ChatBar: React.FC = () => {
     setLoading1(true);
     setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
-    setCompletion("");
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
     setMessages(newMessages);
+    chrome.storage.session.set({ messages: newMessages });
 
     // send prompt to background script
     chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
@@ -194,34 +193,26 @@ const ChatBar: React.FC = () => {
   const handleBackgroundMessage = (msg: {
     docNo: number;
     docCount: number;
-    chunk: string;
+    completion: string;
     sender: string;
     done: boolean;
   }) => {
     if (msg.docNo) {
       setLoading1(true);
       setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}`);
-    } else if (msg.chunk) {
-      const sender = msg.sender;
+    } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
 
-      // save new completion value
-      const newCompletion = completion + msg.chunk;
-      setCompletion(newCompletion);
+      const newMsg = new LumosMessage(msg.sender, msg.completion);
 
       const lastMessage = messages[messages.length - 1];
       if (lastMessage !== undefined && lastMessage.sender === "user") {
         // append assistant/tool message to messages list
-        const newAssistantMsg = new LumosMessage(sender, newCompletion);
-        setMessages([...messages, newAssistantMsg]);
+        setMessages([...messages, newMsg]);
       } else {
         // replace last assistant/tool message with updated message
-        const newAssistantMsg = new LumosMessage(sender, newCompletion);
-        setMessages([
-          ...messages.slice(0, messages.length - 1),
-          newAssistantMsg,
-        ]);
+        setMessages([...messages.slice(0, messages.length - 1), newMsg]);
       }
     } else if (msg.done) {
       // save messages after response streaming is done

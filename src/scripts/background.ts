@@ -21,8 +21,9 @@ interface VectorStoreMetadata {
 // map of url to vector store metadata
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
-// global variable for storing parsed content from current tab
+// global variables
 let context = "";
+let completion = "";
 
 // prompt classification constants
 const CLS_IMG_TYPE = "isImagePrompt";
@@ -84,15 +85,17 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   const calculator = new Calculator();
   const answer = await calculator.invoke(prompt);
 
-  await chrome.runtime.sendMessage({ chunk: answer, sender: "tool" });
+  await chrome.runtime.sendMessage({ completion: answer, sender: "tool" });
   await sleep(300); // hack to allow messages to be saved
   chrome.runtime.sendMessage({ done: true });
   return;
 };
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
+  completion = "";
   for await (const chunk of stream) {
-    chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
+    completion += chunk;
+    chrome.runtime.sendMessage({ completion: completion, sender: "assistant" });
   }
   chrome.runtime.sendMessage({ done: true });
 };
