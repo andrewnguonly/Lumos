@@ -82,15 +82,6 @@ const ChatBar: React.FC = () => {
   };
 
   const promptWithContent = async () => {
-    setLoading1(true);
-    setLoading1Text("Raise your wand...");
-    setSubmitDisabled(true);
-
-    // save user message to messages list
-    const newMessages = [...messages, new LumosMessage("user", prompt)];
-    setMessages(newMessages);
-    chrome.storage.session.set({ messages: newMessages });
-
     // get default options
     const options = await getLumosOptions();
     const contentConfig = options.contentConfig;
@@ -136,10 +127,6 @@ const ChatBar: React.FC = () => {
             skipCache: isHighlightedContent,
             imageURLs: imageURLs,
           });
-
-          // clear prompt after sending it to the background script
-          setPrompt("");
-          chrome.storage.session.set({ prompt: "" });
         });
       })
       .catch((error) => {
@@ -148,6 +135,11 @@ const ChatBar: React.FC = () => {
   };
 
   const promptWithoutContent = async () => {
+    // send prompt to background script
+    chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
+  };
+
+  const handleSendButtonClick = async () => {
     setLoading1(true);
     setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
@@ -157,20 +149,15 @@ const ChatBar: React.FC = () => {
     setMessages(newMessages);
     chrome.storage.session.set({ messages: newMessages });
 
-    // send prompt to background script
-    chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
-
-    // clear prompt after sending it to the background script
-    setPrompt("");
-    chrome.storage.session.set({ prompt: "" });
-  };
-
-  const handleSendButtonClick = async () => {
     if (parsingDisabled) {
       promptWithoutContent();
     } else {
       promptWithContent();
     }
+
+    // clear prompt after sending it to the background script
+    setPrompt("");
+    chrome.storage.session.set({ prompt: "" });
   };
 
   const handleAvatarClick = (message: string) => {
@@ -190,6 +177,30 @@ const ChatBar: React.FC = () => {
     }
   };
 
+  const appendNonUserMessage = (
+    currentMessages: LumosMessage[],
+    sender: string,
+    completion: string,
+  ): LumosMessage[] => {
+    const newMsg = new LumosMessage(sender, completion);
+    const lastMessage = currentMessages[currentMessages.length - 1];
+    let newMessages;
+
+    if (lastMessage !== undefined && lastMessage.sender === "user") {
+      // append assistant/tool message to messages list
+      newMessages = [...currentMessages, newMsg];
+    } else {
+      // replace last assistant/tool message with updated message
+      newMessages = [
+        ...currentMessages.slice(0, currentMessages.length - 1),
+        newMsg,
+      ];
+    }
+
+    setMessages(newMessages);
+    return newMessages;
+  };
+
   const handleBackgroundMessage = (msg: {
     docNo: number;
     docCount: number;
@@ -203,17 +214,7 @@ const ChatBar: React.FC = () => {
     } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
-
-      const newMsg = new LumosMessage(msg.sender, msg.completion);
-
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage !== undefined && lastMessage.sender === "user") {
-        // append assistant/tool message to messages list
-        setMessages([...messages, newMsg]);
-      } else {
-        // replace last assistant/tool message with updated message
-        setMessages([...messages.slice(0, messages.length - 1), newMsg]);
-      }
+      appendNonUserMessage(messages, msg.sender, msg.completion);
     } else if (msg.done) {
       // save messages after response streaming is done
       chrome.storage.session.set({ messages: messages });
@@ -256,26 +257,15 @@ const ChatBar: React.FC = () => {
           // check if there is a completion in storage to append to the messages list
           chrome.storage.sync.get(["completion", "sender"], (data) => {
             if (data.completion && data.sender) {
-              const newMsg = new LumosMessage(data.sender, data.completion);
-              const lastMessage = currentMsgs[currentMsgs.length - 1];
-              let newMessages;
-
-              if (lastMessage !== undefined && lastMessage.sender === "user") {
-                // append assistant/tool message to messages list
-                newMessages = [...currentMsgs, newMsg];
-              } else {
-                // replace last assistant/tool message with updated message
-                newMessages = [
-                  ...currentMsgs.slice(0, currentMsgs.length - 1),
-                  newMsg,
-                ];
-              }
-
-              setMessages(newMessages);
+              const newMessages = appendNonUserMessage(
+                currentMsgs,
+                data.sender,
+                data.completion,
+              );
               chrome.storage.session.set({ messages: newMessages });
+
               setLoading2(false);
               setSubmitDisabled(false);
-
               chrome.storage.sync.remove(["completion", "sender"]);
             }
           });
