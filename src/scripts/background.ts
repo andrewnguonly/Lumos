@@ -4,6 +4,7 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -20,8 +21,9 @@ interface VectorStoreMetadata {
 // map of url to vector store metadata
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
-// global variable for storing parsed content from current tab
+// global variables
 let context = "";
+let completion = "";
 
 // prompt classification constants
 const CLS_IMG_TYPE = "isImagePrompt";
@@ -83,10 +85,32 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   const calculator = new Calculator();
   const answer = await calculator.invoke(prompt);
 
-  await chrome.runtime.sendMessage({ chunk: answer, sender: "tool" });
+  await chrome.runtime
+    .sendMessage({ completion: answer, sender: "tool" })
+    .catch(() => {
+      console.log("Sending partial completion, but popup is closed...");
+    });
   await sleep(300); // hack to allow messages to be saved
-  chrome.runtime.sendMessage({ done: true });
-  return;
+  chrome.runtime.sendMessage({ done: true }).catch(() => {
+    console.log("Sending done message, but popup is closed...");
+    chrome.storage.sync.set({ completion: answer, sender: "tool" });
+  });
+};
+
+const streamChunks = async (stream: IterableReadableStream<string>) => {
+  completion = "";
+  for await (const chunk of stream) {
+    completion += chunk;
+    chrome.runtime
+      .sendMessage({ completion: completion, sender: "assistant" })
+      .catch(() => {
+        console.log("Sending partial completion, but popup is closed...");
+      });
+  }
+  chrome.runtime.sendMessage({ done: true }).catch(() => {
+    console.log("Sending done message, but popup is closed...");
+    chrome.storage.sync.set({ completion: completion, sender: "assistant" });
+  });
 };
 
 chrome.runtime.onMessage.addListener(async (request) => {
@@ -120,10 +144,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await model.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process prompt (RAG enabled)
@@ -254,13 +275,19 @@ chrome.runtime.onMessage.addListener(async (request) => {
       const documents = await splitter.createDocuments([context]);
 
       // load documents into vector store
-      vectorStore = await MemoryVectorStore.fromDocuments(
-        documents,
+      vectorStore = new MemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
         }),
       );
+      documents.forEach(async (doc, index) => {
+        await vectorStore.addDocuments([doc]);
+        chrome.runtime.sendMessage({
+          docNo: index + 1,
+          docCount: documents.length,
+        });
+      });
 
       // store vector store in vector store map
       if (!skipCache) {
@@ -286,10 +313,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await chain.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process parsed context
