@@ -95,9 +95,15 @@ const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
   for await (const chunk of stream) {
     completion += chunk;
-    chrome.runtime.sendMessage({ completion: completion, sender: "assistant" });
+    chrome.runtime.sendMessage({ completion: completion, sender: "assistant" })
+    .catch(() => {
+      console.log("Sending partial completion, but popup is closed...");
+    });
   }
-  chrome.runtime.sendMessage({ done: true });
+  chrome.runtime.sendMessage({ done: true })
+  .catch(() => {
+    console.log("Sending done message, but popup is closed...");
+  });
 };
 
 chrome.runtime.onMessage.addListener(async (request) => {
