@@ -26,6 +26,7 @@ import {
   getLumosOptions,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
+import { getContentConfig } from "../contentConfig";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -43,10 +44,10 @@ const ChatBar: React.FC = () => {
     "Enter your prompt here",
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
-  const [completion, setCompletion] = useState("");
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
+  const [loading1Text, setLoading1Text] = useState("");
   const [loading2, setLoading2] = useState(false); // loading state during completion process
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -80,24 +81,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const getDomain = (hostname: string): string => {
-    const parts = hostname.split(".");
-    if (parts.length > 2) {
-      return parts.slice(-2).join(".");
-    } else {
-      return hostname;
-    }
-  };
-
   const promptWithContent = async () => {
-    setLoading1(true);
-    setSubmitDisabled(true);
-    setCompletion("");
-
-    // save user message to messages list
-    const newMessages = [...messages, new LumosMessage("user", prompt)];
-    setMessages(newMessages);
-
     // get default options
     const options = await getLumosOptions();
     const contentConfig = options.contentConfig;
@@ -110,10 +94,9 @@ const ChatBar: React.FC = () => {
         const activeTab = tabs[0];
         const activeTabId = activeTab.id || 0;
         activeTabUrl = new URL(activeTab.url || "");
-        const domain = getDomain(activeTabUrl.hostname);
 
-        // get domain specific content config
-        config = domain in contentConfig ? contentConfig[domain] : config;
+        // get path specific content config
+        config = getContentConfig(activeTabUrl, contentConfig) || config;
 
         if (activeTabUrl.protocol === "chrome:") {
           // skip script injection for chrome:// urls
@@ -144,10 +127,6 @@ const ChatBar: React.FC = () => {
             skipCache: isHighlightedContent,
             imageURLs: imageURLs,
           });
-
-          // clear prompt after sending it to the background script
-          setPrompt("");
-          chrome.storage.session.set({ prompt: "" });
         });
       })
       .catch((error) => {
@@ -155,29 +134,25 @@ const ChatBar: React.FC = () => {
       });
   };
 
-  const promptWithoutContent = async () => {
+  const handleSendButtonClick = async () => {
     setLoading1(true);
+    setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
-    setCompletion("");
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
     setMessages(newMessages);
+    chrome.storage.session.set({ messages: newMessages });
 
-    // send prompt to background script
-    chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
+    if (parsingDisabled) {
+      chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
+    } else {
+      promptWithContent();
+    }
 
     // clear prompt after sending it to the background script
     setPrompt("");
     chrome.storage.session.set({ prompt: "" });
-  };
-
-  const handleSendButtonClick = async () => {
-    if (parsingDisabled) {
-      promptWithoutContent();
-    } else {
-      promptWithContent();
-    }
   };
 
   const handleAvatarClick = (message: string) => {
@@ -197,33 +172,44 @@ const ChatBar: React.FC = () => {
     }
   };
 
+  const appendNonUserMessage = (
+    currentMessages: LumosMessage[],
+    sender: string,
+    completion: string,
+  ): LumosMessage[] => {
+    const newMsg = new LumosMessage(sender, completion);
+    const lastMessage = currentMessages[currentMessages.length - 1];
+    let newMessages;
+
+    if (lastMessage !== undefined && lastMessage.sender === "user") {
+      // append assistant/tool message to messages list
+      newMessages = [...currentMessages, newMsg];
+    } else {
+      // replace last assistant/tool message with updated message
+      newMessages = [
+        ...currentMessages.slice(0, currentMessages.length - 1),
+        newMsg,
+      ];
+    }
+
+    setMessages(newMessages);
+    return newMessages;
+  };
+
   const handleBackgroundMessage = (msg: {
-    chunk: string;
+    docNo: number;
+    docCount: number;
+    completion: string;
     sender: string;
     done: boolean;
   }) => {
-    if (msg.chunk) {
-      const sender = msg.sender;
+    if (msg.docNo) {
+      setLoading1(true);
+      setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}`);
+    } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
-
-      // save new completion value
-      const newCompletion = completion + msg.chunk;
-      setCompletion(newCompletion);
-
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage !== undefined && lastMessage.sender === "user") {
-        // append assistant/tool message to messages list
-        const newAssistantMsg = new LumosMessage(sender, newCompletion);
-        setMessages([...messages, newAssistantMsg]);
-      } else {
-        // replace last assistant/tool message with updated message
-        const newAssistantMsg = new LumosMessage(sender, newCompletion);
-        setMessages([
-          ...messages.slice(0, messages.length - 1),
-          newAssistantMsg,
-        ]);
-      }
+      appendNonUserMessage(messages, msg.sender, msg.completion);
     } else if (msg.done) {
       // save messages after response streaming is done
       chrome.storage.session.set({ messages: messages });
@@ -260,7 +246,24 @@ const ChatBar: React.FC = () => {
           setParsingDisabled(data.parsingDisabled);
         }
         if (data.messages) {
-          setMessages(data.messages);
+          const currentMsgs = data.messages;
+          setMessages(currentMsgs);
+
+          // check if there is a completion in storage to append to the messages list
+          chrome.storage.sync.get(["completion", "sender"], (data) => {
+            if (data.completion && data.sender) {
+              const newMessages = appendNonUserMessage(
+                currentMsgs,
+                data.sender,
+                data.completion,
+              );
+              chrome.storage.session.set({ messages: newMessages });
+
+              setLoading2(false);
+              setSubmitDisabled(false);
+              chrome.storage.sync.remove(["completion", "sender"]);
+            }
+          });
         }
       },
     );
@@ -312,9 +315,9 @@ const ChatBar: React.FC = () => {
           <MessageList
             typingIndicator={
               loading1 ? (
-                <TypingIndicator content="Lumos..." />
+                <TypingIndicator content={loading1Text} />
               ) : loading2 ? (
-                <TypingIndicator content="Nox!" />
+                <TypingIndicator content="Lumos!" />
               ) : null
             }
           >

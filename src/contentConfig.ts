@@ -10,6 +10,15 @@ export interface ContentConfig {
   };
 }
 
+export const defaultContentConfig: ContentConfig = {
+  default: {
+    chunkSize: DEFAULT_CHUCK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    selectors: ["body"],
+    selectorsAll: [],
+  },
+};
+
 export const isContentConfig = (input: string): boolean => {
   try {
     const parsedConfig: ContentConfig = JSON.parse(input);
@@ -35,11 +44,34 @@ export const isContentConfig = (input: string): boolean => {
   }
 };
 
-export const defaultContentConfig: ContentConfig = {
-  default: {
-    chunkSize: DEFAULT_CHUCK_SIZE,
-    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
-    selectors: ["body"],
-    selectorsAll: [],
-  },
+/**
+ * Return the content config that matches the current URL path.
+ *
+ * Each URL path can have a custom content config. For example,
+ * domain.com/path1 and domain.com/path2 can have different content
+ * configs. Additionally, content config paths can be nested. For
+ * example, domain.com/path1/subpath1 and domain.com/path1. In
+ * this case, the function will try to match the longest path first.
+ *
+ * Subdomains are also matched. If no matching path is found, null is
+ * returned.
+ */
+export const getContentConfig = (
+  url: URL,
+  contentConfig: ContentConfig,
+): null | {
+  chunkSize: number;
+  chunkOverlap: number;
+  selectors: string[];
+  selectorsAll: string[];
+} => {
+  const searchPath = `${url.hostname}${url.pathname}`;
+
+  // Order keys (paths) of contentConfig in reverse order and check if any
+  // key is a substring of searchPath. This will find the longest matching
+  // key (path).
+  const paths = Object.keys(contentConfig).sort().reverse();
+  const matchingPath = paths.find((path) => searchPath.startsWith(path));
+
+  return matchingPath ? contentConfig[matchingPath] : null;
 };

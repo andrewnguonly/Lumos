@@ -4,6 +4,7 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -20,40 +21,49 @@ interface VectorStoreMetadata {
 // map of url to vector store metadata
 const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
-// global variable for storing parsed content from current tab
+// global variables
 let context = "";
+let completion = "";
+
+// prompt classification constants
+const CLS_IMG_TYPE = "isImagePrompt";
+const CLS_IMG_PROMPT =
+  "Is the following prompt referring to an image or asking to describe an image?";
+const CLS_IMG_TRIGGER = "based on the image";
+const CLS_CALC_TYPE = "isCalcPrompt";
+const CLS_CALC_PROMPT =
+  "Is the following prompt a math equation with numbers and operators?";
+const CLS_CALC_TRIGGER = "calculate:";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Determine if a prompt is asking about an image. If so, return true.
- * Otherwise, return false.
+ * Determine if a prompt is positively classified as described in the
+ * classifcation prompt. If so, return true. Otherwise, return false.
  *
- * This function uses the Ollama model to determine if the prompt is
- * asking about an image or not. The classification approach is simplistic and
- * may generate false positives or false negatives. However, the approach
- * greatly simplifies the user exprience when using a multimodal model. With
- * this approach, a user is able to issue prompts that may or may not refer to
- * an image without having to switch models or download the images when the
- * current prompt does not refer to an image.
- *
- * Additionally, the function checks for a hardcoded prefix trigger: "based on
- * the image". This is a simple mechanism to allow a user to override the
- * classifcation workflow and force the images to be downloaded and bound to
- * the model.
- *
- * Example: "Based on the image, describe what's going on in the background"
+ * @param baseURL Ollama base URL
+ * @param model Ollama model name
+ * @param type Type of classification. Only used for logging.
+ * @param originalPrompt Prompt to be classified
+ * @param classifcationPrompt Prompt that will classify originalPrompt
+ * @param prefixTrigger Prefix trigger that will override LLM classification
+ * @returns True if originalPrompt is positively classified by the classificationPrompt. Otherwise, false.
  */
-const isImagePrompt = async (
+const classifyPrompt = async (
   baseURL: string,
   model: string,
-  prompt: string,
+  type: string,
+  originalPrompt: string,
+  classifcationPrompt: string,
+  prefixTrigger?: string,
 ): Promise<boolean> => {
   // check for prefix trigger
-  if (prompt.trim().toLowerCase().startsWith("based on the image")) {
-    return new Promise((resolve) => resolve(true));
+  if (prefixTrigger) {
+    if (originalPrompt.trim().toLowerCase().startsWith(prefixTrigger)) {
+      return new Promise((resolve) => resolve(true));
+    }
   }
 
   // otherwise, attempt to classify prompt
@@ -63,40 +73,9 @@ const isImagePrompt = async (
     temperature: 0,
     stop: [".", ","],
   });
-  const question = `Is the following prompt referring to an image or asking to describe an image? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
-  return ollama.invoke(question).then((response) => {
-    console.log(`isImagePrompt classification response: ${response}`);
-    const answer = response.trim().split(" ")[0].toLowerCase();
-    return answer.includes("yes");
-  });
-};
-
-/**
- * Determine if a prompt is an arithmetic expression. If so, return true.
- * Otherwise, return false.
- *
- * This function follows the same implementation as the isImagePrompt function.
- */
-const isArithmeticExpression = async (
-  baseURL: string,
-  model: string,
-  prompt: string,
-): Promise<boolean> => {
-  // check for prefix trigger
-  if (prompt.trim().toLowerCase().startsWith("calculate:")) {
-    return new Promise((resolve) => resolve(true));
-  }
-
-  // otherwise, attempt to classify prompt
-  const ollama = new Ollama({
-    baseUrl: baseURL,
-    model: model,
-    temperature: 0,
-    stop: [".", ","],
-  });
-  const question = `Is the following prompt a math equation with numbers and operators? Answer with 'yes' or 'no'.\n\nPrompt: ${prompt}`;
-  return ollama.invoke(question).then((response) => {
-    console.log(`isArithmeticExpression classification response: ${response}`);
+  const finalPrompt = `${classifcationPrompt} Answer with 'yes' or 'no'.\n\nPrompt: ${originalPrompt}`;
+  return ollama.invoke(finalPrompt).then((response) => {
+    console.log(`${type} classification response: ${response}`);
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
@@ -106,10 +85,32 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   const calculator = new Calculator();
   const answer = await calculator.invoke(prompt);
 
-  await chrome.runtime.sendMessage({ chunk: answer, sender: "tool" });
+  await chrome.runtime
+    .sendMessage({ completion: answer, sender: "tool" })
+    .catch(() => {
+      console.log("Sending partial completion, but popup is closed...");
+    });
   await sleep(300); // hack to allow messages to be saved
-  chrome.runtime.sendMessage({ done: true });
-  return;
+  chrome.runtime.sendMessage({ done: true }).catch(() => {
+    console.log("Sending done message, but popup is closed...");
+    chrome.storage.sync.set({ completion: answer, sender: "tool" });
+  });
+};
+
+const streamChunks = async (stream: IterableReadableStream<string>) => {
+  completion = "";
+  for await (const chunk of stream) {
+    completion += chunk;
+    chrome.runtime
+      .sendMessage({ completion: completion, sender: "assistant" })
+      .catch(() => {
+        console.log("Sending partial completion, but popup is closed...");
+      });
+  }
+  chrome.runtime.sendMessage({ done: true }).catch(() => {
+    console.log("Sending done message, but popup is closed...");
+    chrome.storage.sync.set({ completion: completion, sender: "assistant" });
+  });
 };
 
 chrome.runtime.onMessage.addListener(async (request) => {
@@ -123,10 +124,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // classify prompt and optionally execute tools
     if (
-      await isArithmeticExpression(
+      await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
+        CLS_CALC_TYPE,
         prompt,
+        CLS_CALC_PROMPT,
+        CLS_CALC_TRIGGER,
       )
     ) {
       return executeCalculatorTool(prompt);
@@ -140,10 +144,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await model.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process prompt (RAG enabled)
@@ -184,7 +185,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // classify prompt and optionally execute tools
     if (
       isMultimodal(options.ollamaModel) &&
-      (await isImagePrompt(options.ollamaHost, options.ollamaModel, prompt))
+      (await classifyPrompt(
+        options.ollamaHost,
+        options.ollamaModel,
+        CLS_IMG_TYPE,
+        prompt,
+        CLS_IMG_PROMPT,
+        CLS_IMG_TRIGGER,
+      ))
     ) {
       const urls: string[] = request.imageURLs;
 
@@ -218,10 +226,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
         }
       }
     } else if (
-      await isArithmeticExpression(
+      await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
+        CLS_CALC_TYPE,
         prompt,
+        CLS_CALC_PROMPT,
+        CLS_CALC_TRIGGER,
       )
     ) {
       return executeCalculatorTool(prompt);
@@ -264,13 +275,19 @@ chrome.runtime.onMessage.addListener(async (request) => {
       const documents = await splitter.createDocuments([context]);
 
       // load documents into vector store
-      vectorStore = await MemoryVectorStore.fromDocuments(
-        documents,
+      vectorStore = new MemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
         }),
       );
+      documents.forEach(async (doc, index) => {
+        await vectorStore.addDocuments([doc]);
+        chrome.runtime.sendMessage({
+          docNo: index + 1,
+          docCount: documents.length,
+        });
+      });
 
       // store vector store in vector store map
       if (!skipCache) {
@@ -296,10 +313,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // stream response chunks
     const stream = await chain.stream(prompt);
-    for await (const chunk of stream) {
-      chrome.runtime.sendMessage({ chunk: chunk, sender: "assistant" });
-    }
-    chrome.runtime.sendMessage({ done: true });
+    streamChunks(stream);
   }
 
   // process parsed context
