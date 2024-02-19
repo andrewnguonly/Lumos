@@ -12,6 +12,7 @@ import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
 import { getLumosOptions, isMultimodal } from "../pages/Options";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -298,7 +299,11 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
-    const retriever = vectorStore.asRetriever();
+    const retriever = vectorStore.asRetriever(
+      10, // kOrFields
+      undefined, // filters
+      [new ConsoleCallbackHandler()], // callbacks
+    );
 
     // create chain
     const chain = RunnableSequence.from([
