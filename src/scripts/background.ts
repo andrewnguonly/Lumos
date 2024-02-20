@@ -4,6 +4,7 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
@@ -12,7 +13,6 @@ import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
 import { getLumosOptions, isMultimodal } from "../pages/Options";
-import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -104,14 +104,14 @@ const computeK = (documentsCount: number): number => {
   if (documentsCount <= 20) {
     ratio = 0.5;
   } else if (documentsCount <= 50) {
-    ratio = 0.20;
+    ratio = 0.2;
   } else if (documentsCount <= 100) {
     ratio = 0.1;
   } else {
     ratio = 0.05;
   }
   return Math.ceil(documentsCount * ratio);
-}
+};
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
