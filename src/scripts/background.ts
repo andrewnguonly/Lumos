@@ -98,6 +98,21 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
   });
 };
 
+const computeK = (documentsCount: number): number => {
+  let ratio;
+
+  if (documentsCount <= 20) {
+    ratio = 0.5;
+  } else if (documentsCount <= 50) {
+    ratio = 0.20;
+  } else if (documentsCount <= 100) {
+    ratio = 0.1;
+  } else {
+    ratio = 0.05;
+  }
+  return Math.ceil(documentsCount * ratio);
+}
+
 const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
   for await (const chunk of stream) {
@@ -256,12 +271,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // check if vector store already exists for url
     let vectorStore: MemoryVectorStore;
+    let documentsCount;
 
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
       // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
       vectorStore = vectorStoreMap.get(url)?.vectorStore!;
+      documentsCount = vectorStore.memoryVectors.length;
     } else {
       // create new vector store
       console.log(
@@ -274,6 +291,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         chunkOverlap: chunkOverlap,
       });
       const documents = await splitter.createDocuments([context]);
+      documentsCount = documents.length;
 
       // load documents into vector store
       vectorStore = new MemoryVectorStore(
@@ -299,8 +317,9 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
+    // create retriever
     const retriever = vectorStore.asRetriever(
-      10, // kOrFields
+      computeK(documentsCount), // k
       undefined, // filters
       [new ConsoleCallbackHandler()], // callbacks
     );
