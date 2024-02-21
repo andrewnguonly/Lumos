@@ -1,3 +1,4 @@
+import { Document } from "@langchain/core/documents";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import {
@@ -301,7 +302,12 @@ chrome.runtime.onMessage.addListener(async (request) => {
         }),
       );
       documents.forEach(async (doc, index) => {
-        await vectorStore.addDocuments([doc]);
+        await vectorStore.addDocuments([
+          new Document({
+            pageContent: doc.pageContent,
+            metadata: {...doc.metadata, docId: index}, // add document ID
+          }),
+        ]);
         chrome.runtime.sendMessage({
           docNo: index + 1,
           docCount: documents.length,
