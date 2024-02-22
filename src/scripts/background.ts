@@ -11,7 +11,11 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
-import { getLumosOptions, isMultimodal } from "../pages/Options";
+import {
+  DEFAULT_KEEP_ALIVE,
+  getLumosOptions,
+  isMultimodal,
+} from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
@@ -70,6 +74,7 @@ const classifyPrompt = async (
   const ollama = new Ollama({
     baseUrl: baseURL,
     model: model,
+    keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
   });
@@ -140,6 +145,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
+      keepAlive: DEFAULT_KEEP_ALIVE,
     });
 
     // stream response chunks
@@ -242,6 +248,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
+      keepAlive: DEFAULT_KEEP_ALIVE,
     }).bind({
       images: base64EncodedImages,
     });
@@ -279,6 +286,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
+          keepAlive: DEFAULT_KEEP_ALIVE,
         }),
       );
       documents.forEach(async (doc, index) => {
