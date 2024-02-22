@@ -76,6 +76,13 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
 
+### Keyboard Shortcut
+
+Create a keyboard shortcut to make Lumos easily accessible.
+
+1. Navigate to `chrome://extensions/shortcuts`.
+1. Configure a shortcut for Lumos (`Activate the extension`). For example, `⌘L` (`command key` + `L`).
+
 ### Releases
 
 If you don't have `npm` installed, you can download the pre-built extension package from the [Releases](https://github.com/andrewnguonly/Lumos/releases) page.
