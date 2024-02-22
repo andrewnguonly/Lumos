@@ -53,7 +53,6 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
-  const [selectedHost, setSelectedHost] = useState(DEFAULT_HOST);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -230,9 +229,24 @@ const ChatBar: React.FC = () => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
         }
-        if (data.selectedHost) {
-          setSelectedHost(data.selectedHost);
-        }
+
+        // API connectivity check
+        const selectedHost = data.selectedHost || DEFAULT_HOST;
+        fetch(`${selectedHost}/api/tags`)
+          .then((response) => {
+            if (response.ok) {
+              setPromptError(false);
+              setPromptPlaceholderText("Enter your prompt here");
+            } else {
+              throw new Error();
+            }
+          })
+          .catch(() => {
+            setPromptError(true);
+            setPromptPlaceholderText(
+              "Unable to connect to Ollama API. Check Ollama server.",
+            );
+          });
       },
     );
 
@@ -268,25 +282,6 @@ const ChatBar: React.FC = () => {
       },
     );
   }, []);
-
-  // API connectivity check
-  useEffect(() => {
-    fetch(`${selectedHost}/api/tags`)
-      .then((response) => {
-        if (response.ok) {
-          setPromptError(false);
-          setPromptPlaceholderText("Enter your prompt here");
-        } else {
-          throw new Error();
-        }
-      })
-      .catch(() => {
-        setPromptError(true);
-        setPromptPlaceholderText(
-          "Unable to connect to Ollama API. Check Ollama server.",
-        );
-      });
-  }, [selectedHost]);
 
   useEffect(() => {
     if (!submitDisabled && textFieldRef.current) {
