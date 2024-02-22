@@ -15,7 +15,7 @@ import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
   isMultimodal,
- } from "../pages/Options";
+} from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: MemoryVectorStore;
