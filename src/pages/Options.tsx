@@ -75,6 +75,8 @@ const Options: React.FC = () => {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([]);
   const [host, setHost] = useState(DEFAULT_HOST);
+  const [hostError, setHostError] = useState(false);
+  const [hostHelpText, setHostHelpText] = useState("");
   const [contentConfig, setContentConfig] = useState(DEFAULT_CONTENT_CONFIG);
   const [contentConfigError, setContentConfigError] = useState(false);
   const [contentConfigHelpText, setContentConfigHelpText] = useState("");
@@ -136,38 +138,39 @@ const Options: React.FC = () => {
     chrome.storage.local
       .get(["selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"])
       .then((data) => {
-        if (data.selectedHost) {
-          setHost(data.selectedHost);
-        }
         if (data.selectedConfig) {
           setContentConfig(data.selectedConfig);
         }
         if (data.selectedVectorStoreTTLMins) {
           setVectorStoreTTLMins(parseInt(data.selectedVectorStoreTTLMins, 10));
         }
+
+        // API connectivity check
+        const selectedHost = data.selectedHost || DEFAULT_HOST;
+        fetch(`${selectedHost}/api/tags`)
+          .then((response) => response.json())
+          .then((data) => {
+            const modelOptions = data.models.map(
+              (model: { name: string }) => model.name,
+            );
+            setModelOptions(modelOptions);
+            chrome.storage.local.get(["selectedModel"]).then((data) => {
+              if (data.selectedModel) {
+                setModel(data.selectedModel);
+              } else {
+                setModel(modelOptions[0]);
+              }
+            });
+            setHostError(false);
+            setHostHelpText("");
+          })
+          .catch(() => {
+            setHostError(true);
+            setHostHelpText("Error connecting to Ollama host");
+          });
+        setHost(selectedHost);
       });
   }, []);
-
-  useEffect(() => {
-    fetch(`${host}/api/tags`)
-      .then((response) => response.json())
-      .then((data) => {
-        const modelOptions = data.models.map(
-          (model: { name: string }) => model.name,
-        );
-        setModelOptions(modelOptions);
-        chrome.storage.local.get(["selectedModel"]).then((data) => {
-          if (data.selectedModel) {
-            setModel(data.selectedModel);
-          } else {
-            setModel(modelOptions[0]);
-          }
-        });
-      })
-      .catch((error) => {
-        console.warn("Error retrieving Ollama models: ", error);
-      });
-  }, [host]);
 
   return (
     <ThemeProvider theme={AppTheme}>
@@ -192,6 +195,8 @@ const Options: React.FC = () => {
               sx={{ "margin-bottom": "15px" }}
               label="Ollama Host"
               value={host}
+              error={hostError}
+              helperText={hostHelpText}
               onChange={handleHostChange}
             />
             <TextField
