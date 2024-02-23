@@ -4,13 +4,14 @@ import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
+import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -18,7 +19,7 @@ import {
 } from "../pages/Options";
 
 interface VectorStoreMetadata {
-  vectorStore: MemoryVectorStore;
+  vectorStore: EnhancedMemoryVectorStore;
   createdAt: number;
 }
 
@@ -261,7 +262,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     });
 
     // check if vector store already exists for url
-    let vectorStore: MemoryVectorStore;
+    let vectorStore: EnhancedMemoryVectorStore;
 
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
@@ -282,7 +283,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
       const documents = await splitter.createDocuments([context]);
 
       // load documents into vector store
-      vectorStore = new MemoryVectorStore(
+      vectorStore = new EnhancedMemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
@@ -306,7 +307,10 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
-    const retriever = vectorStore.asRetriever();
+    const retriever = vectorStore.asRetriever({
+      searchType: "hybrid",
+      callbacks: [new ConsoleCallbackHandler()],
+    });
 
     // create chain
     const chain = RunnableSequence.from([
