@@ -1,3 +1,4 @@
+import { Document } from "@langchain/core/documents";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import {
@@ -85,6 +86,10 @@ const classifyPrompt = async (
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const computeK = (documentsCount: number): number => {
+  return Math.ceil(Math.sqrt(documentsCount));
 };
 
 const executeCalculatorTool = async (prompt: string): Promise<void> => {
@@ -263,12 +268,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // check if vector store already exists for url
     let vectorStore: EnhancedMemoryVectorStore;
+    let documentsCount: number;
 
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
       // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
       vectorStore = vectorStoreMap.get(url)?.vectorStore!;
+      documentsCount = vectorStore.memoryVectors.length;
     } else {
       // create new vector store
       console.log(
@@ -281,6 +288,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         chunkOverlap: chunkOverlap,
       });
       const documents = await splitter.createDocuments([context]);
+      documentsCount = documents.length;
 
       // load documents into vector store
       vectorStore = new EnhancedMemoryVectorStore(
@@ -291,10 +299,15 @@ chrome.runtime.onMessage.addListener(async (request) => {
         }),
       );
       documents.forEach(async (doc, index) => {
-        await vectorStore.addDocuments([doc]);
+        await vectorStore.addDocuments([
+          new Document({
+            pageContent: doc.pageContent,
+            metadata: {...doc.metadata, docId: index}, // add document ID
+          }),
+        ]);
         chrome.runtime.sendMessage({
           docNo: index + 1,
-          docCount: documents.length,
+          docCount: documentsCount,
         });
       });
 
@@ -308,7 +321,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
     }
 
     const retriever = vectorStore.asRetriever({
-      searchType: "hybrid",
+      k: computeK(documentsCount),
+      searchType: "similarity",
       callbacks: [new ConsoleCallbackHandler()],
     });
 
