@@ -66,7 +66,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
   };
 
-  const handleChangetHeight = (pixels: number) => {
+  const handleChangeHeight = (pixels: number) => {
     let newChatContainerHeight = chatContainerHeight + pixels;
 
     // constrain height between CHAT_CONTAINER_HEIGHT_MIN and CHAT_CONTAINER_HEIGHT_MAX
@@ -166,8 +166,29 @@ const ChatBar: React.FC = () => {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.metaKey && event.key === "k") {
-      handleClearButtonClick();
+    if (event.metaKey) {
+      const toggledParsingDisabled = !parsingDisabled;
+
+      switch (event.key) {
+        case "k":
+          // clear messages
+          handleClearButtonClick();
+          break;
+        case "j":
+          // toggle disable parsing checkbox
+          setParsingDisabled(toggledParsingDisabled);
+          chrome.storage.session.set({
+            parsingDisabled: toggledParsingDisabled,
+          });
+          break;
+        case "c":
+          // copy last message
+          if (messages.length === 0) return;
+          navigator.clipboard.writeText(messages[messages.length - 1].message);
+          setShowSnackbar(true);
+          setSnackbarMessage("Copied!");
+          break;
+      }
     }
   };
 
@@ -361,14 +382,14 @@ const ChatBar: React.FC = () => {
         <div style={{ flex: 1 }}></div>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
-            <Button onClick={() => handleChangetHeight(50)}>
+            <Button onClick={() => handleChangeHeight(50)}>
               <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
                 +
               </Typography>
             </Button>
           </Tooltip>
           <Tooltip title="Decrease window height" placement="top">
-            <Button onClick={() => handleChangetHeight(-50)}>
+            <Button onClick={() => handleChangeHeight(-50)}>
               <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
                 -
               </Typography>
