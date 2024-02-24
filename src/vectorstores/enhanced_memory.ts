@@ -8,6 +8,7 @@ import {
   type BaseRetrieverInput,
 } from "@langchain/core/retrievers";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import Fuse from "fuse.js";
 
 export type EnhancedMemoryRetrieverInput<V extends EnhancedMemoryVectorStore> =
   BaseRetrieverInput &
@@ -94,7 +95,7 @@ export class EnhancedMemoryRetriever<
   }
 
   async addDocuments(documents: DocumentInterface[]): Promise<string[] | void> {
-    return this.vectorStore.addDocuments(documents);
+    return await this.vectorStore.addDocuments(documents);
   }
 }
 
@@ -105,7 +106,7 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
 
   async keywordSearch(
     query: string,
-    k?: number,
+    k: number,
     filter?: this["FilterType"],
   ): Promise<Document[]> {
     const results = await this.keywordSearchWithScore(query, k, filter);
@@ -114,25 +115,63 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
 
   async keywordSearchWithScore(
     query: string,
-    k?: number,
+    k: number,
     filter?: this["FilterType"],
   ): Promise<[Document, number][]> {
-    return Promise.resolve([]);
+    // filter documents (MemoryVector interface is not exported...)
+    const filterFunction = (memoryVector: (typeof this.memoryVectors)[0]) => {
+      if (!filter) {
+        return true;
+      }
+
+      const doc = new Document({
+        metadata: memoryVector.metadata,
+        pageContent: memoryVector.content,
+      });
+      return filter(doc);
+    };
+    const filteredDocRecords = this.memoryVectors
+      .filter(filterFunction)
+      .map((memoryVector) => {
+        return {
+          metadata: memoryVector.metadata,
+          pageContent: memoryVector.content,
+        };
+      });
+
+    // keyword (fuzzy) search
+    // fuse options: https://www.fusejs.io/api/options.html#options
+    const fuseOptions = {
+      includeScore: true,
+      ignoreLocation: true,
+      keys: ["pageContent"],
+    };
+    const fuse = new Fuse(filteredDocRecords, fuseOptions);
+    const result = fuse.search(query, { limit: k });
+
+    // return documents and scores
+    return Promise.all(result).then((fuseResult) => {
+      return fuseResult.map((fuseResult) => {
+        return [new Document(fuseResult.item), fuseResult.score as number];
+      });
+    });
   }
 
   async hybridSearch(
     query: string,
-    k?: number,
+    k: number,
     filter?: this["FilterType"],
     _callbacks?: Callbacks,
   ): Promise<Document[]> {
-    const similarity_search = this.similaritySearchWithScore(
+    const similarity_search = await this.similaritySearchWithScore(
       query,
       k,
       filter,
       _callbacks,
     );
-    const keyword_search = this.keywordSearchWithScore(query, k, filter);
+    console.log("Similarity search results: ", similarity_search);
+    const keyword_search = await this.keywordSearchWithScore(query, k, filter);
+    console.log("Keyword search results: ", keyword_search);
 
     return (
       Promise.all([similarity_search, keyword_search])
