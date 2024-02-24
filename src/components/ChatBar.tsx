@@ -191,6 +191,7 @@ const ChatBar: React.FC = () => {
           break;
         case "c":
           // copy last message
+          if (messages.length === 0) return;
           navigator.clipboard.writeText(messages[messages.length - 1].message);
           setShowSnackbar(true);
           setSnackbarMessage("Copied!");
