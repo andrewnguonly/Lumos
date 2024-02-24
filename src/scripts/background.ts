@@ -1,20 +1,26 @@
+import { Document } from "@langchain/core/documents";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import {
   RunnableSequence,
   RunnablePassthrough,
 } from "@langchain/core/runnables";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { Calculator } from "../tools/calculator";
-import { getLumosOptions, isMultimodal } from "../pages/Options";
+import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
+import {
+  DEFAULT_KEEP_ALIVE,
+  getLumosOptions,
+  isMultimodal,
+} from "../pages/Options";
 
 interface VectorStoreMetadata {
-  vectorStore: MemoryVectorStore;
+  vectorStore: EnhancedMemoryVectorStore;
   createdAt: number;
 }
 
@@ -70,6 +76,7 @@ const classifyPrompt = async (
   const ollama = new Ollama({
     baseUrl: baseURL,
     model: model,
+    keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
   });
@@ -79,6 +86,10 @@ const classifyPrompt = async (
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const computeK = (documentsCount: number): number => {
+  return Math.ceil(Math.sqrt(documentsCount));
 };
 
 const executeCalculatorTool = async (prompt: string): Promise<void> => {
@@ -140,6 +151,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
+      keepAlive: DEFAULT_KEEP_ALIVE,
     });
 
     // stream response chunks
@@ -242,6 +254,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const model = new Ollama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
+      keepAlive: DEFAULT_KEEP_ALIVE,
     }).bind({
       images: base64EncodedImages,
     });
@@ -254,13 +267,15 @@ chrome.runtime.onMessage.addListener(async (request) => {
     });
 
     // check if vector store already exists for url
-    let vectorStore: MemoryVectorStore;
+    let vectorStore: EnhancedMemoryVectorStore;
+    let documentsCount: number;
 
     if (!skipCache && vectorStoreMap.has(url)) {
       // retrieve existing vector store
       console.log(`Retrieving existing vector store for url: ${url}`);
       // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
       vectorStore = vectorStoreMap.get(url)?.vectorStore!;
+      documentsCount = vectorStore.memoryVectors.length;
     } else {
       // create new vector store
       console.log(
@@ -273,19 +288,26 @@ chrome.runtime.onMessage.addListener(async (request) => {
         chunkOverlap: chunkOverlap,
       });
       const documents = await splitter.createDocuments([context]);
+      documentsCount = documents.length;
 
       // load documents into vector store
-      vectorStore = new MemoryVectorStore(
+      vectorStore = new EnhancedMemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
           model: options.ollamaModel,
+          keepAlive: DEFAULT_KEEP_ALIVE,
         }),
       );
       documents.forEach(async (doc, index) => {
-        await vectorStore.addDocuments([doc]);
+        await vectorStore.addDocuments([
+          new Document({
+            pageContent: doc.pageContent,
+            metadata: { ...doc.metadata, docId: index }, // add document ID
+          }),
+        ]);
         chrome.runtime.sendMessage({
           docNo: index + 1,
-          docCount: documents.length,
+          docCount: documentsCount,
         });
       });
 
@@ -298,7 +320,11 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
-    const retriever = vectorStore.asRetriever();
+    const retriever = vectorStore.asRetriever({
+      k: computeK(documentsCount),
+      searchType: "hybrid",
+      callbacks: [new ConsoleCallbackHandler()],
+    });
 
     // create chain
     const chain = RunnableSequence.from([

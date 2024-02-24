@@ -53,7 +53,6 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
-  const [selectedHost, setSelectedHost] = useState(DEFAULT_HOST);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -67,7 +66,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
   };
 
-  const handleChangetHeight = (pixels: number) => {
+  const handleChangeHeight = (pixels: number) => {
     let newChatContainerHeight = chatContainerHeight + pixels;
 
     // constrain height between CHAT_CONTAINER_HEIGHT_MIN and CHAT_CONTAINER_HEIGHT_MAX
@@ -167,8 +166,29 @@ const ChatBar: React.FC = () => {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.metaKey && event.key === "k") {
-      handleClearButtonClick();
+    if (event.metaKey) {
+      const toggledParsingDisabled = !parsingDisabled;
+
+      switch (event.key) {
+        case "k":
+          // clear messages
+          handleClearButtonClick();
+          break;
+        case "j":
+          // toggle disable parsing checkbox
+          setParsingDisabled(toggledParsingDisabled);
+          chrome.storage.session.set({
+            parsingDisabled: toggledParsingDisabled,
+          });
+          break;
+        case "c":
+          // copy last message
+          if (messages.length === 0) return;
+          navigator.clipboard.writeText(messages[messages.length - 1].message);
+          setShowSnackbar(true);
+          setSnackbarMessage("Copied!");
+          break;
+      }
     }
   };
 
@@ -230,9 +250,24 @@ const ChatBar: React.FC = () => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
         }
-        if (data.selectedHost) {
-          setSelectedHost(data.selectedHost);
-        }
+
+        // API connectivity check
+        const selectedHost = data.selectedHost || DEFAULT_HOST;
+        fetch(`${selectedHost}/api/tags`)
+          .then((response) => {
+            if (response.ok) {
+              setPromptError(false);
+              setPromptPlaceholderText("Enter your prompt here");
+            } else {
+              throw new Error();
+            }
+          })
+          .catch(() => {
+            setPromptError(true);
+            setPromptPlaceholderText(
+              "Unable to connect to Ollama API. Check Ollama server.",
+            );
+          });
       },
     );
 
@@ -268,25 +303,6 @@ const ChatBar: React.FC = () => {
       },
     );
   }, []);
-
-  // API connectivity check
-  useEffect(() => {
-    fetch(`${selectedHost}/api/tags`)
-      .then((response) => {
-        if (response.ok) {
-          setPromptError(false);
-          setPromptPlaceholderText("Enter your prompt here");
-        } else {
-          throw new Error();
-        }
-      })
-      .catch(() => {
-        setPromptError(true);
-        setPromptPlaceholderText(
-          "Unable to connect to Ollama API. Check Ollama server.",
-        );
-      });
-  }, [selectedHost]);
 
   useEffect(() => {
     if (!submitDisabled && textFieldRef.current) {
@@ -366,14 +382,14 @@ const ChatBar: React.FC = () => {
         <div style={{ flex: 1 }}></div>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
-            <Button onClick={() => handleChangetHeight(50)}>
+            <Button onClick={() => handleChangeHeight(50)}>
               <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
                 +
               </Typography>
             </Button>
           </Tooltip>
           <Tooltip title="Decrease window height" placement="top">
-            <Button onClick={() => handleChangetHeight(-50)}>
+            <Button onClick={() => handleChangeHeight(-50)}>
               <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
                 -
               </Typography>
