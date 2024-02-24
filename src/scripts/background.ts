@@ -302,7 +302,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         await vectorStore.addDocuments([
           new Document({
             pageContent: doc.pageContent,
-            metadata: {...doc.metadata, docId: index}, // add document ID
+            metadata: { ...doc.metadata, docId: index }, // add document ID
           }),
         ]);
         chrome.runtime.sendMessage({
@@ -322,7 +322,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     const retriever = vectorStore.asRetriever({
       k: computeK(documentsCount),
-      searchType: "similarity",
+      searchType: "hybrid",
       callbacks: [new ConsoleCallbackHandler()],
     });
 

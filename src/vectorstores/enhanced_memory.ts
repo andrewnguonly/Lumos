@@ -126,7 +126,39 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
     filter?: this["FilterType"],
     _callbacks?: Callbacks,
   ): Promise<Document[]> {
-    return Promise.resolve([]);
+    const similarity_search = this.similaritySearchWithScore(
+      query,
+      k,
+      filter,
+      _callbacks,
+    );
+    const keyword_search = this.keywordSearchWithScore(query, k, filter);
+
+    return (
+      Promise.all([similarity_search, keyword_search])
+        .then((docTuples) => docTuples.flat())
+        .then((docTuples) => {
+          const picks = new Map<number, [Document, number]>();
+
+          docTuples.forEach((docTuple: [Document, number]) => {
+            const id = docTuple[0].metadata.docId;
+            const nextScore = docTuple[1];
+            const prevScore = picks.get(id)?.[1];
+
+            if (prevScore === undefined || nextScore > prevScore) {
+              picks.set(id, docTuple);
+            }
+          });
+
+          return Array.from(picks.values());
+        })
+        // sort by score
+        .then((docTuples) => docTuples.sort((a, b) => b[1] - a[1]))
+        // select top k
+        .then((docTuples) => docTuples.slice(0, k))
+        // get documents
+        .then((docTuples) => docTuples.map((docTuple) => docTuple[0]))
+    );
   }
 
   asRetriever(
