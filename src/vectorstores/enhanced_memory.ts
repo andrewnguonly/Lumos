@@ -108,7 +108,7 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
     query: string,
     k: number,
     filter?: this["FilterType"],
-  ): Promise<Document[]> {
+  ): Promise<DocumentInterface[]> {
     const results = await this.keywordSearchWithScore(query, k, filter);
     return results.map((result) => result[0]);
   }
@@ -117,7 +117,7 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
     query: string,
     k: number,
     filter?: this["FilterType"],
-  ): Promise<[Document, number][]> {
+  ): Promise<[DocumentInterface, number][]> {
     // filter documents (MemoryVector interface is not exported...)
     const filterFunction = (memoryVector: (typeof this.memoryVectors)[0]) => {
       if (!filter) {
@@ -162,7 +162,7 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
     k: number,
     filter?: this["FilterType"],
     _callbacks?: Callbacks,
-  ): Promise<Document[]> {
+  ): Promise<DocumentInterface[]> {
     const similarity_search = await this.similaritySearchWithScore(
       query,
       k,
