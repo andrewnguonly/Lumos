@@ -181,14 +181,6 @@ const ChatBar: React.FC = () => {
             parsingDisabled: toggledParsingDisabled,
           });
           break;
-        case "u":
-          // increase chat container height
-          handleChangeHeight(50);
-          break;
-        case "i":
-          // decrease chat container height
-          handleChangeHeight(-50);
-          break;
         case "c":
           // copy last message
           if (messages.length === 0) return;
