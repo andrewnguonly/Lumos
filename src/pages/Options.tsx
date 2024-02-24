@@ -27,6 +27,7 @@ export const DEFAULT_CONTENT_CONFIG = JSON.stringify(
 );
 export const DEFAULT_VECTOR_STORE_TTL_MINS = 60;
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
+export const EMBEDDING_MODELS = ["nomic-embed-text", "all-minilm"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
@@ -151,9 +152,13 @@ const Options: React.FC = () => {
         fetch(`${selectedHost}/api/tags`)
           .then((response) => response.json())
           .then((data) => {
-            const modelOptions = data.models.map(
-              (model: { name: string }) => model.name,
-            );
+            const modelOptions = data.models
+              .map((model: { name: string }) => model.name)
+              .filter(
+                (model: string) =>
+                  !EMBEDDING_MODELS.includes(model.split(":")[0]),
+              );
+
             setModelOptions(modelOptions);
             chrome.storage.local.get(["selectedModel"]).then((data) => {
               if (data.selectedModel) {
