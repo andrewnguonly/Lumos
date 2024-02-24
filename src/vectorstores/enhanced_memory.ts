@@ -179,7 +179,19 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
     });
     console.log("Similarity search results: ", similarity_search);
 
-    const keyword_search = await this.keywordSearchWithScore(query, k, filter);
+    const keyword_search = await this.keywordSearchWithScore(
+      query,
+      k,
+      filter,
+    ).then((docTuples) => {
+      return docTuples.map((docTuple) => {
+        // manually downscale Fuzziness score to better blend with cosine similarity score
+        const score = docTuple[1];
+        const normalizedScore = score * 0.7;
+        docTuple[1] = normalizedScore;
+        return docTuple;
+      });
+    });
     console.log("Keyword search results: ", keyword_search);
 
     return (
