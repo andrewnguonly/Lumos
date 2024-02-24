@@ -168,8 +168,17 @@ export class EnhancedMemoryVectorStore extends MemoryVectorStore {
       k,
       filter,
       _callbacks,
-    );
+    ).then((docTuples) => {
+      return docTuples.map((docTuple) => {
+        // normalize cosine similarity score between 0 and 1
+        const score = docTuple[1];
+        const normalizedScore = (score + 1) / 2;
+        docTuple[1] = normalizedScore;
+        return docTuple;
+      });
+    });
     console.log("Similarity search results: ", similarity_search);
+
     const keyword_search = await this.keywordSearchWithScore(query, k, filter);
     console.log("Keyword search results: ", keyword_search);
 
