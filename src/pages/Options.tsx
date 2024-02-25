@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import {
+  Box,
   FormControl,
-  FormGroup,
   InputLabel,
   MenuItem,
   Select,
@@ -18,6 +18,7 @@ import {
 import "./Options.css";
 
 export const DEFAULT_MODEL = "llama2";
+export const DEFAULT_EMBEDDING_MODEL = "";
 export const DEFAULT_HOST = "http://localhost:11434";
 export const DEFAULT_KEEP_ALIVE = "60m";
 export const DEFAULT_CONTENT_CONFIG = JSON.stringify(
@@ -75,6 +76,7 @@ export const isMultimodal = (model: string): boolean => {
 
 const Options: React.FC = () => {
   const [model, setModel] = useState(DEFAULT_MODEL);
+  const [embeddingModel, setEmbeddingModel] = useState(DEFAULT_EMBEDDING_MODEL);
   const [modelOptions, setModelOptions] = useState([]);
   const [host, setHost] = useState(DEFAULT_HOST);
   const [hostError, setHostError] = useState(false);
@@ -91,6 +93,14 @@ const Options: React.FC = () => {
     const selectedModel = event.target.value;
     setModel(selectedModel);
     chrome.storage.local.set({ selectedModel: selectedModel });
+  };
+
+  const handleEmbeddingModelChange = (event: SelectChangeEvent) => {
+    const selectedEmbeddingModel = event.target.value;
+    setEmbeddingModel(selectedEmbeddingModel);
+    chrome.storage.local.set({
+      selectedEmbeddingModel: selectedEmbeddingModel,
+    });
   };
 
   const handleHostChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -152,21 +162,24 @@ const Options: React.FC = () => {
         fetch(`${selectedHost}/api/tags`)
           .then((response) => response.json())
           .then((data) => {
-            const modelOptions = data.models
-              .map((model: { name: string }) => model.name)
-              .filter(
-                (model: string) =>
-                  !EMBEDDING_MODELS.includes(model.split(":")[0]),
-              );
-
+            const modelOptions = data.models.map(
+              (model: { name: string }) => model.name,
+            );
             setModelOptions(modelOptions);
-            chrome.storage.local.get(["selectedModel"]).then((data) => {
-              if (data.selectedModel) {
-                setModel(data.selectedModel);
-              } else {
-                setModel(modelOptions[0]);
-              }
-            });
+            chrome.storage.local
+              .get(["selectedModel", "selectedEmbeddingModel"])
+              .then((data) => {
+                if (data.selectedModel) {
+                  setModel(data.selectedModel);
+                } else {
+                  setModel(modelOptions[0]);
+                }
+                if (data.selectedEmbeddingModel) {
+                  setEmbeddingModel(data.selectedEmbeddingModel);
+                } else {
+                  setEmbeddingModel(DEFAULT_EMBEDDING_MODEL);
+                }
+              });
             setHostError(false);
             setHostHelpText("");
           })
@@ -180,52 +193,83 @@ const Options: React.FC = () => {
 
   return (
     <ThemeProvider theme={AppTheme}>
-      <div className="options-popup">
-        <FormControl fullWidth>
-          <FormGroup>
-            <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
-            <Select
-              sx={{ "margin-bottom": "15px" }}
-              labelId="ollama-model-select-label"
-              label="Ollama Model"
-              value={model}
-              onChange={handleModelChange}
-            >
-              {modelOptions.map((modelName: string, index) => (
+      <Box className="options-popup">
+        <FormControl className="options-input">
+          <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
+          <Select
+            sx={{ marginBottom: "15px" }}
+            labelId="ollama-model-select-label"
+            label="Ollama Model"
+            value={model}
+            onChange={handleModelChange}
+          >
+            {modelOptions
+              .filter(
+                (model: string) =>
+                  !EMBEDDING_MODELS.includes(model.split(":")[0]),
+              )
+              .map((modelName: string, index) => (
                 <MenuItem key={index} value={modelName}>
                   {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
                 </MenuItem>
               ))}
-            </Select>
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              label="Ollama Host"
-              value={host}
-              error={hostError}
-              helperText={hostHelpText}
-              onChange={handleHostChange}
-            />
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              type="number"
-              label="Vector Store TTL (minutes)"
-              value={vectorStoreTTLMins}
-              error={vectorStoreTTLMinsError}
-              onChange={handleVectorStoreTTLMinsChange}
-            />
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              label="Content Parser Config"
-              multiline
-              rows={10}
-              value={contentConfig}
-              error={contentConfigError}
-              helperText={contentConfigHelpText}
-              onChange={handleContentConfigChange}
-            />
-          </FormGroup>
+          </Select>
         </FormControl>
-      </div>
+        <FormControl className="options-input">
+          <InputLabel id="ollama-embedding-select-label" shrink>
+            Ollama Embedding Model
+          </InputLabel>
+          <Select
+            sx={{ marginBottom: "15px" }}
+            labelId="ollama-embedding-select-label"
+            label="Ollama Embedding Model"
+            value={embeddingModel}
+            onChange={handleEmbeddingModelChange}
+          >
+            <MenuItem value={DEFAULT_EMBEDDING_MODEL}>
+              <em>None</em>
+            </MenuItem>
+            {modelOptions
+              .filter((model: string) =>
+                EMBEDDING_MODELS.includes(model.split(":")[0]),
+              )
+              .map((modelName: string, index) => (
+                <MenuItem key={index} value={modelName}>
+                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+        <TextField
+          className="options-input"
+          sx={{ marginBottom: "15px" }}
+          label="Ollama Host"
+          value={host}
+          error={hostError}
+          helperText={hostHelpText}
+          onChange={handleHostChange}
+        />
+        <TextField
+          className="options-input"
+          sx={{ marginBottom: "15px" }}
+          type="number"
+          label="Vector Store TTL (minutes)"
+          value={vectorStoreTTLMins}
+          error={vectorStoreTTLMinsError}
+          onChange={handleVectorStoreTTLMinsChange}
+        />
+        <TextField
+          className="options-input"
+          sx={{ marginBottom: "15px" }}
+          label="Content Parser Config"
+          multiline
+          rows={10}
+          value={contentConfig}
+          error={contentConfigError}
+          helperText={contentConfigHelpText}
+          onChange={handleContentConfigChange}
+        />
+      </Box>
     </ThemeProvider>
   );
 };
