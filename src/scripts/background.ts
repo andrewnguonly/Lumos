@@ -294,7 +294,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
       vectorStore = new EnhancedMemoryVectorStore(
         new OllamaEmbeddings({
           baseUrl: options.ollamaHost,
-          model: options.ollamaModel,
+          model: options.ollamaEmbeddingModel || options.ollamaModel,
           keepAlive: DEFAULT_KEEP_ALIVE,
         }),
       );

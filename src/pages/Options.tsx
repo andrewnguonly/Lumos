@@ -34,6 +34,7 @@ export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
 interface LumosOptions {
   ollamaModel: string;
+  ollamaEmbeddingModel: string;
   ollamaHost: string;
   contentConfig: ContentConfig;
   vectorStoreTTLMins: number;
@@ -44,6 +45,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
     chrome.storage.local.get(
       [
         "selectedModel",
+        "selectedEmbeddingModel",
         "selectedHost",
         "selectedConfig",
         "selectedVectorStoreTTLMins",
@@ -54,6 +56,8 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
         } else {
           resolve({
             ollamaModel: data.selectedModel || DEFAULT_MODEL,
+            ollamaEmbeddingModel:
+              data.selectedEmbeddingModel || DEFAULT_EMBEDDING_MODEL,
             ollamaHost: data.selectedHost || DEFAULT_HOST,
             contentConfig: JSON.parse(
               data.selectedConfig || DEFAULT_CONTENT_CONFIG,
@@ -197,7 +201,6 @@ const Options: React.FC = () => {
         <FormControl className="options-input">
           <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
           <Select
-            sx={{ marginBottom: "15px" }}
             labelId="ollama-model-select-label"
             label="Ollama Model"
             value={model}
@@ -220,7 +223,6 @@ const Options: React.FC = () => {
             Ollama Embedding Model
           </InputLabel>
           <Select
-            sx={{ marginBottom: "15px" }}
             labelId="ollama-embedding-select-label"
             label="Ollama Embedding Model"
             value={embeddingModel}
@@ -242,7 +244,6 @@ const Options: React.FC = () => {
         </FormControl>
         <TextField
           className="options-input"
-          sx={{ marginBottom: "15px" }}
           label="Ollama Host"
           value={host}
           error={hostError}
@@ -251,7 +252,6 @@ const Options: React.FC = () => {
         />
         <TextField
           className="options-input"
-          sx={{ marginBottom: "15px" }}
           type="number"
           label="Vector Store TTL (minutes)"
           value={vectorStoreTTLMins}
@@ -260,7 +260,6 @@ const Options: React.FC = () => {
         />
         <TextField
           className="options-input"
-          sx={{ marginBottom: "15px" }}
           label="Content Parser Config"
           multiline
           rows={10}

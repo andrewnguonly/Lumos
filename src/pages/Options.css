@@ -9,4 +9,8 @@
 
 .options-input {
   width: 100%;
+
+  .MuiInputBase-root {
+    margin-bottom: 15px;
+  }
 }
