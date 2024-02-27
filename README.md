@@ -202,3 +202,4 @@ Lumos invokes [Tools](https://js.langchain.com/docs/modules/agents/tools/) autom
 - [Local LLM in the Browser Powered by Ollama (Part 2)](https://medium.com/@andrewnguonly/local-llm-in-the-browser-powered-by-ollama-part-2-6eb10caf39a1)
 - [Let’s Normalize Online, In-Memory RAG! (Part 3)](https://medium.com/@andrewnguonly/lets-normalize-online-in-memory-rag-88e8169e9806)
 - [Supercharging If-Statements With Prompt Classification Using Ollama and LangChain (Part 4)](https://blog.langchain.dev/supercharging-if-statements-with-prompt-classification-using-ollama-and-langchain/)
+- [Bolstering LangChain’s MemoryVectorStore With Keyword Search (Part 5)](https://medium.com/@andrewnguonly/bolstering-langchains-memoryvectorstore-with-keyword-search-3d35cc278dc1)
