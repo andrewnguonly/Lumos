@@ -401,6 +401,7 @@ const ChatBar: React.FC = () => {
         <TextField
           className="input-field"
           multiline
+          maxRows={5}
           placeholder={promptPlaceholderText}
           value={prompt}
           disabled={submitDisabled}
