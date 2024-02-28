@@ -11,12 +11,25 @@ export const CodeBlock = ({
   let lang = "text";
   if (className && className.startsWith("lang-")) {
     lang = className.replace("lang-", "");
+    return (
+      <SyntaxHighlighter language={lang} style={vs} wrapLongLines>
+        {children}
+      </SyntaxHighlighter>
+    );
+  } else {
+    // inline code block
+    return (
+      <span
+        style={{
+          fontFamily: "courier",
+          color: "purple",
+          backgroundColor: "#fff8e1",
+        }}
+      >
+        {children}
+      </span>
+    );
   }
-  return (
-    <SyntaxHighlighter language={lang} style={vs} wrapLongLines>
-      {children}
-    </SyntaxHighlighter>
-  );
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

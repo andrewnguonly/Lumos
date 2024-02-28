@@ -28,7 +28,7 @@ import {
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
-import { PreBlock } from "./CodeBlock";
+import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -365,6 +365,7 @@ const ChatBar: React.FC = () => {
                     options={{
                       overrides: {
                         pre: PreBlock,
+                        code: CodeBlock,
                       },
                     }}
                   >
