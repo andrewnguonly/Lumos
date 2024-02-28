@@ -19,6 +19,7 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
+import Markdown from "markdown-to-jsx";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -27,6 +28,7 @@ import {
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
+import { PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -341,25 +343,34 @@ const ChatBar: React.FC = () => {
               <Message
                 key={index}
                 model={{
-                  message: message.message.trim(),
                   sender: message.sender,
                   direction:
                     message.sender === "user" ? "outgoing" : "incoming",
                   position: "single",
                 }}
+                type="custom"
               >
-                {
-                  <Avatar
-                    src={
-                      message.sender === "user"
-                        ? "../assets/glasses_48.png"
-                        : message.sender === "assistant"
-                          ? "../assets/wand_48.png"
-                          : "../assets/hammer_48.png"
-                    }
-                    onClick={() => handleAvatarClick(message.message)}
-                  />
-                }
+                <Avatar
+                  src={
+                    message.sender === "user"
+                      ? "../assets/glasses_48.png"
+                      : message.sender === "assistant"
+                        ? "../assets/wand_48.png"
+                        : "../assets/hammer_48.png"
+                  }
+                  onClick={() => handleAvatarClick(message.message)}
+                />
+                <Message.CustomContent>
+                  <Markdown
+                    options={{
+                      overrides: {
+                        pre: PreBlock,
+                      },
+                    }}
+                  >
+                    {message.message.trim()}
+                  </Markdown>
+                </Message.CustomContent>
               </Message>
             ))}
           </MessageList>
