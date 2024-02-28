@@ -21,8 +21,10 @@
     "buffer": "^6.0.3",
     "fuse.js": "^7.0.0",
     "langchain": "^0.1.21",
+    "markdown-to-jsx": "^7.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^15.5.0",
     "ts-loader": "^9.5.0",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
@@ -53,6 +55,7 @@
   },
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
+    "@types/react-syntax-highlighter": "^15.5.11",
     "@typescript-eslint/parser": "^5.62.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
