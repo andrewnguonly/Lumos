@@ -400,6 +400,8 @@ const ChatBar: React.FC = () => {
       <Box className="chat-bar">
         <TextField
           className="input-field"
+          multiline
+          maxRows={5}
           placeholder={promptPlaceholderText}
           value={prompt}
           disabled={submitDisabled}
@@ -407,7 +409,7 @@ const ChatBar: React.FC = () => {
           onChange={handlePromptChange}
           inputRef={textFieldRef}
           onKeyUp={(event) => {
-            if (event.key === "Enter") {
+            if (!event.shiftKey && event.key === "Enter") {
               handleSendButtonClick();
             }
           }}
