@@ -7,6 +7,8 @@ import {
 } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
+import { OllamaFunctions } from "langchain/experimental/chat_models/ollama_functions";
+import { JsonOutputFunctionsParser } from "langchain/output_parsers";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
@@ -73,19 +75,41 @@ const classifyPrompt = async (
   }
 
   // otherwise, attempt to classify prompt
-  const ollama = new Ollama({
+  const ollama = new OllamaFunctions({
     baseUrl: baseURL,
     model: model,
     keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
-    stop: [".", ","],
+  }).bind({
+    functions: [
+      {
+        name: "classify_prompt",
+        description: "Classify prompt based on classification prompt",
+        parameters: {
+          type: "object",
+          properties: {
+            answer: {
+              type: "string",
+              enum: ["yes", "no"],
+            },
+          },
+          required: ["answer"],
+        },
+      },
+    ],
+    function_call: {
+      name: "classify_prompt",
+    },
   });
-  const finalPrompt = `${classifcationPrompt} Answer with 'yes' or 'no'.\n\nPrompt: ${originalPrompt}`;
-  return ollama.invoke(finalPrompt).then((response) => {
-    console.log(`${type} classification response: ${response}`);
-    const answer = response.trim().split(" ")[0].toLowerCase();
-    return answer.includes("yes");
-  });
+
+  // construct and invoke chain
+  const template = `${classifcationPrompt}\n\nPrompt: {originalPrompt}`;
+  const prompt = PromptTemplate.fromTemplate(template);
+  const chain = await prompt.pipe(ollama).pipe(new JsonOutputFunctionsParser());
+  const response = await chain.invoke({ originalPrompt: originalPrompt });
+
+  console.log(`${type} classification response: ${JSON.stringify(response)}`);
+  return JSON.parse(JSON.stringify(response)).answer === "yes";
 };
 
 const computeK = (documentsCount: number): number => {
