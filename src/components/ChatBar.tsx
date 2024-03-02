@@ -229,7 +229,9 @@ const ChatBar: React.FC = () => {
     if (msg.docNo) {
       const skipCacheMsg = msg.skipCache ? " (skipping cache)" : "";
       setLoading1(true);
-      setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}${skipCacheMsg}`);
+      setLoading1Text(
+        `Generated embedding ${msg.docNo} of ${msg.docCount}${skipCacheMsg}`,
+      );
     } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
