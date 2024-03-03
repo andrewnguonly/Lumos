@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import {
   Avatar,
   ChatContainer,
@@ -19,6 +20,7 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
+import Markdown from "markdown-to-jsx";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -27,6 +29,7 @@ import {
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
+import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -44,6 +47,7 @@ const ChatBar: React.FC = () => {
     "Enter your prompt here",
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
+  const [highlightedContent, setHighlightedContent] = useState(false);
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -115,6 +119,8 @@ const ChatBar: React.FC = () => {
         const pageContent = results[0].result[0];
         const isHighlightedContent = results[0].result[1];
         const imageURLs = results[0].result[2];
+
+        setHighlightedContent(isHighlightedContent);
 
         chrome.runtime.sendMessage({ context: pageContent }).then(() => {
           chrome.runtime.sendMessage({
@@ -219,13 +225,17 @@ const ChatBar: React.FC = () => {
   const handleBackgroundMessage = (msg: {
     docNo: number;
     docCount: number;
+    skipCache: boolean;
     completion: string;
     sender: string;
     done: boolean;
   }) => {
     if (msg.docNo) {
+      const skipCacheMsg = msg.skipCache ? " (skipping cache)" : "";
       setLoading1(true);
-      setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}`);
+      setLoading1Text(
+        `Generated embedding ${msg.docNo} of ${msg.docCount}${skipCacheMsg}`,
+      );
     } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
@@ -341,31 +351,41 @@ const ChatBar: React.FC = () => {
               <Message
                 key={index}
                 model={{
-                  message: message.message.trim(),
                   sender: message.sender,
                   direction:
                     message.sender === "user" ? "outgoing" : "incoming",
                   position: "single",
                 }}
+                type="custom"
               >
-                {
-                  <Avatar
-                    src={
-                      message.sender === "user"
-                        ? "../assets/glasses_48.png"
-                        : message.sender === "assistant"
-                          ? "../assets/wand_48.png"
-                          : "../assets/hammer_48.png"
-                    }
-                    onClick={() => handleAvatarClick(message.message)}
-                  />
-                }
+                <Avatar
+                  src={
+                    message.sender === "user"
+                      ? "../assets/glasses_48.png"
+                      : message.sender === "assistant"
+                        ? "../assets/wand_48.png"
+                        : "../assets/hammer_48.png"
+                  }
+                  onClick={() => handleAvatarClick(message.message)}
+                />
+                <Message.CustomContent>
+                  <Markdown
+                    options={{
+                      overrides: {
+                        pre: PreBlock,
+                        code: CodeBlock,
+                      },
+                    }}
+                  >
+                    {message.message.trim()}
+                  </Markdown>
+                </Message.CustomContent>
               </Message>
             ))}
           </MessageList>
         </ChatContainer>
       </Box>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
         <FormControlLabel
           control={
             <Checkbox
@@ -379,6 +399,11 @@ const ChatBar: React.FC = () => {
             </Typography>
           }
         />
+        {highlightedContent && (
+          <Tooltip title="Page has highlighted content" placement="top">
+            <InfoIcon fontSize="small" color="primary" />
+          </Tooltip>
+        )}
         <div style={{ flex: 1 }}></div>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
@@ -400,6 +425,8 @@ const ChatBar: React.FC = () => {
       <Box className="chat-bar">
         <TextField
           className="input-field"
+          multiline
+          maxRows={5}
           placeholder={promptPlaceholderText}
           value={prompt}
           disabled={submitDisabled}
@@ -407,7 +434,7 @@ const ChatBar: React.FC = () => {
           onChange={handlePromptChange}
           inputRef={textFieldRef}
           onKeyUp={(event) => {
-            if (event.key === "Enter") {
+            if (!event.shiftKey && event.key === "Enter") {
               handleSendButtonClick();
             }
           }}

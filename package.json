@@ -1,14 +1,15 @@
 {
   "name": "lumos",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "dependencies": {
     "@chatscope/chat-ui-kit-react": "^1.10.1",
     "@chatscope/chat-ui-kit-styles": "^1.4.0",
-    "@emotion/react": "^11.11.1",
+    "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
     "@langchain/community": "^0.0.32",
-    "@mui/material": "^5.14.17",
+    "@mui/icons-material": "^5.15.11",
+    "@mui/material": "^5.15.11",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -21,8 +22,10 @@
     "buffer": "^6.0.3",
     "fuse.js": "^7.0.0",
     "langchain": "^0.1.21",
+    "markdown-to-jsx": "^7.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^15.5.0",
     "ts-loader": "^9.5.0",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
@@ -53,6 +56,7 @@
   },
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
+    "@types/react-syntax-highlighter": "^15.5.11",
     "@typescript-eslint/parser": "^5.62.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",

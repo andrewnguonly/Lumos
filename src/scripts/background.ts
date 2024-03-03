@@ -308,6 +308,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         chrome.runtime.sendMessage({
           docNo: index + 1,
           docCount: documentsCount,
+          skipCache: skipCache,
         });
       });
 
