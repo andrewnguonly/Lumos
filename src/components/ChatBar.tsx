@@ -332,7 +332,9 @@ const ChatBar: React.FC = () => {
         setHighlightedContent(isHighlightedContent !== "");
       })
       .catch((error) => {
-        console.log(`Error checking if highlighted content is present: ${error}`);
+        console.log(
+          `Error checking if highlighted content is present: ${error}`,
+        );
       });
   }, []);
 
@@ -423,7 +425,7 @@ const ChatBar: React.FC = () => {
         />
         {highlightedContent && (
           <Tooltip title="Page has highlighted content" placement="top">
-            <ErrorOutlineIcon fontSize="small" color="primary"/>
+            <ErrorOutlineIcon fontSize="small" color="primary" />
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
