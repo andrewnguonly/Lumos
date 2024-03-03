@@ -189,6 +189,8 @@ Example:
 
 Alternatively, if content is highlighted on a page (e.g. highlighted text), that content will be parsed instead of the content produced from the content parser configuration.
 
+Note: Content that is highlighted will not be cached in the vector store cache. Each subsequent prompt containing highlighted content will generate new embeddings.
+
 ## Multimodal
 
 Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).

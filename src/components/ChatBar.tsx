@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import {
   Avatar,
   ChatContainer,
@@ -46,6 +47,7 @@ const ChatBar: React.FC = () => {
     "Enter your prompt here",
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
+  const [highlightedContent, setHighlightedContent] = useState(false);
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -117,6 +119,8 @@ const ChatBar: React.FC = () => {
         const pageContent = results[0].result[0];
         const isHighlightedContent = results[0].result[1];
         const imageURLs = results[0].result[2];
+
+        setHighlightedContent(isHighlightedContent);
 
         chrome.runtime.sendMessage({ context: pageContent }).then(() => {
           chrome.runtime.sendMessage({
@@ -221,13 +225,17 @@ const ChatBar: React.FC = () => {
   const handleBackgroundMessage = (msg: {
     docNo: number;
     docCount: number;
+    skipCache: boolean;
     completion: string;
     sender: string;
     done: boolean;
   }) => {
     if (msg.docNo) {
+      const skipCacheMsg = msg.skipCache ? " (skipping cache)" : "";
       setLoading1(true);
-      setLoading1Text(`Generated embedding ${msg.docNo} of ${msg.docCount}`);
+      setLoading1Text(
+        `Generated embedding ${msg.docNo} of ${msg.docCount}${skipCacheMsg}`,
+      );
     } else if (msg.completion) {
       setLoading1(false);
       setLoading2(true);
@@ -377,7 +385,7 @@ const ChatBar: React.FC = () => {
           </MessageList>
         </ChatContainer>
       </Box>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
         <FormControlLabel
           control={
             <Checkbox
@@ -391,6 +399,11 @@ const ChatBar: React.FC = () => {
             </Typography>
           }
         />
+        {highlightedContent && (
+          <Tooltip title="Page has highlighted content" placement="top">
+            <InfoIcon fontSize="small" color="primary" />
+          </Tooltip>
+        )}
         <div style={{ flex: 1 }}></div>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
