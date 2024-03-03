@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import {
   Avatar,
   ChatContainer,
@@ -26,7 +27,7 @@ import {
   DEFAULT_HOST,
   getLumosOptions,
 } from "../pages/Options";
-import { getHtmlContent } from "../scripts/content";
+import { getHighlightedContent, getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
 import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
@@ -46,6 +47,7 @@ const ChatBar: React.FC = () => {
     "Enter your prompt here",
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
+  const [highlightedContent, setHighlightedContent] = useState(false);
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -308,6 +310,30 @@ const ChatBar: React.FC = () => {
         }
       },
     );
+
+    // Check if the page contains highlighted text and display a notification.
+    // In the future, this logic may be repurposed to preemptively parse the
+    // page content prior to the user initiating a prompt. This approach would
+    // allow embeddings to be generated ahead of time.
+    chrome.tabs
+      .query({ active: true, currentWindow: true })
+      .then((tabs) => {
+        const activeTab = tabs[0];
+        const activeTabId = activeTab.id || 0;
+
+        return chrome.scripting.executeScript({
+          target: { tabId: activeTabId },
+          injectImmediately: true,
+          func: getHighlightedContent,
+        });
+      })
+      .then(async (results) => {
+        const isHighlightedContent = results[0].result;
+        setHighlightedContent(isHighlightedContent !== "");
+      })
+      .catch((error) => {
+        console.log(`Error checking if highlighted content is present: ${error}`);
+      });
   }, []);
 
   useEffect(() => {
@@ -381,7 +407,7 @@ const ChatBar: React.FC = () => {
           </MessageList>
         </ChatContainer>
       </Box>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
         <FormControlLabel
           control={
             <Checkbox
@@ -395,6 +421,11 @@ const ChatBar: React.FC = () => {
             </Typography>
           }
         />
+        {highlightedContent && (
+          <Tooltip title="Page has highlighted content" placement="top">
+            <ErrorOutlineIcon fontSize="small" color="primary"/>
+          </Tooltip>
+        )}
         <div style={{ flex: 1 }}></div>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
