@@ -309,7 +309,9 @@ chrome.runtime.onMessage.addListener(async (request) => {
           docNo: index + 1,
           docCount: documentsCount,
           skipCache: skipCache,
-        });
+        }).catch(() => {
+          console.log("Sending document embedding message, but popup is closed...");
+        });;
       });
 
       // store vector store in vector store map
