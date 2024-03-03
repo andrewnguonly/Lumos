@@ -305,13 +305,17 @@ chrome.runtime.onMessage.addListener(async (request) => {
             metadata: { ...doc.metadata, docId: index }, // add document ID
           }),
         ]);
-        chrome.runtime.sendMessage({
-          docNo: index + 1,
-          docCount: documentsCount,
-          skipCache: skipCache,
-        }).catch(() => {
-          console.log("Sending document embedding message, but popup is closed...");
-        });;
+        chrome.runtime
+          .sendMessage({
+            docNo: index + 1,
+            docCount: documentsCount,
+            skipCache: skipCache,
+          })
+          .catch(() => {
+            console.log(
+              "Sending document embedding message, but popup is closed...",
+            );
+          });
       });
 
       // store vector store in vector store map
