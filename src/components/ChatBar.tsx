@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import InfoIcon from "@mui/icons-material/Info";
 import {
   Avatar,
   ChatContainer,
@@ -27,7 +27,7 @@ import {
   DEFAULT_HOST,
   getLumosOptions,
 } from "../pages/Options";
-import { getHighlightedContent, getHtmlContent } from "../scripts/content";
+import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
 import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
@@ -119,6 +119,8 @@ const ChatBar: React.FC = () => {
         const pageContent = results[0].result[0];
         const isHighlightedContent = results[0].result[1];
         const imageURLs = results[0].result[2];
+
+        setHighlightedContent(isHighlightedContent);
 
         chrome.runtime.sendMessage({ context: pageContent }).then(() => {
           chrome.runtime.sendMessage({
@@ -310,32 +312,6 @@ const ChatBar: React.FC = () => {
         }
       },
     );
-
-    // Check if the page contains highlighted text and display a notification.
-    // In the future, this logic may be repurposed to preemptively parse the
-    // page content prior to the user initiating a prompt. This approach would
-    // allow embeddings to be generated ahead of time.
-    chrome.tabs
-      .query({ active: true, currentWindow: true })
-      .then((tabs) => {
-        const activeTab = tabs[0];
-        const activeTabId = activeTab.id || 0;
-
-        return chrome.scripting.executeScript({
-          target: { tabId: activeTabId },
-          injectImmediately: true,
-          func: getHighlightedContent,
-        });
-      })
-      .then(async (results) => {
-        const isHighlightedContent = results[0].result;
-        setHighlightedContent(isHighlightedContent !== "");
-      })
-      .catch((error) => {
-        console.log(
-          `Error checking if highlighted content is present: ${error}`,
-        );
-      });
   }, []);
 
   useEffect(() => {
@@ -425,7 +401,7 @@ const ChatBar: React.FC = () => {
         />
         {highlightedContent && (
           <Tooltip title="Page has highlighted content" placement="top">
-            <ErrorOutlineIcon fontSize="small" color="primary" />
+            <InfoIcon fontSize="small" color="primary" />
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>

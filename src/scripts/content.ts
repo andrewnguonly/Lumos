@@ -1,4 +1,4 @@
-export const getHighlightedContent = (): string => {
+const getHighlightedContent = (): string => {
   const selection = window.getSelection();
   return selection ? selection.toString().trim() : "";
 };
