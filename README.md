@@ -38,7 +38,10 @@ Terminal output:
 2023/11/19 20:55:16 routes.go:777: Listening on 127.0.0.1:11434 (version 0.1.10)
 ```
 
-Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://*` to allow requests originating from the Chrome extension.
+Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension://*` to allow requests originating from the Chrome extension. The following error will occur in the Chrome extension if `OLLAMA_ORIGINS` is not set properly.
+```
+Access to fetch at 'http://localhost:11434/api/tags' from origin 'chrome-extension://<extension_id>' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. If an opaque response serves your needs, set the request's mode to 'no-cors' to fetch the resource with CORS disabled.
+```
 
 ### Docker
 
