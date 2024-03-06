@@ -11,7 +11,11 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
-import { Calculator } from "../tools/calculator";
+import {
+  Calculator,
+  CLS_CALC_PROMPT,
+  CLS_CALC_TYPE,
+} from "../tools/calculator";
 import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
 import {
   DEFAULT_KEEP_ALIVE,
@@ -36,9 +40,6 @@ const CLS_IMG_TYPE = "isImagePrompt";
 const CLS_IMG_PROMPT =
   "Is the following prompt referring to an image or asking to describe an image?";
 const CLS_IMG_TRIGGER = "based on the image";
-const CLS_CALC_TYPE = "isCalcPrompt";
-const CLS_CALC_PROMPT =
-  "Is the following prompt a math equation with numbers and operators?";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
