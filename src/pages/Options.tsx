@@ -1,11 +1,13 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import {
+  Box,
   FormControl,
-  FormGroup,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
+  Switch,
   TextField,
   ThemeProvider,
 } from "@mui/material";
@@ -17,6 +19,13 @@ import {
 } from "../contentConfig";
 import "./Options.css";
 
+export interface ToolConfig {
+  [key: string]: {
+    enabled: boolean;
+    prefix: string;
+  };
+}
+
 export const DEFAULT_MODEL = "llama2";
 export const DEFAULT_HOST = "http://localhost:11434";
 export const DEFAULT_KEEP_ALIVE = "60m";
@@ -26,6 +35,12 @@ export const DEFAULT_CONTENT_CONFIG = JSON.stringify(
   2,
 );
 export const DEFAULT_VECTOR_STORE_TTL_MINS = 60;
+export const DEFAULT_TOOL_CONFIG: ToolConfig = {
+  Calculator: {
+    enabled: true,
+    prefix: "calculate:",
+  },
+};
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
@@ -35,6 +50,7 @@ interface LumosOptions {
   ollamaHost: string;
   contentConfig: ContentConfig;
   vectorStoreTTLMins: number;
+  toolConfig: ToolConfig;
 }
 
 export const getLumosOptions = async (): Promise<LumosOptions> => {
@@ -45,6 +61,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
         "selectedHost",
         "selectedConfig",
         "selectedVectorStoreTTLMins",
+        "toolConfig",
       ],
       (data) => {
         if (chrome.runtime.lastError) {
@@ -59,6 +76,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
             vectorStoreTTLMins:
               parseInt(data.selectedVectorStoreTTLMins, 10) ||
               DEFAULT_VECTOR_STORE_TTL_MINS,
+            toolConfig: data.toolConfig || DEFAULT_TOOL_CONFIG,
           });
         }
       },
@@ -85,6 +103,7 @@ const Options: React.FC = () => {
     DEFAULT_VECTOR_STORE_TTL_MINS,
   );
   const [vectorStoreTTLMinsError, setVectorStoreTTLMinsError] = useState(false);
+  const [toolConfig, setToolConfig] = useState(DEFAULT_TOOL_CONFIG);
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -135,15 +154,52 @@ const Options: React.FC = () => {
     });
   };
 
+  const handleToolEnabledChange = (tool: string, enabled: boolean) => {
+    const newToolConfig = { ...toolConfig };
+    newToolConfig[tool].enabled = enabled;
+    setToolConfig(newToolConfig);
+    chrome.storage.local.set({ toolConfig: newToolConfig });
+  };
+
+  const handleToolPrefixChange = (tool: string, prefix: string) => {
+    const newToolConfig = { ...toolConfig };
+    newToolConfig[tool].prefix = prefix;
+    setToolConfig(newToolConfig);
+    chrome.storage.local.set({ toolConfig: newToolConfig });
+  };
+
   useEffect(() => {
     chrome.storage.local
-      .get(["selectedHost", "selectedConfig", "selectedVectorStoreTTLMins"])
+      .get([
+        "selectedHost",
+        "selectedConfig",
+        "selectedVectorStoreTTLMins",
+        "toolConfig",
+      ])
       .then((data) => {
         if (data.selectedConfig) {
           setContentConfig(data.selectedConfig);
         }
         if (data.selectedVectorStoreTTLMins) {
           setVectorStoreTTLMins(parseInt(data.selectedVectorStoreTTLMins, 10));
+        }
+        if (data.toolConfig) {
+          // This logic is needed so tools can be added and removed from
+          // DEFAULT_TOOL_CONFIG and the toolConfig local storage.
+          Object.keys(DEFAULT_TOOL_CONFIG).forEach((tool) => {
+            if (!data.toolConfig[tool]) {
+              // add new tool
+              data.toolConfig[tool] = DEFAULT_TOOL_CONFIG[tool];
+            }
+          });
+          Object.keys(data.toolConfig).forEach((tool) => {
+            if (!DEFAULT_TOOL_CONFIG[tool]) {
+              // remove deleted tool
+              delete data.toolConfig[tool];
+            }
+          });
+          setToolConfig(data.toolConfig);
+          chrome.storage.local.set({ toolConfig: data.toolConfig });
         }
 
         // API connectivity check
@@ -175,52 +231,80 @@ const Options: React.FC = () => {
 
   return (
     <ThemeProvider theme={AppTheme}>
-      <div className="options-popup">
-        <FormControl fullWidth>
-          <FormGroup>
-            <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
-            <Select
-              sx={{ "margin-bottom": "15px" }}
-              labelId="ollama-model-select-label"
-              label="Ollama Model"
-              value={model}
-              onChange={handleModelChange}
-            >
-              {modelOptions.map((modelName: string, index) => (
-                <MenuItem key={index} value={modelName}>
-                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
-                </MenuItem>
-              ))}
-            </Select>
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              label="Ollama Host"
-              value={host}
-              error={hostError}
-              helperText={hostHelpText}
-              onChange={handleHostChange}
-            />
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              type="number"
-              label="Vector Store TTL (minutes)"
-              value={vectorStoreTTLMins}
-              error={vectorStoreTTLMinsError}
-              onChange={handleVectorStoreTTLMinsChange}
-            />
-            <TextField
-              sx={{ "margin-bottom": "15px" }}
-              label="Content Parser Config"
-              multiline
-              rows={10}
-              value={contentConfig}
-              error={contentConfigError}
-              helperText={contentConfigHelpText}
-              onChange={handleContentConfigChange}
-            />
-          </FormGroup>
+      <Box className="options-popup">
+        <FormControl className="options-input">
+          <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
+          <Select
+            sx={{ "margin-bottom": "15px" }}
+            labelId="ollama-model-select-label"
+            label="Ollama Model"
+            value={model}
+            onChange={handleModelChange}
+          >
+            {modelOptions.map((modelName: string, index) => (
+              <MenuItem key={index} value={modelName}>
+                {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
+              </MenuItem>
+            ))}
+          </Select>
         </FormControl>
-      </div>
+        <TextField
+          className="options-input"
+          sx={{ "margin-bottom": "15px" }}
+          label="Ollama Host"
+          value={host}
+          error={hostError}
+          helperText={hostHelpText}
+          onChange={handleHostChange}
+        />
+        <TextField
+          className="options-input"
+          sx={{ "margin-bottom": "15px" }}
+          type="number"
+          label="Vector Store TTL (minutes)"
+          value={vectorStoreTTLMins}
+          error={vectorStoreTTLMinsError}
+          onChange={handleVectorStoreTTLMinsChange}
+        />
+        <TextField
+          className="options-input"
+          sx={{ "margin-bottom": "15px" }}
+          label="Content Parser Config"
+          multiline
+          rows={10}
+          value={contentConfig}
+          error={contentConfigError}
+          helperText={contentConfigHelpText}
+          onChange={handleContentConfigChange}
+        />
+        <Box sx={{ mb: "5px" }}>Enable/Disable Tools</Box>
+        {Object.entries(toolConfig).map(([key, value]) => (
+          <Box
+            key={key}
+            sx={{ display: "flex", alignItems: "center", ml: "10px" }}
+          >
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={value.enabled}
+                  onChange={() => handleToolEnabledChange(key, !value.enabled)}
+                />
+              }
+              label={key}
+            />
+            <div style={{ flex: 1 }}></div>
+            <TextField
+              sx={{ width: "250px" }}
+              label="Prefix trigger"
+              disabled={!value.enabled}
+              value={value.prefix}
+              onChange={(event) =>
+                handleToolPrefixChange(key, event.target.value)
+              }
+            />
+          </Box>
+        ))}
+      </Box>
     </ThemeProvider>
   );
 };

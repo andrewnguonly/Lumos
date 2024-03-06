@@ -1,5 +1,9 @@
 import { Tool } from "@langchain/core/tools";
 
+export const CLS_CALC_TYPE = "isCalcPrompt";
+export const CLS_CALC_PROMPT =
+  "Is the following prompt a math equation with numbers and operators?";
+
 const OPERATOR_ORDER: { [key: string]: number } = {
   "^": 3,
   "*": 2,
