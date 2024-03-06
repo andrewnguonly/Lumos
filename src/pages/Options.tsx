@@ -294,7 +294,7 @@ const Options: React.FC = () => {
             />
             <div style={{ flex: 1 }}></div>
             <TextField
-              sx={{ width: "250px" }}
+              sx={{ width: "50%" }}
               label="Prefix trigger"
               disabled={!value.enabled}
               value={value.prefix}
