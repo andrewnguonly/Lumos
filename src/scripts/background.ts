@@ -39,7 +39,6 @@ const CLS_IMG_TRIGGER = "based on the image";
 const CLS_CALC_TYPE = "isCalcPrompt";
 const CLS_CALC_PROMPT =
   "Is the following prompt a math equation with numbers and operators?";
-const CLS_CALC_TRIGGER = "calculate:";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -135,13 +134,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     // classify prompt and optionally execute tools
     if (
+      options.toolConfig["Calculator"].enabled &&
       await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
-        CLS_CALC_TRIGGER,
+        options.toolConfig["Calculator"].prefix,
       )
     ) {
       return executeCalculatorTool(prompt);
@@ -238,13 +238,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
         }
       }
     } else if (
+      options.toolConfig["Calculator"].enabled &&
       await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
-        CLS_CALC_TRIGGER,
+        options.toolConfig["Calculator"].prefix,
       )
     ) {
       return executeCalculatorTool(prompt);
