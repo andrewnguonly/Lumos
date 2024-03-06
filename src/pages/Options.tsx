@@ -184,6 +184,8 @@ const Options: React.FC = () => {
           setVectorStoreTTLMins(parseInt(data.selectedVectorStoreTTLMins, 10));
         }
         if (data.toolConfig) {
+          // This logic is needed so tools can be added and removed from
+          // DEFAULT_TOOL_CONFIG and the toolConfig local storage.
           Object.keys(DEFAULT_TOOL_CONFIG).forEach((tool) => {
             if (!data.toolConfig[tool]) {
               // add new tool
@@ -292,7 +294,7 @@ const Options: React.FC = () => {
             />
             <div style={{ flex: 1 }}></div>
             <TextField
-              sx={{ width: "250px", "margin-bottom": "15px" }}
+              sx={{ width: "250px" }}
               label="Prefix trigger"
               disabled={!value.enabled}
               value={value.prefix}
