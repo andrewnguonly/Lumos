@@ -60,7 +60,7 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
-  const [openMsgHistory, setOpenMsgHistory] = useState(true);
+  const [openMsgHistory, setOpenMsgHistory] = useState(false);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
