@@ -5,6 +5,7 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
+  Drawer,
   FormControlLabel,
   IconButton,
   Snackbar,
@@ -12,6 +13,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import {
   Avatar,
@@ -30,6 +32,7 @@ import {
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
 import { CodeBlock, PreBlock } from "./CodeBlock";
+import MessageHistory from "./MessageHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -57,6 +60,7 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
+  const [openMsgHistory, setOpenMsgHistory] = useState(true);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -82,6 +86,10 @@ const ChatBar: React.FC = () => {
 
     setChatContainerHeight(newChatContainerHeight);
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
+  };
+
+  const toggleOpenMsgHistory = (open: boolean) => () => {
+    setOpenMsgHistory(open);
   };
 
   const promptWithContent = async () => {
@@ -322,6 +330,9 @@ const ChatBar: React.FC = () => {
 
   return (
     <Box>
+      <Drawer open={openMsgHistory} onClose={toggleOpenMsgHistory(false)}>
+        <MessageHistory />
+      </Drawer>
       <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -405,6 +416,9 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
+        <IconButton onClick={() => setOpenMsgHistory(true)}>
+          <HistoryIcon />
+        </IconButton>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
             <Button onClick={() => handleChangeHeight(50)}>
