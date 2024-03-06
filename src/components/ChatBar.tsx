@@ -92,6 +92,16 @@ const ChatBar: React.FC = () => {
     setOpenMsgHistory(open);
   };
 
+  const loadOldMessages = (preview: string) => {
+    chrome.storage.local.get(["messageHistory"], (data) => {
+      if (data.messageHistory) {
+        setMessages(data.messageHistory[preview]);
+      }
+      // close message history drawer
+      setOpenMsgHistory(false);
+    });
+  };
+
   const promptWithContent = async () => {
     // get default options
     const options = await getLumosOptions();
@@ -331,7 +341,7 @@ const ChatBar: React.FC = () => {
   return (
     <Box>
       <Drawer open={openMsgHistory} onClose={toggleOpenMsgHistory(false)}>
-        <MessageHistory />
+        <MessageHistory loadOldMessages={loadOldMessages} />
       </Drawer>
       <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
