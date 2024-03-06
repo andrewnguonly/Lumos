@@ -135,14 +135,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
     // classify prompt and optionally execute tools
     if (
       options.toolConfig["Calculator"].enabled &&
-      await classifyPrompt(
+      (await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
         options.toolConfig["Calculator"].prefix,
-      )
+      ))
     ) {
       return executeCalculatorTool(prompt);
     }
@@ -239,14 +239,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     } else if (
       options.toolConfig["Calculator"].enabled &&
-      await classifyPrompt(
+      (await classifyPrompt(
         options.ollamaHost,
         options.ollamaModel,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
         options.toolConfig["Calculator"].prefix,
-      )
+      ))
     ) {
       return executeCalculatorTool(prompt);
     }
