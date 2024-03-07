@@ -197,6 +197,7 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `cmd + c`: Copy last message to clipboard.
 - `cmd + j`: Toggle `Disable content parsing` checkbox.
 - `cmd + k`: Clear all messages.
+- `cmd + ;`: Open/close Chat History panel.
 
 ## Multimodal
 

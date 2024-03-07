@@ -212,6 +212,10 @@ const ChatBar: React.FC = () => {
           setShowSnackbar(true);
           setSnackbarMessage("Copied!");
           break;
+        case ";":
+          // open message history
+          toggleOpenMsgHistory(!openMsgHistory)();
+          break;
       }
     }
   };
@@ -426,29 +430,19 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
-        <Tooltip title="Time-Turner" placement="top">
-          <IconButton
-            disabled={submitDisabled}
-            onClick={() => setOpenMsgHistory(true)}
-          >
-            <HistoryIcon />
-          </IconButton>
-        </Tooltip>
+        <IconButton
+          disabled={submitDisabled}
+          onClick={() => setOpenMsgHistory(true)}
+        >
+          <HistoryIcon />
+        </IconButton>
         <ButtonGroup variant="text">
-          <Tooltip title="Increase window height" placement="top">
-            <Button onClick={() => handleChangeHeight(50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
-                +
-              </Typography>
-            </Button>
-          </Tooltip>
-          <Tooltip title="Decrease window height" placement="top">
-            <Button onClick={() => handleChangeHeight(-50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
-                -
-              </Typography>
-            </Button>
-          </Tooltip>
+          <Button onClick={() => handleChangeHeight(50)}>
+            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>+</Typography>
+          </Button>
+          <Button onClick={() => handleChangeHeight(-50)}>
+            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
+          </Button>
         </ButtonGroup>
       </Box>
       <Box className="chat-bar">

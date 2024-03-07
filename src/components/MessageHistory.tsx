@@ -16,20 +16,7 @@ interface MessageHistoryProps {
 }
 
 const MessageHistory: React.FC<MessageHistoryProps> = (props) => {
-  const [messagePreviews, setMessagePreviews] = useState([
-    "a preview of chat history 1",
-    "a preview of chat history 2",
-    "a preview of chat history 3",
-    "a preview of chat history 4",
-    "a preview of chat history 5",
-    "a preview of chat history 6",
-    "a preview of chat history 7",
-    "a preview of chat history 8",
-    "a preview of chat history 9",
-    "a preview of chat history 10",
-    "a preview of chat history 11",
-    "a preview of chat history 12",
-  ]);
+  const [messagePreviews, setMessagePreviews] = useState([]);
 
   const handleMessagePreviewClick = (text: string) => {
     props.loadOldMessages(text);
