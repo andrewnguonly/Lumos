@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import Box from "@mui/material/Box";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
+import {
+  Box,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  ListSubheader,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface MessageHistoryProps {
   loadOldMessages: (preview: string) => void;
@@ -30,6 +35,17 @@ const MessageHistory: React.FC<MessageHistoryProps> = (props) => {
     props.loadOldMessages(text);
   };
 
+  const handleMessagePreviewDelete = (text: string) => {
+    chrome.storage.local.get(["messageHistory"], (data) => {
+      if (data.messageHistory) {
+        const newMessageHistory = data.messageHistory;
+        delete newMessageHistory[text];
+        setMessagePreviews(newMessageHistory.keys());
+        chrome.storage.local.set({ messageHistory: newMessageHistory });
+      }
+    });
+  };
+
   useEffect(() => {
     chrome.storage.local.get(["messageHistory"], (data) => {
       if (data.messageHistory) {
@@ -39,12 +55,27 @@ const MessageHistory: React.FC<MessageHistoryProps> = (props) => {
   }, []);
 
   return (
-    <Box sx={{ width: 250 }} role="presentation">
-      <List>
+    <Box sx={{ width: 300 }} role="presentation">
+      <List sx={{ padding: 0 }}>
+        <ListSubheader>Chat History</ListSubheader>
         {messagePreviews.map((text) => (
-          <ListItem key={text} disablePadding>
+          <ListItem
+            key={text}
+            disablePadding
+            secondaryAction={
+              <IconButton
+                edge="end"
+                onClick={() => handleMessagePreviewDelete(text)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            }
+          >
             <ListItemButton onClick={() => handleMessagePreviewClick(text)}>
-              <ListItemText primary={text} />
+              <ListItemText
+                primary={text}
+                primaryTypographyProps={{ noWrap: true }}
+              />
             </ListItemButton>
           </ListItem>
         ))}

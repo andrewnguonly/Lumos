@@ -426,9 +426,14 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
-        <IconButton onClick={() => setOpenMsgHistory(true)}>
-          <HistoryIcon />
-        </IconButton>
+        <Tooltip title="Time-Turner" placement="top">
+          <IconButton
+            disabled={submitDisabled}
+            onClick={() => setOpenMsgHistory(true)}
+          >
+            <HistoryIcon />
+          </IconButton>
+        </Tooltip>
         <ButtonGroup variant="text">
           <Tooltip title="Increase window height" placement="top">
             <Button onClick={() => handleChangeHeight(50)}>
