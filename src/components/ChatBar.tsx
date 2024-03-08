@@ -32,7 +32,7 @@ import {
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
 import { CodeBlock, PreBlock } from "./CodeBlock";
-import MessageHistory from "./MessageHistory";
+import ChatHistory from "./ChatHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -60,7 +60,7 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
-  const [openMsgHistory, setOpenMsgHistory] = useState(false);
+  const [openChatHistory, setOpenChatHistory] = useState(false);
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -88,17 +88,13 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const toggleOpenMsgHistory = (open: boolean) => () => {
-    setOpenMsgHistory(open);
-  };
-
-  const loadOldMessages = (preview: string) => {
-    chrome.storage.local.get(["messageHistory"], (data) => {
-      if (data.messageHistory) {
-        setMessages(data.messageHistory[preview]);
+  const loadOldChats = (chatId: number) => {
+    chrome.storage.local.get(["chatHistory"], (data) => {
+      if (data.chatHistory) {
+        setMessages(data.chatHistory[chatId].messages);
       }
       // close message history drawer
-      setOpenMsgHistory(false);
+      setOpenChatHistory(false);
     });
   };
 
@@ -214,7 +210,7 @@ const ChatBar: React.FC = () => {
           break;
         case ";":
           // open message history
-          toggleOpenMsgHistory(!openMsgHistory)();
+          setOpenChatHistory(!openChatHistory);
           break;
       }
     }
@@ -344,8 +340,8 @@ const ChatBar: React.FC = () => {
 
   return (
     <Box>
-      <Drawer open={openMsgHistory} onClose={toggleOpenMsgHistory(false)}>
-        <MessageHistory loadOldMessages={loadOldMessages} />
+      <Drawer open={openChatHistory} onClose={() => setOpenChatHistory(false)}>
+        <ChatHistory loadOldChat={loadOldChats} />
       </Drawer>
       <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
@@ -432,7 +428,7 @@ const ChatBar: React.FC = () => {
         <div style={{ flex: 1 }}></div>
         <IconButton
           disabled={submitDisabled}
-          onClick={() => setOpenMsgHistory(true)}
+          onClick={() => setOpenChatHistory(true)}
         >
           <HistoryIcon />
         </IconButton>
