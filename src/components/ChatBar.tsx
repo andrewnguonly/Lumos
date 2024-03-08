@@ -102,6 +102,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
         setMessages(data.chatHistory[chatId].messages);
+        saveCurrentChatId(chatId);
       }
       // close message history drawer
       setOpenChatHistory(false);
