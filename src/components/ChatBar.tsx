@@ -5,6 +5,7 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
+  Drawer,
   FormControlLabel,
   IconButton,
   Snackbar,
@@ -12,7 +13,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Avatar,
   ChatContainer,
@@ -21,6 +24,7 @@ import {
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
 import Markdown from "markdown-to-jsx";
+import { v4 as uuidv4 } from "uuid";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -30,6 +34,7 @@ import {
 import { getHtmlContent } from "../scripts/content";
 import { getContentConfig } from "../contentConfig";
 import { CodeBlock, PreBlock } from "./CodeBlock";
+import ChatHistory from "./ChatHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
@@ -57,6 +62,8 @@ const ChatBar: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
+  const [openChatHistory, setOpenChatHistory] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState("");
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -82,6 +89,95 @@ const ChatBar: React.FC = () => {
 
     setChatContainerHeight(newChatContainerHeight);
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
+  };
+
+  const saveMessages = (messages: LumosMessage[]) => {
+    setMessages(messages);
+    chrome.storage.session.set({ messages: messages });
+  };
+
+  const saveCurrentChatId = (chatId: string) => {
+    setCurrentChatId(chatId);
+    chrome.storage.session.set({ currentChatId: chatId });
+  };
+
+  const loadChat = (chatId: string) => {
+    console.log(`Loading chat ID: ${chatId}`);
+    chrome.storage.local.get(["chatHistory"], (data) => {
+      if (data.chatHistory) {
+        saveMessages(data.chatHistory[chatId].messages);
+        saveCurrentChatId(chatId);
+      }
+      // close message history drawer
+      setOpenChatHistory(false);
+    });
+  };
+
+  const saveChat = () => {
+    if (currentChatId !== "") {
+      setShowSnackbar(true);
+      setSnackbarMessage("Chat is already saved");
+      return;
+    }
+    if (messages.length === 0) {
+      // don't save an empty chat
+      return;
+    }
+
+    setShowSnackbar(true);
+    setSnackbarMessage("Saved chat!");
+    let newChatHistory;
+
+    // generate new chat ID
+    const newChatId = uuidv4().substring(0, 8);
+    console.log(`Creating new chat ID: ${newChatId}`);
+
+    chrome.storage.local.get(["chatHistory"], (data) => {
+      if (data.chatHistory) {
+        // chat history already exists in local storage
+        newChatHistory = data.chatHistory;
+        // add new chat to chat history
+        newChatHistory[newChatId] = {
+          updatedAt: Date.now(),
+          preview: messages[0].message,
+          messages: messages,
+        };
+      } else {
+        // create new chat history in local storage
+        newChatHistory = {
+          [newChatId]: {
+            updatedAt: Date.now(),
+            preview: messages[0].message,
+            messages: messages,
+          },
+        };
+      }
+
+      // save new chat history in local storage and update current chat ID
+      saveCurrentChatId(newChatId);
+      chrome.storage.local.set({ chatHistory: newChatHistory });
+    });
+  };
+
+  const updateChat = (chatId?: string) => {
+    if (chatId) {
+      chrome.storage.local.get(["chatHistory"], (data) => {
+        if (data.chatHistory) {
+          // chat history already exists in local storage
+          const newChatHistory = data.chatHistory;
+          // add new chat to chat history
+          newChatHistory[chatId] = {
+            updatedAt: Date.now(),
+            preview: messages[0].message,
+            messages: messages,
+          };
+
+          // save new chat history in local storage and update current chat ID
+          saveCurrentChatId(chatId);
+          chrome.storage.local.set({ chatHistory: newChatHistory });
+        }
+      });
+    }
   };
 
   const promptWithContent = async () => {
@@ -146,8 +242,7 @@ const ChatBar: React.FC = () => {
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
-    setMessages(newMessages);
-    chrome.storage.session.set({ messages: newMessages });
+    saveMessages(newMessages);
 
     if (parsingDisabled) {
       chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
@@ -167,8 +262,8 @@ const ChatBar: React.FC = () => {
   };
 
   const handleClearButtonClick = () => {
-    setMessages([]);
-    chrome.storage.session.set({ messages: [] });
+    saveMessages([]);
+    saveCurrentChatId("");
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -193,6 +288,10 @@ const ChatBar: React.FC = () => {
           navigator.clipboard.writeText(messages[messages.length - 1].message);
           setShowSnackbar(true);
           setSnackbarMessage("Copied!");
+          break;
+        case ";":
+          // open message history
+          setOpenChatHistory(!openChatHistory);
           break;
       }
     }
@@ -245,20 +344,42 @@ const ChatBar: React.FC = () => {
       chrome.storage.session.set({ messages: messages });
       setLoading2(false);
       setSubmitDisabled(false);
+      updateChat(currentChatId);
     }
   };
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
     document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   });
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedHost"],
+      ["chatContainerHeight", "selectedHost", "chatHistory"],
       (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
+        }
+        if (data.chatHistory) {
+          chrome.storage.session.get(["currentChatId"], (sessionData) => {
+            if (
+              sessionData.currentChatId &&
+              data.chatHistory[sessionData.currentChatId]
+            ) {
+              // Only set the current chat ID if it's present in the chat history.
+              // It may have been deleted in the chat history view.
+              console.log(
+                "Setting current chat id:",
+                sessionData.currentChatId,
+              );
+              setCurrentChatId(sessionData.currentChatId);
+            }
+          });
         }
 
         // API connectivity check
@@ -282,7 +403,7 @@ const ChatBar: React.FC = () => {
     );
 
     chrome.storage.session.get(
-      ["prompt", "parsingDisabled", "messages"],
+      ["prompt", "parsingDisabled", "messages", "currentChatId"],
       (data) => {
         if (data.prompt) {
           setPrompt(data.prompt);
@@ -322,6 +443,9 @@ const ChatBar: React.FC = () => {
 
   return (
     <Box>
+      <Drawer open={openChatHistory} onClose={() => setOpenChatHistory(false)}>
+        <ChatHistory loadChat={loadChat} />
+      </Drawer>
       <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -405,21 +529,22 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
+        <IconButton disabled={submitDisabled} onClick={saveChat}>
+          <SaveAltIcon />
+        </IconButton>
+        <IconButton
+          disabled={submitDisabled}
+          onClick={() => setOpenChatHistory(true)}
+        >
+          <HistoryIcon />
+        </IconButton>
         <ButtonGroup variant="text">
-          <Tooltip title="Increase window height" placement="top">
-            <Button onClick={() => handleChangeHeight(50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
-                +
-              </Typography>
-            </Button>
-          </Tooltip>
-          <Tooltip title="Decrease window height" placement="top">
-            <Button onClick={() => handleChangeHeight(-50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
-                -
-              </Typography>
-            </Button>
-          </Tooltip>
+          <Button onClick={() => handleChangeHeight(50)}>
+            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>+</Typography>
+          </Button>
+          <Button onClick={() => handleChangeHeight(-50)}>
+            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
+          </Button>
         </ButtonGroup>
       </Box>
       <Box className="chat-bar">

@@ -36,6 +36,11 @@ const AppTheme = createTheme({
         size: "small",
       },
     },
+    MuiSwitch: {
+      defaultProps: {
+        size: "small",
+      },
+    },
   },
 });
 

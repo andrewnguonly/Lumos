@@ -4,7 +4,7 @@
 
 A RAG LLM co-pilot for browsing the web, powered by local LLMs.
 
-![Screenshot of Lumos](./screenshots/lumos_screenshot_2.png)
+![Screenshot of Lumos](./screenshots/lumos_screenshot_3.png)
 
 This Chrome extension is powered by [Ollama](https://ollama.ai/). Inference is done on your local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the [Web LLM project](https://webllm.mlc.ai/) and the [local LLM examples](https://js.langchain.com/docs/use_cases/question_answering/local_retrieval_qa) provided by [LangChain](https://github.com/langchain-ai/langchainjs).
 
@@ -98,6 +98,7 @@ Right-click on the extension icon and select `Options` to access the extension's
 - **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
 - **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
+- **Enable/Disable Tools**: Enable or disable individual tools. If a tool is enabled, a custom prefix trigger (e.g. "calc:") can be specified to override the app's internal prompt classification mechanism.
 
 ### Content Parser Config
 
@@ -193,6 +194,13 @@ Example:
 Alternatively, if content is highlighted on a page (e.g. highlighted text), that content will be parsed instead of the content produced from the content parser configuration.
 
 Note: Content that is highlighted will not be cached in the vector store cache. Each subsequent prompt containing highlighted content will generate new embeddings.
+
+## Shortcuts
+
+- `cmd + c`: Copy last message to clipboard.
+- `cmd + j`: Toggle `Disable content parsing` checkbox.
+- `cmd + k`: Clear all messages.
+- `cmd + ;`: Open/close Chat History panel.
 
 ## Multimodal
 
