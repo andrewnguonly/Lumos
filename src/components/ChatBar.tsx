@@ -360,10 +360,26 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedHost"],
+      ["chatContainerHeight", "selectedHost", "chatHistory"],
       (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
+        }
+        if (data.chatHistory) {
+          chrome.storage.session.get(["currentChatId"], (sessionData) => {
+            if (
+              sessionData.currentChatId &&
+              data.chatHistory[sessionData.currentChatId]
+            ) {
+              // Only set the current chat ID if it's present in the chat history.
+              // It may have been deleted in the chat history view.
+              console.log(
+                "Setting current chat id:",
+                sessionData.currentChatId,
+              );
+              setCurrentChatId(sessionData.currentChatId);
+            }
+          });
         }
 
         // API connectivity check
@@ -414,10 +430,6 @@ const ChatBar: React.FC = () => {
               chrome.storage.sync.remove(["completion", "sender"]);
             }
           });
-        }
-        if (data.currentChatId) {
-          console.log("setting current chat id:", data.currentChatId);
-          setCurrentChatId(data.currentChatId);
         }
       },
     );

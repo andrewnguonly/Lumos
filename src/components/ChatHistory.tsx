@@ -93,7 +93,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
                 <ListItemText
                   primary={chatMetadata.preview}
                   secondary={formatTs(chatMetadata.updatedAt)}
-                  primaryTypographyProps={{ noWrap: true }}
+                  primaryTypographyProps={{ fontSize: 14, noWrap: true }}
                   secondaryTypographyProps={{ fontSize: 10 }}
                 />
               </ListItemButton>
