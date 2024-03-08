@@ -24,6 +24,7 @@ import {
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
 import Markdown from "markdown-to-jsx";
+import { v4 as uuidv4 } from "uuid";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -62,7 +63,7 @@ const ChatBar: React.FC = () => {
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState<number | undefined>(
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
     undefined,
   );
 
@@ -92,12 +93,12 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const saveCurrentChatId = (chatId?: number) => {
+  const saveCurrentChatId = (chatId?: string) => {
     setCurrentChatId(chatId);
     chrome.storage.session.set({ currentChatId: chatId });
   };
 
-  const loadChat = (chatId: number) => {
+  const loadChat = (chatId: string) => {
     console.log(`Loading chat ID: ${chatId}`);
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
@@ -109,41 +110,59 @@ const ChatBar: React.FC = () => {
     });
   };
 
-  const saveChat = (chatId?: number) => {
+  const saveChat = () => {
+    let newChatHistory;
+
+    // generate new chat ID
+    const newChatId = uuidv4().substring(0, 8);
+    console.log(`Creating new chat ID: ${newChatId}`);
+
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
         // chat history already exists in local storage
-        const newChatHistory = data.chatHistory;
-        if (chatId) {
-          // update existing chat
-          console.log(`Saving chat ID: ${chatId}`);
-          newChatHistory[chatId].messages = messages;
-          saveCurrentChatId(chatId);
-        } else {
-          // save new chat
-          const newChatId = Date.now();
-          console.log(`Creating new chat ID: ${newChatId}`);
-          newChatHistory[newChatId] = {
-            preview: messages[0].message,
-            messages: messages,
-          };
-          saveCurrentChatId(newChatId);
-        }
-        chrome.storage.local.set({ chatHistory: newChatHistory });
+        newChatHistory = data.chatHistory;
+        // add new chat to chat history
+        newChatHistory[newChatId] = {
+          updatedAt: Date.now(),
+          preview: messages[0].message,
+          messages: messages,
+        };
       } else {
         // create new chat history in local storage
-        const newChatId = Date.now();
-        console.log(`Creating new chat ID: ${newChatId}`);
-        const newChatHistory = {
+        newChatHistory = {
           [newChatId]: {
+            updatedAt: Date.now(),
             preview: messages[0].message,
             messages: messages,
           },
         };
-        saveCurrentChatId(newChatId);
-        chrome.storage.local.set({ chatHistory: newChatHistory });
       }
+
+      // save new chat history in local storage and update current chat ID
+      saveCurrentChatId(newChatId);
+      chrome.storage.local.set({ chatHistory: newChatHistory });
     });
+  };
+
+  const updateChat = (chatId?: string) => {
+    if (chatId) {
+      chrome.storage.local.get(["chatHistory"], (data) => {
+        if (data.chatHistory) {
+          // chat history already exists in local storage
+          const newChatHistory = data.chatHistory;
+          // add new chat to chat history
+          newChatHistory[chatId] = {
+            updatedAt: Date.now(),
+            preview: messages[0].message,
+            messages: messages,
+          };
+
+          // save new chat history in local storage and update current chat ID
+          saveCurrentChatId(chatId);
+          chrome.storage.local.set({ chatHistory: newChatHistory });
+        }
+      });
+    }
   };
 
   const promptWithContent = async () => {
@@ -312,6 +331,7 @@ const ChatBar: React.FC = () => {
       chrome.storage.session.set({ messages: messages });
       setLoading2(false);
       setSubmitDisabled(false);
+      updateChat(currentChatId);
     }
   };
 
@@ -483,10 +503,7 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
-        <IconButton
-          disabled={submitDisabled}
-          onClick={() => saveChat(currentChatId)}
-        >
+        <IconButton disabled={submitDisabled} onClick={saveChat}>
           <SaveAltIcon />
         </IconButton>
         <IconButton

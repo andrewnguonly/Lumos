@@ -12,7 +12,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface ChatHistoryProps {
-  loadChat: (chatId: number) => void;
+  loadChat: (chatId: string) => void;
 }
 
 const formatTs = (ts: string): string => {
@@ -43,11 +43,12 @@ const formatTs = (ts: string): string => {
 
 const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
   const [chatHistory, setChatHistory] = useState<
-    Record<number, Record<string, string>>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Record<string, Record<string, any>>
   >({});
 
   const handleMessagePreviewClick = (chatId: string) => {
-    props.loadChat(parseInt(chatId));
+    props.loadChat(chatId);
   };
 
   const handleMessagePreviewDelete = (chatId: string) => {
@@ -74,7 +75,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
       <List sx={{ padding: 0 }}>
         <ListSubheader>Chat History</ListSubheader>
         {Object.entries(chatHistory)
-          .sort(([key1], [key2]) => key2.localeCompare(key1))
+          .sort(([, a], [, b]) => b.updatedAt - a.updatedAt)
           .map(([chatId, chatMetadata]) => (
             <ListItem
               key={chatId}
@@ -91,7 +92,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
               <ListItemButton onClick={() => handleMessagePreviewClick(chatId)}>
                 <ListItemText
                   primary={chatMetadata.preview}
-                  secondary={formatTs(chatId)}
+                  secondary={formatTs(chatMetadata.updatedAt)}
                   primaryTypographyProps={{ noWrap: true }}
                   secondaryTypographyProps={{ fontSize: 10 }}
                 />
