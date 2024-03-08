@@ -91,6 +91,11 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
+  const saveMessages = (messages: LumosMessage[]) => {
+    setMessages(messages);
+    chrome.storage.session.set({ messages: messages });
+  };
+
   const saveCurrentChatId = (chatId: string) => {
     setCurrentChatId(chatId);
     chrome.storage.session.set({ currentChatId: chatId });
@@ -100,10 +105,7 @@ const ChatBar: React.FC = () => {
     console.log(`Loading chat ID: ${chatId}`);
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
-        setMessages(data.chatHistory[chatId].messages);
-        chrome.storage.session.set({
-          messages: data.chatHistory[chatId].messages,
-        });
+        saveMessages(data.chatHistory[chatId].messages);
         saveCurrentChatId(chatId);
       }
       // close message history drawer
@@ -240,8 +242,7 @@ const ChatBar: React.FC = () => {
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
-    setMessages(newMessages);
-    chrome.storage.session.set({ messages: newMessages });
+    saveMessages(newMessages);
 
     if (parsingDisabled) {
       chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
@@ -261,8 +262,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handleClearButtonClick = () => {
-    setMessages([]);
-    chrome.storage.session.set({ messages: [] });
+    saveMessages([]);
     saveCurrentChatId("");
   };
 
