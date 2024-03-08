@@ -251,6 +251,11 @@ const ChatBar: React.FC = () => {
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleBackgroundMessage);
     document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   });
 
   useEffect(() => {
