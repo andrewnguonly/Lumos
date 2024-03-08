@@ -63,9 +63,7 @@ const ChatBar: React.FC = () => {
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
-    undefined,
-  );
+  const [currentChatId, setCurrentChatId] = useState("");
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -93,7 +91,7 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const saveCurrentChatId = (chatId?: string) => {
+  const saveCurrentChatId = (chatId: string) => {
     setCurrentChatId(chatId);
     chrome.storage.session.set({ currentChatId: chatId });
   };
@@ -114,7 +112,7 @@ const ChatBar: React.FC = () => {
   };
 
   const saveChat = () => {
-    if (currentChatId) {
+    if (currentChatId !== "") {
       setShowSnackbar(true);
       setSnackbarMessage("Chat is already saved");
       return;
@@ -265,7 +263,7 @@ const ChatBar: React.FC = () => {
   const handleClearButtonClick = () => {
     setMessages([]);
     chrome.storage.session.set({ messages: [] });
-    saveCurrentChatId(undefined);
+    saveCurrentChatId("");
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -418,6 +416,7 @@ const ChatBar: React.FC = () => {
           });
         }
         if (data.currentChatId) {
+          console.log("setting current chat id:", data.currentChatId);
           setCurrentChatId(data.currentChatId);
         }
       },
