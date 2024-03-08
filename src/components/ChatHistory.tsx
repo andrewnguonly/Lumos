@@ -12,8 +12,34 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface ChatHistoryProps {
-  loadOldChat: (chatId: number) => void;
+  loadChat: (chatId: number) => void;
 }
+
+const formatTs = (ts: string): string => {
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const date = new Date(parseInt(ts));
+  const dayOfWeek = daysOfWeek[date.getDay()];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  return `${dayOfWeek}, ${month} ${day}, ${year}`;
+};
 
 const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
   const [chatHistory, setChatHistory] = useState<
@@ -21,7 +47,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
   >({});
 
   const handleMessagePreviewClick = (chatId: string) => {
-    props.loadOldChat(parseInt(chatId));
+    props.loadChat(parseInt(chatId));
   };
 
   const handleMessagePreviewDelete = (chatId: string) => {
@@ -47,34 +73,38 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
     <Box sx={{ width: 300 }} role="presentation">
       <List sx={{ padding: 0 }}>
         <ListSubheader>Chat History</ListSubheader>
-        {Object.entries(chatHistory).map(([chatId, chatMetadata]) => (
-          <ListItem
-            key={chatId}
-            disablePadding
-            secondaryAction={
-              <IconButton
-                edge="end"
-                onClick={() => handleMessagePreviewDelete(chatId)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            }
-          >
-            <ListItemButton onClick={() => handleMessagePreviewClick(chatId)}>
-              <ListItemText
-                primary={chatMetadata.preview}
-                primaryTypographyProps={{ noWrap: true }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {Object.entries(chatHistory)
+          .sort(([key1], [key2]) => key2.localeCompare(key1))
+          .map(([chatId, chatMetadata]) => (
+            <ListItem
+              key={chatId}
+              disablePadding
+              secondaryAction={
+                <IconButton
+                  edge="end"
+                  onClick={() => handleMessagePreviewDelete(chatId)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
+            >
+              <ListItemButton onClick={() => handleMessagePreviewClick(chatId)}>
+                <ListItemText
+                  primary={chatMetadata.preview}
+                  secondary={formatTs(chatId)}
+                  primaryTypographyProps={{ noWrap: true }}
+                  secondaryTypographyProps={{ fontSize: 10 }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
       </List>
     </Box>
   );
 };
 
 ChatHistory.propTypes = {
-  loadOldChat: PropTypes.func.isRequired,
+  loadChat: PropTypes.func.isRequired,
 };
 
 export default ChatHistory;

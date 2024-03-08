@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Avatar,
   ChatContainer,
@@ -61,6 +62,9 @@ const ChatBar: React.FC = () => {
   const textFieldRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<number | undefined>(
+    undefined,
+  );
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -88,13 +92,56 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.set({ chatContainerHeight: newChatContainerHeight });
   };
 
-  const loadOldChats = (chatId: number) => {
+  const saveCurrentChatId = (chatId?: number) => {
+    setCurrentChatId(chatId);
+    chrome.storage.session.set({ currentChatId: chatId });
+  };
+
+  const loadChat = (chatId: number) => {
+    console.log(`Loading chat ID: ${chatId}`);
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
         setMessages(data.chatHistory[chatId].messages);
       }
       // close message history drawer
       setOpenChatHistory(false);
+    });
+  };
+
+  const saveChat = (chatId?: number) => {
+    chrome.storage.local.get(["chatHistory"], (data) => {
+      if (data.chatHistory) {
+        // chat history already exists in local storage
+        const newChatHistory = data.chatHistory;
+        if (chatId) {
+          // update existing chat
+          console.log(`Saving chat ID: ${chatId}`);
+          newChatHistory[chatId].messages = messages;
+          saveCurrentChatId(chatId);
+        } else {
+          // save new chat
+          const newChatId = Date.now();
+          console.log(`Creating new chat ID: ${newChatId}`);
+          newChatHistory[newChatId] = {
+            preview: messages[0].message,
+            messages: messages,
+          };
+          saveCurrentChatId(newChatId);
+        }
+        chrome.storage.local.set({ chatHistory: newChatHistory });
+      } else {
+        // create new chat history in local storage
+        const newChatId = Date.now();
+        console.log(`Creating new chat ID: ${newChatId}`);
+        const newChatHistory = {
+          [newChatId]: {
+            preview: messages[0].message,
+            messages: messages,
+          },
+        };
+        saveCurrentChatId(newChatId);
+        chrome.storage.local.set({ chatHistory: newChatHistory });
+      }
     });
   };
 
@@ -183,6 +230,7 @@ const ChatBar: React.FC = () => {
   const handleClearButtonClick = () => {
     setMessages([]);
     chrome.storage.session.set({ messages: [] });
+    saveCurrentChatId(undefined);
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -300,7 +348,7 @@ const ChatBar: React.FC = () => {
     );
 
     chrome.storage.session.get(
-      ["prompt", "parsingDisabled", "messages"],
+      ["prompt", "parsingDisabled", "messages", "currentChatId"],
       (data) => {
         if (data.prompt) {
           setPrompt(data.prompt);
@@ -328,6 +376,9 @@ const ChatBar: React.FC = () => {
             }
           });
         }
+        if (data.currentChatId) {
+          setCurrentChatId(data.currentChatId);
+        }
       },
     );
   }, []);
@@ -341,7 +392,7 @@ const ChatBar: React.FC = () => {
   return (
     <Box>
       <Drawer open={openChatHistory} onClose={() => setOpenChatHistory(false)}>
-        <ChatHistory loadOldChat={loadOldChats} />
+        <ChatHistory loadChat={loadChat} />
       </Drawer>
       <Box className="chat-container" sx={{ height: chatContainerHeight }}>
         <Snackbar
@@ -426,6 +477,12 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
+        <IconButton
+          disabled={submitDisabled}
+          onClick={() => saveChat(currentChatId)}
+        >
+          <SaveAltIcon />
+        </IconButton>
         <IconButton
           disabled={submitDisabled}
           onClick={() => setOpenChatHistory(true)}
