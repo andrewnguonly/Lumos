@@ -103,6 +103,9 @@ const ChatBar: React.FC = () => {
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
         setMessages(data.chatHistory[chatId].messages);
+        chrome.storage.session.set({
+          messages: data.chatHistory[chatId].messages,
+        });
         saveCurrentChatId(chatId);
       }
       // close message history drawer
@@ -111,6 +114,18 @@ const ChatBar: React.FC = () => {
   };
 
   const saveChat = () => {
+    if (currentChatId) {
+      setShowSnackbar(true);
+      setSnackbarMessage("Chat is already saved");
+      return;
+    }
+    if (messages.length === 0) {
+      // don't save an empty chat
+      return;
+    }
+
+    setShowSnackbar(true);
+    setSnackbarMessage("Saved chat!");
     let newChatHistory;
 
     // generate new chat ID

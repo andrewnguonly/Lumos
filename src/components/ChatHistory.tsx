@@ -55,7 +55,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = (props) => {
     chrome.storage.local.get(["chatHistory"], (data) => {
       if (data.chatHistory) {
         const newChatHistory = data.chatHistory;
-        delete newChatHistory[parseInt(chatId)];
+        delete newChatHistory[chatId];
         setChatHistory(newChatHistory);
         chrome.storage.local.set({ chatHistory: newChatHistory });
       }
