@@ -29,6 +29,7 @@ import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
   DEFAULT_HOST,
+  apiConnected,
   getLumosOptions,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
@@ -360,8 +361,8 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedHost", "chatHistory"],
-      (data) => {
+      ["chatContainerHeight", "selectedModel", "selectedHost", "chatHistory"],
+      async (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
         }
@@ -384,21 +385,20 @@ const ChatBar: React.FC = () => {
 
         // API connectivity check
         const selectedHost = data.selectedHost || DEFAULT_HOST;
-        fetch(`${selectedHost}/api/tags`)
-          .then((response) => {
-            if (response.ok) {
-              setPromptError(false);
-              setPromptPlaceholderText("Enter your prompt here");
-            } else {
-              throw new Error();
-            }
-          })
-          .catch(() => {
-            setPromptError(true);
-            setPromptPlaceholderText(
-              "Unable to connect to Ollama API. Check Ollama server.",
-            );
-          });
+        const [connected, models, errMsg] = await apiConnected(selectedHost);
+
+        if (connected) {
+          setPromptError(false);
+          setPromptPlaceholderText("Enter your prompt here");
+
+          if (!data.selectedModel) {
+            // persist selected model to local storage
+            chrome.storage.local.set({ selectedModel: models[0] });
+          }
+        } else {
+          setPromptError(true);
+          setPromptPlaceholderText(errMsg);
+        }
       },
     );
 

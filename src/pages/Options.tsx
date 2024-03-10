@@ -26,7 +26,6 @@ export interface ToolConfig {
   };
 }
 
-export const DEFAULT_MODEL = "llama2";
 export const DEFAULT_HOST = "http://localhost:11434";
 export const DEFAULT_KEEP_ALIVE = "60m";
 export const DEFAULT_CONTENT_CONFIG = JSON.stringify(
@@ -68,7 +67,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
           reject(chrome.runtime.lastError);
         } else {
           resolve({
-            ollamaModel: data.selectedModel || DEFAULT_MODEL,
+            ollamaModel: data.selectedModel,
             ollamaHost: data.selectedHost || DEFAULT_HOST,
             contentConfig: JSON.parse(
               data.selectedConfig || DEFAULT_CONTENT_CONFIG,
@@ -90,9 +89,39 @@ export const isMultimodal = (model: string): boolean => {
   );
 };
 
+/**
+ * Ollama API connectivity check.
+ *
+ * @param {string} host Ollama host.
+ * @return {[boolean, string[], string]} Tuple of connected status, available models, and an optional error message.
+ */
+export const apiConnected = async (
+  host: string,
+): Promise<[boolean, string[], string]> => {
+  let resp;
+  const errMsg = "Unable to connect to Ollama API. Check Ollama server.";
+
+  try {
+    resp = await fetch(`${host}/api/tags`);
+  } catch (e) {
+    return [false, [], errMsg];
+  }
+
+  if (resp.ok) {
+    const data = await resp.json();
+    const modelOptions = data.models.map(
+      (model: { name: string }) => model.name,
+    );
+    // successfully connected
+    return [true, modelOptions, ""];
+  }
+
+  return [false, [], errMsg];
+};
+
 const Options: React.FC = () => {
-  const [model, setModel] = useState(DEFAULT_MODEL);
-  const [modelOptions, setModelOptions] = useState([]);
+  const [model, setModel] = useState("");
+  const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [host, setHost] = useState(DEFAULT_HOST);
   const [hostError, setHostError] = useState(false);
   const [hostHelpText, setHostHelpText] = useState("");
@@ -171,12 +200,13 @@ const Options: React.FC = () => {
   useEffect(() => {
     chrome.storage.local
       .get([
+        "selectedModel",
         "selectedHost",
         "selectedConfig",
         "selectedVectorStoreTTLMins",
         "toolConfig",
       ])
-      .then((data) => {
+      .then(async (data) => {
         if (data.selectedConfig) {
           setContentConfig(data.selectedConfig);
         }
@@ -204,35 +234,32 @@ const Options: React.FC = () => {
 
         // API connectivity check
         const selectedHost = data.selectedHost || DEFAULT_HOST;
-        fetch(`${selectedHost}/api/tags`)
-          .then((response) => response.json())
-          .then((data) => {
-            const modelOptions = data.models.map(
-              (model: { name: string }) => model.name,
-            );
-            setModelOptions(modelOptions);
-            chrome.storage.local.get(["selectedModel"]).then((data) => {
-              if (data.selectedModel) {
-                setModel(data.selectedModel);
-              } else {
-                setModel(modelOptions[0]);
-              }
-            });
-            setHostError(false);
-            setHostHelpText("");
-          })
-          .catch(() => {
-            setHostError(true);
-            setHostHelpText("Error connecting to Ollama host");
-          });
         setHost(selectedHost);
+
+        const [connected, models, errMsg] = await apiConnected(selectedHost);
+        if (connected) {
+          setHostError(false);
+          setHostHelpText("");
+          setModelOptions(models);
+
+          if (data.selectedModel) {
+            setModel(data.selectedModel);
+          } else {
+            setModel(models[0]);
+            // persist selected model to local storage
+            chrome.storage.local.set({ selectedModel: models[0] });
+          }
+        } else {
+          setHostError(true);
+          setHostHelpText(errMsg);
+        }
       });
   }, []);
 
   return (
     <ThemeProvider theme={AppTheme}>
       <Box className="options-popup">
-        <FormControl className="options-input">
+        <FormControl className="options-input" size="small">
           <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
           <Select
             sx={{ "margin-bottom": "15px" }}
