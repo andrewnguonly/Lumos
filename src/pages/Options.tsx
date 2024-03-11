@@ -41,11 +41,13 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
   },
 };
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
+export const EMBEDDING_MODELS = ["nomic-embed-text", "all-minilm"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
 interface LumosOptions {
   ollamaModel: string;
+  ollamaEmbeddingModel: string;
   ollamaHost: string;
   contentConfig: ContentConfig;
   vectorStoreTTLMins: number;
@@ -57,6 +59,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
     chrome.storage.local.get(
       [
         "selectedModel",
+        "selectedEmbeddingModel",
         "selectedHost",
         "selectedConfig",
         "selectedVectorStoreTTLMins",
@@ -68,6 +71,8 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
         } else {
           resolve({
             ollamaModel: data.selectedModel,
+            ollamaEmbeddingModel:
+              data.selectedEmbeddingModel || data.selectedModel,
             ollamaHost: data.selectedHost || DEFAULT_HOST,
             contentConfig: JSON.parse(
               data.selectedConfig || DEFAULT_CONTENT_CONFIG,
@@ -121,6 +126,7 @@ export const apiConnected = async (
 
 const Options: React.FC = () => {
   const [model, setModel] = useState("");
+  const [embeddingModel, setEmbeddingModel] = useState("");
   const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [host, setHost] = useState(DEFAULT_HOST);
   const [hostError, setHostError] = useState(false);
@@ -138,6 +144,14 @@ const Options: React.FC = () => {
     const selectedModel = event.target.value;
     setModel(selectedModel);
     chrome.storage.local.set({ selectedModel: selectedModel });
+  };
+
+  const handleEmbeddingModelChange = (event: SelectChangeEvent) => {
+    const selectedEmbeddingModel = event.target.value;
+    setEmbeddingModel(selectedEmbeddingModel);
+    chrome.storage.local.set({
+      selectedEmbeddingModel: selectedEmbeddingModel,
+    });
   };
 
   const handleHostChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -201,6 +215,7 @@ const Options: React.FC = () => {
     chrome.storage.local
       .get([
         "selectedModel",
+        "selectedEmbeddingModel",
         "selectedHost",
         "selectedConfig",
         "selectedVectorStoreTTLMins",
@@ -249,6 +264,12 @@ const Options: React.FC = () => {
             // persist selected model to local storage
             chrome.storage.local.set({ selectedModel: models[0] });
           }
+          if (data.selectedEmbeddingModel) {
+            setEmbeddingModel(data.selectedEmbeddingModel);
+          } else {
+            setEmbeddingModel("");
+            chrome.storage.local.set({ selectedEmbeddingModel: "" });
+          }
         } else {
           setHostError(true);
           setHostHelpText(errMsg);
@@ -268,11 +289,41 @@ const Options: React.FC = () => {
             value={model}
             onChange={handleModelChange}
           >
-            {modelOptions.map((modelName: string, index) => (
-              <MenuItem key={index} value={modelName}>
-                {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
-              </MenuItem>
-            ))}
+            {modelOptions
+              .filter(
+                (model: string) =>
+                  !EMBEDDING_MODELS.includes(model.split(":")[0]),
+              )
+              .map((modelName: string, index) => (
+                <MenuItem key={index} value={modelName}>
+                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+        <FormControl className="options-input" size="small">
+          <InputLabel id="ollama-embedding-select-label">
+            Ollama Embedding Model
+          </InputLabel>
+          <Select
+            sx={{ "margin-bottom": "15px" }}
+            labelId="ollama-embedding-select-label"
+            label="Ollama Embedding Model"
+            value={embeddingModel}
+            onChange={handleEmbeddingModelChange}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {modelOptions
+              .filter((model: string) =>
+                EMBEDDING_MODELS.includes(model.split(":")[0]),
+              )
+              .map((modelName: string, index) => (
+                <MenuItem key={index} value={modelName}>
+                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
         <TextField
