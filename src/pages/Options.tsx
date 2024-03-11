@@ -261,14 +261,10 @@ const Options: React.FC = () => {
             setModel(data.selectedModel);
           } else {
             setModel(models[0]);
-            // persist selected model to local storage
             chrome.storage.local.set({ selectedModel: models[0] });
           }
           if (data.selectedEmbeddingModel) {
             setEmbeddingModel(data.selectedEmbeddingModel);
-          } else {
-            setEmbeddingModel("");
-            chrome.storage.local.set({ selectedEmbeddingModel: "" });
           }
         } else {
           setHostError(true);

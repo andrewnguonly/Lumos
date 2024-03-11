@@ -95,6 +95,7 @@ If you don't have `npm` installed, you can download the pre-built extension pack
 Right-click on the extension icon and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
+- **Ollama Embedding Model**: Select desired embedding model (e.g. `nomic-embed-text`). Note: Using a different embedding model requires Ollama to swap models, which may incur undesired latency in the app. This is a known limitation in Ollama.
 - **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
 - **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
