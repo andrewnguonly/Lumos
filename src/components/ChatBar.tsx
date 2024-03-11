@@ -39,7 +39,7 @@ import ChatHistory from "./ChatHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
-class LumosMessage {
+export class LumosMessage {
   constructor(
     public sender: string,
     public message: string,

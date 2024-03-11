@@ -1,6 +1,7 @@
 import { Document } from "@langchain/core/documents";
+import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
 import {
   RunnableSequence,
   RunnablePassthrough,
@@ -11,6 +12,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
+import { LumosMessage } from "../components/ChatBar";
 import {
   Calculator,
   CLS_CALC_PROMPT,
@@ -88,6 +90,24 @@ const classifyPrompt = async (
   });
 };
 
+const getMessages = async (): Promise<BaseMessage[]> => {
+  const data = await chrome.storage.session.get(["messages"]);
+
+  if (data.messages) {
+    const msgs = data.messages as LumosMessage[];
+    return msgs.map((msg: LumosMessage) => {
+      return msg.sender === "user"
+        ? new HumanMessage({
+            content: msg.message,
+          })
+        : new AIMessage({
+            content: msg.message,
+          });
+    });
+  }
+  return [];
+};
+
 const computeK = (documentsCount: number): number => {
   return Math.ceil(Math.sqrt(documentsCount));
 };
@@ -148,6 +168,9 @@ chrome.runtime.onMessage.addListener(async (request) => {
       return executeCalculatorTool(prompt);
     }
 
+    // create prompt
+    const chatPrompt = ChatPromptTemplate.fromMessages(await getMessages());
+
     // create model
     const model = new Ollama({
       baseUrl: options.ollamaHost,
@@ -155,8 +178,11 @@ chrome.runtime.onMessage.addListener(async (request) => {
       keepAlive: DEFAULT_KEEP_ALIVE,
     });
 
+    // create chain
+    const chain = chatPrompt.pipe(model);
+
     // stream response chunks
-    const stream = await model.stream(prompt);
+    const stream = await chain.stream(prompt);
     streamChunks(stream);
   }
 
