@@ -64,8 +64,7 @@ function sleep(ms: number) {
  * @returns True if originalPrompt is positively classified by the classificationPrompt. Otherwise, false.
  */
 const classifyPrompt = async (
-  baseURL: string,
-  model: string,
+  options: LumosOptions,
   type: string,
   originalPrompt: string,
   classifcationPrompt: string,
@@ -80,8 +79,8 @@ const classifyPrompt = async (
 
   // otherwise, attempt to classify prompt
   const ollama = new Ollama({
-    baseUrl: baseURL,
-    model: model,
+    baseUrl: options.ollamaHost,
+    model: options.ollamaModel,
     keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
@@ -103,13 +102,16 @@ const getChatModel = (options: LumosOptions): ChatOllama => {
   });
 };
 
-const getMessages = async (): Promise<BaseMessage[]> => {
+const getMessages = async (
+  base64EncodedImages: string[],
+): Promise<BaseMessage[]> => {
+  let chatMsgs: BaseMessage[] = [];
   // the array of persisted messages includes the current prompt
   const data = await chrome.storage.session.get(["messages"]);
 
   if (data.messages) {
-    const msgs = data.messages as LumosMessage[];
-    return msgs.slice(-5).map((msg: LumosMessage) => {
+    const lumosMsgs = data.messages as LumosMessage[];
+    chatMsgs = lumosMsgs.slice(-5).map((msg: LumosMessage) => {
       return msg.sender === "user"
         ? new HumanMessage({
             content: msg.message,
@@ -118,8 +120,22 @@ const getMessages = async (): Promise<BaseMessage[]> => {
             content: msg.message,
           });
     });
+
+    // add images to the chat
+    base64EncodedImages.forEach((image) => {
+      chatMsgs.push(
+        new HumanMessage({
+          content: [
+            {
+              type: "image_url",
+              image_url: `data:image/*;base64,${image}`,
+            },
+          ],
+        }),
+      );
+    });
   }
-  return [];
+  return chatMsgs;
 };
 
 const computeK = (documentsCount: number): number => {
@@ -161,7 +177,7 @@ const streamChunks = async (stream: IterableReadableStream<string>) => {
 chrome.runtime.onMessage.addListener(async (request) => {
   // process prompt (RAG disabled)
   if (request.prompt && request.skipRAG) {
-    const prompt = request.prompt;
+    const prompt = request.prompt.trim();
     console.log(`Received prompt (RAG disabled): ${prompt}`);
 
     // get options
@@ -171,8 +187,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
@@ -183,7 +198,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     }
 
     // create chain
-    const chatPrompt = ChatPromptTemplate.fromMessages(await getMessages());
+    const chatPrompt = ChatPromptTemplate.fromMessages(await getMessages([]));
     const model = getChatModel(options);
     const chain = chatPrompt.pipe(model).pipe(new StringOutputParser());
 
@@ -194,7 +209,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
   // process prompt (RAG enabled)
   if (request.prompt && !request.skipRAG) {
-    const prompt = request.prompt;
+    const prompt = request.prompt.trim();
     const url = request.url;
     const skipCache = Boolean(request.skipCache);
     console.log(`Received prompt (RAG enabled): ${prompt}`);
@@ -231,8 +246,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     if (
       isMultimodal(options.ollamaModel) &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_IMG_TYPE,
         prompt,
         CLS_IMG_PROMPT,
@@ -273,8 +287,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
@@ -354,7 +367,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     const chatPrompt = ChatPromptTemplate.fromMessages([
       SystemMessagePromptTemplate.fromTemplate(SYS_PROMPT_TEMPLATE),
-      ...(await getMessages()),
+      ...(await getMessages(base64EncodedImages)),
     ]);
 
     const model = getChatModel(options);
