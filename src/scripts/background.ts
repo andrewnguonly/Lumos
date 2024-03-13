@@ -10,6 +10,7 @@ import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
 import { LumosMessage } from "../components/ChatBar";
@@ -91,11 +92,12 @@ const classifyPrompt = async (
 };
 
 const getMessages = async (): Promise<BaseMessage[]> => {
+  // the array of persisted messages includes the current prompt
   const data = await chrome.storage.session.get(["messages"]);
 
   if (data.messages) {
     const msgs = data.messages as LumosMessage[];
-    return msgs.map((msg: LumosMessage) => {
+    return msgs.slice(-10).map((msg: LumosMessage) => {
       return msg.sender === "user"
         ? new HumanMessage({
             content: msg.message,
@@ -172,17 +174,18 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const chatPrompt = ChatPromptTemplate.fromMessages(await getMessages());
 
     // create model
-    const model = new Ollama({
+    const model = new ChatOllama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
       keepAlive: DEFAULT_KEEP_ALIVE,
+      callbacks: [new ConsoleCallbackHandler()],
     });
 
     // create chain
-    const chain = chatPrompt.pipe(model);
+    const chain = chatPrompt.pipe(model).pipe(new StringOutputParser());
 
     // stream response chunks
-    const stream = await chain.stream(prompt);
+    const stream = await chain.stream({});
     streamChunks(stream);
   }
 
@@ -283,6 +286,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
       keepAlive: DEFAULT_KEEP_ALIVE,
+      callbacks: [new ConsoleCallbackHandler()],
     }).bind({
       images: base64EncodedImages,
     });
