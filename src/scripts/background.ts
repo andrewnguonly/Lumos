@@ -50,8 +50,8 @@ const CLS_IMG_PROMPT =
   "Is the following prompt referring to an image or asking to describe an image?";
 const CLS_IMG_TRIGGER = "based on the image";
 
-const MAX_CHAT_HISTORY = 5;
-const SYS_PROMPT_TEMPLATE = `Use the following context and the chat history when responding to the prompt.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT`;
+const MAX_CHAT_HISTORY = 3;
+const SYS_PROMPT_TEMPLATE = `Use the following context when responding to the prompt.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT`;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
