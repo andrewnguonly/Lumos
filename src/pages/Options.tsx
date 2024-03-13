@@ -45,7 +45,7 @@ export const EMBEDDING_MODELS = ["nomic-embed-text", "all-minilm"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
-interface LumosOptions {
+export interface LumosOptions {
   ollamaModel: string;
   ollamaEmbeddingModel: string;
   ollamaHost: string;
