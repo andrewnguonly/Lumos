@@ -1,5 +1,5 @@
 import { Document } from "@langchain/core/documents";
-import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage, MessageContent } from "@langchain/core/messages";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import {
   ChatPromptTemplate,
@@ -121,19 +121,32 @@ const getMessages = async (
           });
     });
 
-    // add images to the chat
-    base64EncodedImages.forEach((image) => {
+    // add images to the content array
+    if (base64EncodedImages.length > 0) {
+      // get the last element (current user prompt) from chatMsgs
+      const lastMsg = chatMsgs[chatMsgs.length - 1];
+
+      // remove the last element from chatMsgs
+      chatMsgs = chatMsgs.slice(0, chatMsgs.length - 1);
+  
+      const content: MessageContent = [{
+        type: "text",
+        text: lastMsg.content.toString(),
+      }];
+      base64EncodedImages.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: `data:image/*;base64,${image}`,
+        });
+      });
+
+      // replace the last element with a new HumanMessage that contains the image content
       chatMsgs.push(
         new HumanMessage({
-          content: [
-            {
-              type: "image_url",
-              image_url: `data:image/*;base64,${image}`,
-            },
-          ],
+          content: content,
         }),
       );
-    });
+    }
   }
   return chatMsgs;
 };
