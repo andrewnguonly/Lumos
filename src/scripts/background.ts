@@ -1,16 +1,24 @@
 import { Document } from "@langchain/core/documents";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { PromptTemplate } from "@langchain/core/prompts";
 import {
-  RunnableSequence,
-  RunnablePassthrough,
-} from "@langchain/core/runnables";
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  MessageContent,
+} from "@langchain/core/messages";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import {
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+} from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { Ollama } from "@langchain/community/llms/ollama";
+import { LumosMessage } from "../components/ChatBar";
 import {
   Calculator,
   CLS_CALC_PROMPT,
@@ -21,6 +29,7 @@ import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
   isMultimodal,
+  LumosOptions,
 } from "../pages/Options";
 
 interface VectorStoreMetadata {
@@ -41,6 +50,9 @@ const CLS_IMG_PROMPT =
   "Is the following prompt referring to an image or asking to describe an image?";
 const CLS_IMG_TRIGGER = "based on the image";
 
+const MAX_CHAT_HISTORY = 3;
+const SYS_PROMPT_TEMPLATE = `Use the following context when responding to the prompt.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT`;
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -58,8 +70,7 @@ function sleep(ms: number) {
  * @returns True if originalPrompt is positively classified by the classificationPrompt. Otherwise, false.
  */
 const classifyPrompt = async (
-  baseURL: string,
-  model: string,
+  options: LumosOptions,
   type: string,
   originalPrompt: string,
   classifcationPrompt: string,
@@ -74,8 +85,8 @@ const classifyPrompt = async (
 
   // otherwise, attempt to classify prompt
   const ollama = new Ollama({
-    baseUrl: baseURL,
-    model: model,
+    baseUrl: options.ollamaHost,
+    model: options.ollamaModel,
     keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
@@ -86,6 +97,68 @@ const classifyPrompt = async (
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const getChatModel = (options: LumosOptions): ChatOllama => {
+  return new ChatOllama({
+    baseUrl: options.ollamaHost,
+    model: options.ollamaModel,
+    keepAlive: DEFAULT_KEEP_ALIVE,
+    callbacks: [new ConsoleCallbackHandler()],
+  });
+};
+
+const getMessages = async (
+  base64EncodedImages: string[],
+): Promise<BaseMessage[]> => {
+  let chatMsgs: BaseMessage[] = [];
+  // the array of persisted messages includes the current prompt
+  const data = await chrome.storage.session.get(["messages"]);
+
+  if (data.messages) {
+    const lumosMsgs = data.messages as LumosMessage[];
+    chatMsgs = lumosMsgs
+      .slice(-1 * MAX_CHAT_HISTORY)
+      .map((msg: LumosMessage) => {
+        return msg.sender === "user"
+          ? new HumanMessage({
+              content: msg.message,
+            })
+          : new AIMessage({
+              content: msg.message,
+            });
+      });
+
+    // add images to the content array
+    if (base64EncodedImages.length > 0) {
+      // get the last element (current user prompt) from chatMsgs
+      const lastMsg = chatMsgs[chatMsgs.length - 1];
+
+      // remove the last element from chatMsgs
+      chatMsgs = chatMsgs.slice(0, chatMsgs.length - 1);
+
+      const content: MessageContent = [
+        {
+          type: "text",
+          text: lastMsg.content.toString(),
+        },
+      ];
+      base64EncodedImages.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: `data:image/*;base64,${image}`,
+        });
+      });
+
+      // replace the last element with a new HumanMessage that contains the image content
+      chatMsgs.push(
+        new HumanMessage({
+          content: content,
+        }),
+      );
+    }
+  }
+  return chatMsgs;
 };
 
 const computeK = (documentsCount: number): number => {
@@ -127,7 +200,7 @@ const streamChunks = async (stream: IterableReadableStream<string>) => {
 chrome.runtime.onMessage.addListener(async (request) => {
   // process prompt (RAG disabled)
   if (request.prompt && request.skipRAG) {
-    const prompt = request.prompt;
+    const prompt = request.prompt.trim();
     console.log(`Received prompt (RAG disabled): ${prompt}`);
 
     // get options
@@ -137,8 +210,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
@@ -148,21 +220,19 @@ chrome.runtime.onMessage.addListener(async (request) => {
       return executeCalculatorTool(prompt);
     }
 
-    // create model
-    const model = new Ollama({
-      baseUrl: options.ollamaHost,
-      model: options.ollamaModel,
-      keepAlive: DEFAULT_KEEP_ALIVE,
-    });
+    // create chain
+    const chatPrompt = ChatPromptTemplate.fromMessages(await getMessages([]));
+    const model = getChatModel(options);
+    const chain = chatPrompt.pipe(model).pipe(new StringOutputParser());
 
     // stream response chunks
-    const stream = await model.stream(prompt);
+    const stream = await chain.stream({});
     streamChunks(stream);
   }
 
   // process prompt (RAG enabled)
   if (request.prompt && !request.skipRAG) {
-    const prompt = request.prompt;
+    const prompt = request.prompt.trim();
     const url = request.url;
     const skipCache = Boolean(request.skipCache);
     console.log(`Received prompt (RAG enabled): ${prompt}`);
@@ -199,8 +269,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     if (
       isMultimodal(options.ollamaModel) &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_IMG_TYPE,
         prompt,
         CLS_IMG_PROMPT,
@@ -241,8 +310,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
-        options.ollamaHost,
-        options.ollamaModel,
+        options,
         CLS_CALC_TYPE,
         prompt,
         CLS_CALC_PROMPT,
@@ -251,22 +319,6 @@ chrome.runtime.onMessage.addListener(async (request) => {
     ) {
       return executeCalculatorTool(prompt);
     }
-
-    // create model and bind base64 encoded image data
-    const model = new Ollama({
-      baseUrl: options.ollamaHost,
-      model: options.ollamaModel,
-      keepAlive: DEFAULT_KEEP_ALIVE,
-    }).bind({
-      images: base64EncodedImages,
-    });
-
-    // create prompt template
-    const template = `Use only the following context when answering the question. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT\n\nQuestion: {question}\n\nAnswer: `;
-    const formatted_prompt = new PromptTemplate({
-      inputVariables: ["filtered_context", "question"],
-      template,
-    });
 
     // check if vector store already exists for url
     let vectorStore: EnhancedMemoryVectorStore;
@@ -329,19 +381,24 @@ chrome.runtime.onMessage.addListener(async (request) => {
       }
     }
 
+    // create chain
     const retriever = vectorStore.asRetriever({
       k: computeK(documentsCount),
       searchType: "hybrid",
       callbacks: [new ConsoleCallbackHandler()],
     });
 
-    // create chain
+    const chatPrompt = ChatPromptTemplate.fromMessages([
+      SystemMessagePromptTemplate.fromTemplate(SYS_PROMPT_TEMPLATE),
+      ...(await getMessages(base64EncodedImages)),
+    ]);
+
+    const model = getChatModel(options);
     const chain = RunnableSequence.from([
       {
         filtered_context: retriever.pipe(formatDocumentsAsString),
-        question: new RunnablePassthrough(),
       },
-      formatted_prompt,
+      chatPrompt,
       model,
       new StringOutputParser(),
     ]);
