@@ -1,5 +1,10 @@
 import { Document } from "@langchain/core/documents";
-import { AIMessage, BaseMessage, HumanMessage, MessageContent } from "@langchain/core/messages";
+import {
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  MessageContent,
+} from "@langchain/core/messages";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import {
   ChatPromptTemplate,
@@ -45,6 +50,7 @@ const CLS_IMG_PROMPT =
   "Is the following prompt referring to an image or asking to describe an image?";
 const CLS_IMG_TRIGGER = "based on the image";
 
+const MAX_CHAT_HISTORY = 5;
 const SYS_PROMPT_TEMPLATE = `Use the following context and the chat history when responding to the prompt.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT`;
 
 function sleep(ms: number) {
@@ -111,15 +117,17 @@ const getMessages = async (
 
   if (data.messages) {
     const lumosMsgs = data.messages as LumosMessage[];
-    chatMsgs = lumosMsgs.slice(-5).map((msg: LumosMessage) => {
-      return msg.sender === "user"
-        ? new HumanMessage({
-            content: msg.message,
-          })
-        : new AIMessage({
-            content: msg.message,
-          });
-    });
+    chatMsgs = lumosMsgs
+      .slice(-1 * MAX_CHAT_HISTORY)
+      .map((msg: LumosMessage) => {
+        return msg.sender === "user"
+          ? new HumanMessage({
+              content: msg.message,
+            })
+          : new AIMessage({
+              content: msg.message,
+            });
+      });
 
     // add images to the content array
     if (base64EncodedImages.length > 0) {
@@ -128,11 +136,13 @@ const getMessages = async (
 
       // remove the last element from chatMsgs
       chatMsgs = chatMsgs.slice(0, chatMsgs.length - 1);
-  
-      const content: MessageContent = [{
-        type: "text",
-        text: lastMsg.content.toString(),
-      }];
+
+      const content: MessageContent = [
+        {
+          type: "text",
+          text: lastMsg.content.toString(),
+        },
+      ];
       base64EncodedImages.forEach((image) => {
         content.push({
           type: "image_url",
