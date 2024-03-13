@@ -1,11 +1,12 @@
 import { Document } from "@langchain/core/documents";
 import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
 import {
-  RunnableSequence,
-  RunnablePassthrough,
-} from "@langchain/core/runnables";
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+  BaseMessagePromptTemplateLike,
+} from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
@@ -281,21 +282,20 @@ chrome.runtime.onMessage.addListener(async (request) => {
       return executeCalculatorTool(prompt);
     }
 
+    const template = `Use only the following context when responding to the prompt. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT`;
+    let messages: BaseMessagePromptTemplateLike[] = [
+      SystemMessagePromptTemplate.fromTemplate(template),
+    ];
+    messages = messages.concat(await getMessages());
+    // TODO: append image data in new message
+    const chatPrompt = ChatPromptTemplate.fromMessages(messages);
+
     // create model and bind base64 encoded image data
-    const model = new Ollama({
+    const model = new ChatOllama({
       baseUrl: options.ollamaHost,
       model: options.ollamaModel,
       keepAlive: DEFAULT_KEEP_ALIVE,
       callbacks: [new ConsoleCallbackHandler()],
-    }).bind({
-      images: base64EncodedImages,
-    });
-
-    // create prompt template
-    const template = `Use only the following context when answering the question. Don't use any other knowledge.\n\nBEGIN CONTEXT\n\n{filtered_context}\n\nEND CONTEXT\n\nQuestion: {question}\n\nAnswer: `;
-    const formatted_prompt = new PromptTemplate({
-      inputVariables: ["filtered_context", "question"],
-      template,
     });
 
     // check if vector store already exists for url
@@ -369,15 +369,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
     const chain = RunnableSequence.from([
       {
         filtered_context: retriever.pipe(formatDocumentsAsString),
-        question: new RunnablePassthrough(),
       },
-      formatted_prompt,
+      chatPrompt,
       model,
       new StringOutputParser(),
     ]);
 
     // stream response chunks
-    const stream = await chain.stream(prompt);
+    const stream = await chain.stream("");
     streamChunks(stream);
   }
 
