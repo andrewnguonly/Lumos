@@ -1,10 +1,10 @@
 .options-popup {
-  width: 100%;
+  width: calc(100% - 16px);
   height: 450px;
   box-sizing: border-box;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding: 10px;
   overflow-x: hidden;
+  margin: 8px;
 }
 
 .options-input {

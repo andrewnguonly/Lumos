@@ -67,6 +67,7 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "html-webpack-plugin": "^5.5.3",
+    "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.2.5",
     "react-scripts": "5.0.1",
     "ts-jest": "^29.1.2",
