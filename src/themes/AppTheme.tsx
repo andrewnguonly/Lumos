@@ -6,6 +6,9 @@ const getAppTheme = (darkMode: boolean): Theme => {
     palette: {
       mode: darkMode ? "dark" : "light",
       primary: darkMode ? lightGreen : amber,
+      text: {
+        primary: darkMode ? "#aed581" : "#212121",
+      }
     },
     components: {
       MuiButton: {
