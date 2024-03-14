@@ -1,5 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import App from "./App";
 
 const root = document.createElement("div");
@@ -8,6 +10,9 @@ document.body.appendChild(root);
 const rootDiv = ReactDOM.createRoot(root);
 rootDiv.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );

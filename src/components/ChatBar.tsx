@@ -38,6 +38,7 @@ import { CodeBlock, PreBlock } from "./CodeBlock";
 import ChatHistory from "./ChatHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
+import { useThemeContext } from "../contexts/ThemeContext";
 
 export class LumosMessage {
   constructor(
@@ -65,6 +66,33 @@ const ChatBar: React.FC = () => {
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState("");
+
+  const { theme } = useThemeContext();
+  const isDarkMode = theme.palette.mode === "dark";
+
+  const chatContainerStyle = {
+    backgroundColor: theme.palette.background.paper,
+  };
+
+  const messageListStyle = {
+    backgroundColor: theme.palette.background.paper,
+  };
+
+  const messageStyle = isDarkMode
+    ? {
+        backgroundColor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+      }
+    : {};
+
+  const avatarStyle = {
+    filter: isDarkMode ? "invert(1)" : "none",
+  };
+
+  const typingIndicatorStyle = {
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
+  };
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -461,14 +489,16 @@ const ChatBar: React.FC = () => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-        <ChatContainer>
+        <ChatContainer style={chatContainerStyle}>
           <MessageList
+            style={messageListStyle}
             typingIndicator={
-              loading1 ? (
-                <TypingIndicator content={loading1Text} />
-              ) : loading2 ? (
-                <TypingIndicator content="Lumos!" />
-              ) : null
+              (loading1 || loading2) && (
+                <TypingIndicator
+                  content={loading1 ? loading1Text : "Lumos!"}
+                  style={typingIndicatorStyle}
+                />
+              )
             }
           >
             {messages.map((message, index) => (
@@ -481,6 +511,7 @@ const ChatBar: React.FC = () => {
                   position: "single",
                 }}
                 type="custom"
+                style={messageStyle}
               >
                 <Avatar
                   src={
@@ -491,6 +522,7 @@ const ChatBar: React.FC = () => {
                         : "../assets/hammer_48.png"
                   }
                   onClick={() => handleAvatarClick(message.message)}
+                  style={avatarStyle}
                 />
                 <Message.CustomContent>
                   <Markdown

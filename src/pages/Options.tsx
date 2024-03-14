@@ -3,6 +3,7 @@ import {
   Box,
   FormControl,
   FormControlLabel,
+  FormGroup,
   InputLabel,
   MenuItem,
   Select,
@@ -11,12 +12,12 @@ import {
   TextField,
   ThemeProvider,
 } from "@mui/material";
-import AppTheme from "../themes/AppTheme";
 import {
   ContentConfig,
   defaultContentConfig,
   isContentConfig,
 } from "../contentConfig";
+import { useThemeContext } from "../contexts/ThemeContext";
 import "./Options.css";
 
 export interface ToolConfig {
@@ -139,6 +140,8 @@ const Options: React.FC = () => {
   );
   const [vectorStoreTTLMinsError, setVectorStoreTTLMinsError] = useState(false);
   const [toolConfig, setToolConfig] = useState(DEFAULT_TOOL_CONFIG);
+  const { theme, toggleDarkMode } = useThemeContext();
+  const isDarkMode = theme.palette.mode === "dark";
 
   const handleModelChange = (event: SelectChangeEvent) => {
     const selectedModel = event.target.value;
@@ -274,7 +277,7 @@ const Options: React.FC = () => {
   }, []);
 
   return (
-    <ThemeProvider theme={AppTheme}>
+    <ThemeProvider theme={theme}>
       <Box className="options-popup">
         <FormControl className="options-input" size="small">
           <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
@@ -352,32 +355,45 @@ const Options: React.FC = () => {
           onChange={handleContentConfigChange}
         />
         <Box sx={{ mb: "5px" }}>Enable/Disable Tools</Box>
-        {Object.entries(toolConfig).map(([key, value]) => (
-          <Box
-            key={key}
-            sx={{ display: "flex", alignItems: "center", ml: "10px" }}
-          >
+        <Box sx={{ ml: "10px" }}>
+          {Object.entries(toolConfig).map(([key, value]) => (
+            <Box key={key} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={value.enabled}
+                    onChange={() =>
+                      handleToolEnabledChange(key, !value.enabled)
+                    }
+                  />
+                }
+                label={key}
+              />
+              <div style={{ flex: 1 }}></div>
+              <TextField
+                sx={{ width: "50%" }}
+                label="Prefix trigger"
+                disabled={!value.enabled}
+                value={value.prefix}
+                onChange={(event) =>
+                  handleToolPrefixChange(key, event.target.value)
+                }
+              />
+            </Box>
+          ))}
+          <FormGroup>
             <FormControlLabel
               control={
                 <Switch
-                  checked={value.enabled}
-                  onChange={() => handleToolEnabledChange(key, !value.enabled)}
+                  checked={theme.palette.mode === "dark"}
+                  onChange={toggleDarkMode}
+                  name="darkModeToggle"
                 />
               }
-              label={key}
+              label={`Dark Arts${isDarkMode ? " 😈" : ""}`}
             />
-            <div style={{ flex: 1 }}></div>
-            <TextField
-              sx={{ width: "50%" }}
-              label="Prefix trigger"
-              disabled={!value.enabled}
-              value={value.prefix}
-              onChange={(event) =>
-                handleToolPrefixChange(key, event.target.value)
-              }
-            />
-          </Box>
-        ))}
+          </FormGroup>
+        </Box>
       </Box>
     </ThemeProvider>
   );
