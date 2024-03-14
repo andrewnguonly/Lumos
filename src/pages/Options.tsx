@@ -381,6 +381,8 @@ const Options: React.FC = () => {
               />
             </Box>
           ))}
+        </Box>
+        <Box sx={{ ml: "10px" }}>
           <FormGroup>
             <FormControlLabel
               control={
