@@ -1,11 +1,14 @@
 import { createTheme, Theme } from "@mui/material/styles";
-import { amber, deepOrange } from "@mui/material/colors";
+import { amber, lightGreen } from "@mui/material/colors";
 
 const getAppTheme = (darkMode: boolean): Theme => {
   return createTheme({
     palette: {
       mode: darkMode ? "dark" : "light",
-      primary: darkMode ? deepOrange : amber,
+      primary: darkMode ? lightGreen : amber,
+      text: {
+        primary: darkMode ? "#aed581" : "#212121",
+      },
     },
     components: {
       MuiButton: {
