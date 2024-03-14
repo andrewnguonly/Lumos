@@ -85,7 +85,7 @@ const ChatBar: React.FC = () => {
       }
     : {};
 
-  const avatarStyle = {
+  const imageStyle = {
     filter: isDarkMode ? "invert(1)" : "none",
   };
 
@@ -522,7 +522,7 @@ const ChatBar: React.FC = () => {
                         : "../assets/hammer_48.png"
                   }
                   onClick={() => handleAvatarClick(message.message)}
-                  style={avatarStyle}
+                  style={imageStyle}
                 />
                 <Message.CustomContent>
                   <Markdown
@@ -605,6 +605,7 @@ const ChatBar: React.FC = () => {
           className="submit-button"
           disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
+          style={imageStyle}
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
@@ -613,6 +614,7 @@ const ChatBar: React.FC = () => {
             className="clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
+            style={imageStyle}
           >
             <img alt="Clear messages (cmd + k)" src="../assets/hat_32.png" />
           </IconButton>

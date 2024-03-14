@@ -4,7 +4,7 @@
 import { render, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import { ThemeProvider, useThemeContext } from "../ThemeContext";
+import { ThemeProvider, useThemeContext } from "../../src/contexts/ThemeContext";
 
 const MockComponent = () => {
   const { theme, toggleDarkMode } = useThemeContext();
