@@ -8,7 +8,7 @@ const getAppTheme = (darkMode: boolean): Theme => {
       primary: darkMode ? lightGreen : amber,
       text: {
         primary: darkMode ? "#aed581" : "#212121",
-      }
+      },
     },
     components: {
       MuiButton: {
