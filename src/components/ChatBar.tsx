@@ -29,6 +29,7 @@ import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
   DEFAULT_HOST,
+  apiConnected,
   getLumosOptions,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
@@ -37,8 +38,9 @@ import { CodeBlock, PreBlock } from "./CodeBlock";
 import ChatHistory from "./ChatHistory";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
+import { useThemeContext } from "../contexts/ThemeContext";
 
-class LumosMessage {
+export class LumosMessage {
   constructor(
     public sender: string,
     public message: string,
@@ -64,6 +66,33 @@ const ChatBar: React.FC = () => {
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState("");
+
+  const { theme } = useThemeContext();
+  const isDarkMode = theme.palette.mode === "dark";
+
+  const chatContainerStyle = {
+    backgroundColor: theme.palette.background.paper,
+  };
+
+  const messageListStyle = {
+    backgroundColor: theme.palette.background.paper,
+  };
+
+  const messageStyle = isDarkMode
+    ? {
+        backgroundColor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+      }
+    : {};
+
+  const imageStyle = {
+    filter: isDarkMode ? "invert(1)" : "none",
+  };
+
+  const typingIndicatorStyle = {
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
+  };
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -360,8 +389,8 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedHost", "chatHistory"],
-      (data) => {
+      ["chatContainerHeight", "selectedModel", "selectedHost", "chatHistory"],
+      async (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
         }
@@ -384,21 +413,20 @@ const ChatBar: React.FC = () => {
 
         // API connectivity check
         const selectedHost = data.selectedHost || DEFAULT_HOST;
-        fetch(`${selectedHost}/api/tags`)
-          .then((response) => {
-            if (response.ok) {
-              setPromptError(false);
-              setPromptPlaceholderText("Enter your prompt here");
-            } else {
-              throw new Error();
-            }
-          })
-          .catch(() => {
-            setPromptError(true);
-            setPromptPlaceholderText(
-              "Unable to connect to Ollama API. Check Ollama server.",
-            );
-          });
+        const [connected, models, errMsg] = await apiConnected(selectedHost);
+
+        if (connected) {
+          setPromptError(false);
+          setPromptPlaceholderText("Enter your prompt here");
+
+          if (!data.selectedModel) {
+            // persist selected model to local storage
+            chrome.storage.local.set({ selectedModel: models[0] });
+          }
+        } else {
+          setPromptError(true);
+          setPromptPlaceholderText(errMsg);
+        }
       },
     );
 
@@ -461,14 +489,16 @@ const ChatBar: React.FC = () => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-        <ChatContainer>
+        <ChatContainer style={chatContainerStyle}>
           <MessageList
+            style={messageListStyle}
             typingIndicator={
-              loading1 ? (
-                <TypingIndicator content={loading1Text} />
-              ) : loading2 ? (
-                <TypingIndicator content="Lumos!" />
-              ) : null
+              (loading1 || loading2) && (
+                <TypingIndicator
+                  content={loading1 ? loading1Text : "Lumos!"}
+                  style={typingIndicatorStyle}
+                />
+              )
             }
           >
             {messages.map((message, index) => (
@@ -481,6 +511,7 @@ const ChatBar: React.FC = () => {
                   position: "single",
                 }}
                 type="custom"
+                style={messageStyle}
               >
                 <Avatar
                   src={
@@ -491,6 +522,7 @@ const ChatBar: React.FC = () => {
                         : "../assets/hammer_48.png"
                   }
                   onClick={() => handleAvatarClick(message.message)}
+                  style={imageStyle}
                 />
                 <Message.CustomContent>
                   <Markdown
@@ -573,6 +605,7 @@ const ChatBar: React.FC = () => {
           className="submit-button"
           disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
+          style={imageStyle}
         >
           <img alt="" src="../assets/wand_32.png" />
         </IconButton>
@@ -581,6 +614,7 @@ const ChatBar: React.FC = () => {
             className="clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
+            style={imageStyle}
           >
             <img alt="Clear messages (cmd + k)" src="../assets/hat_32.png" />
           </IconButton>
