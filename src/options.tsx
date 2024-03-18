@@ -1,7 +1,9 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
-import { ThemeProvider } from "./contexts/ThemeContext";
+
 import CssBaseline from "@mui/material/CssBaseline";
+import ReactDOM from "react-dom/client";
+
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Options from "./pages/Options";
 
 const root = document.createElement("div");

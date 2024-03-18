@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+
 import { Theme, ThemeProvider as MUIThemeProvider } from "@mui/material";
+
 import getAppTheme from "../themes/AppTheme";
 
 interface ThemeContextValue {

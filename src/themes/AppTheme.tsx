@@ -1,5 +1,5 @@
-import { createTheme, Theme } from "@mui/material/styles";
 import { amber, lightGreen } from "@mui/material/colors";
+import { createTheme, Theme } from "@mui/material/styles";
 
 const getAppTheme = (darkMode: boolean): Theme => {
   return createTheme({
