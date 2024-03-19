@@ -103,7 +103,7 @@ Right-click on the extension icon and select `Options` to access the extension's
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
 - **Ollama Embedding Model**: Select desired embedding model (e.g. `nomic-embed-text`). **Caution**: Using a different embedding model requires Ollama to swap models, which may incur undesired latency in the app. This is a known limitation in Ollama and may be improved in the future.
-- **Ollama Host**: Select desired host (defaults to `http://0.0.0.0:11434`)
+- **Ollama Host**: Select desired host (defaults to `http://localhost:11434`)
 - **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
 - **Enable/Disable Tools**: Enable or disable individual tools. If a tool is enabled, a custom prefix trigger (e.g. "calc:") can be specified to override the app's internal prompt classification mechanism.
