@@ -109,7 +109,7 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
   urls = urls.filter((url) => {
     const extension = url.split(".").pop() || "";
     return SUPPORTED_IMG_FORMATS.includes(extension);
-  })
+  });
 
   // only download the first 10 images
   for (const url of urls.slice(0, 10)) {
