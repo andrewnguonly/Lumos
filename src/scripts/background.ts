@@ -101,6 +101,49 @@ const classifyPrompt = async (
   });
 };
 
+const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
+  const base64EncodedImages: string[] = [];
+  let urls: string[] = imageURLs;
+
+  // filter out unsupported image formats
+  urls = urls.filter((url) => {
+    const extension = url.split(".").pop() || "";
+    return SUPPORTED_IMG_FORMATS.includes(extension);
+  })
+
+  // only download the first 10 images
+  for (const url of urls.slice(0, 10)) {
+    console.log(`Downloading image: ${url}`);
+    let response;
+
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      console.log(`Failed to download image: ${url}`);
+      continue;
+    }
+
+    if (response.ok) {
+      const blob = await response.blob();
+      let base64String: string = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+      });
+
+      // remove leading data url prefix `data:*/*;base64,`
+      base64String = base64String.split(",")[1];
+      base64EncodedImages.push(base64String);
+    } else {
+      console.log(`Failed to download image: ${url}`);
+    }
+  }
+
+  return base64EncodedImages;
+};
+
 const getChatModel = (options: LumosOptions): ChatOllama => {
   return new ChatOllama({
     baseUrl: options.ollamaHost,
@@ -265,7 +308,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     );
 
     // define model bindings (e.g. images, functions)
-    const base64EncodedImages: string[] = [];
+    let base64EncodedImages: string[] = [];
 
     // classify prompt and optionally execute tools
     if (
@@ -278,43 +321,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         CLS_IMG_TRIGGER,
       ))
     ) {
-      let urls: string[] = request.imageURLs;
-
-      // filter out unsupported image formats
-      urls = urls.filter((url) => {
-        const extension = url.split(".").pop() || "";
-        return SUPPORTED_IMG_FORMATS.includes(extension);
-      })
-
-      // only download the first 10 images
-      for (const url of urls.slice(0, 10)) {
-        console.log(`Downloading image: ${url}`);
-        let response;
-
-        try {
-          response = await fetch(url);
-        } catch (error) {
-          console.log(`Failed to download image: ${url}`);
-          continue;
-        }
-
-        if (response.ok) {
-          const blob = await response.blob();
-          let base64String: string = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = () => {
-              resolve(reader.result as string);
-            };
-          });
-
-          // remove leading data url prefix `data:*/*;base64,`
-          base64String = base64String.split(",")[1];
-          base64EncodedImages.push(base64String);
-        } else {
-          console.log(`Failed to download image: ${url}`);
-        }
-      }
+      base64EncodedImages = await downloadImages(request.imageURLs);
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
