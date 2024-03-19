@@ -25,6 +25,7 @@ import {
   getLumosOptions,
   isMultimodal,
   LumosOptions,
+  SUPPORTED_IMG_FORMATS,
 } from "../pages/Options";
 import {
   Calculator,
@@ -277,7 +278,13 @@ chrome.runtime.onMessage.addListener(async (request) => {
         CLS_IMG_TRIGGER,
       ))
     ) {
-      const urls: string[] = request.imageURLs;
+      let urls: string[] = request.imageURLs;
+
+      // filter out unsupported image formats
+      urls = urls.filter((url) => {
+        const extension = url.split(".").pop() || "";
+        return SUPPORTED_IMG_FORMATS.includes(extension);
+      })
 
       // only download the first 10 images
       for (const url of urls.slice(0, 10)) {
