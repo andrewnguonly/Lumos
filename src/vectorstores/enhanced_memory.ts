@@ -7,8 +7,8 @@ import {
   BaseRetriever,
   type BaseRetrieverInput,
 } from "@langchain/core/retrievers";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import Fuse from "fuse.js";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
 
 export type EnhancedMemoryRetrieverInput<V extends EnhancedMemoryVectorStore> =
   BaseRetrieverInput &

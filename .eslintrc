@@ -5,7 +5,8 @@
     "@typescript-eslint",
     "react",
     "react-hooks",
-    "prettier"
+    "prettier",
+    "import"
   ],
   "extends": [
     "eslint:recommended",
@@ -16,7 +17,26 @@
   ],
   "ignorePatterns": [],
   "rules": {
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "import/order": [
+      "error",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+        "pathGroups": [
+          {
+            "pattern": "react",
+            "group": "external",
+            "position": "before"
+          }
+        ],
+        "pathGroupsExcludedImportTypes": ["builtin"],
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        },
+        "newlines-between": "always"
+      }
+    ]
   },
   "settings": {
     "react": {

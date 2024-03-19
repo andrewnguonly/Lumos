@@ -1,3 +1,6 @@
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { Ollama } from "@langchain/community/llms/ollama";
 import { Document } from "@langchain/core/documents";
 import {
   AIMessage,
@@ -15,22 +18,20 @@ import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { ChatOllama } from "@langchain/community/chat_models/ollama";
-import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
-import { Ollama } from "@langchain/community/llms/ollama";
+
 import { LumosMessage } from "../components/ChatBar";
-import {
-  Calculator,
-  CLS_CALC_PROMPT,
-  CLS_CALC_TYPE,
-} from "../tools/calculator";
-import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
   isMultimodal,
   LumosOptions,
 } from "../pages/Options";
+import {
+  Calculator,
+  CLS_CALC_PROMPT,
+  CLS_CALC_TYPE,
+} from "../tools/calculator";
+import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
 
 interface VectorStoreMetadata {
   vectorStore: EnhancedMemoryVectorStore;

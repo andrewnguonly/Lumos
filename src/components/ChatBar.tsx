@@ -1,4 +1,15 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+
+import {
+  Avatar,
+  ChatContainer,
+  Message,
+  MessageList,
+  TypingIndicator,
+} from "@chatscope/chat-ui-kit-react";
+import HistoryIcon from "@mui/icons-material/History";
+import InfoIcon from "@mui/icons-material/Info";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Alert,
   Box,
@@ -13,18 +24,11 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import HistoryIcon from "@mui/icons-material/History";
-import InfoIcon from "@mui/icons-material/Info";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import {
-  Avatar,
-  ChatContainer,
-  Message,
-  MessageList,
-  TypingIndicator,
-} from "@chatscope/chat-ui-kit-react";
 import Markdown from "markdown-to-jsx";
 import { v4 as uuidv4 } from "uuid";
+
+import { getContentConfig } from "../contentConfig";
+import { useThemeContext } from "../contexts/ThemeContext";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -33,12 +37,11 @@ import {
   getLumosOptions,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
-import { getContentConfig } from "../contentConfig";
-import { CodeBlock, PreBlock } from "./CodeBlock";
+
 import ChatHistory from "./ChatHistory";
+import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
-import { useThemeContext } from "../contexts/ThemeContext";
 
 export class LumosMessage {
   constructor(
