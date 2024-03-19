@@ -292,15 +292,18 @@ const Options: React.FC = () => {
             onChange={handleModelChange}
           >
             {modelOptions
-              .filter(
-                (model: string) =>
-                  !EMBEDDING_MODELS.includes(model.split(":")[0]),
+              .filter((model: string) =>
+                !EMBEDDING_MODELS.includes(model.split(":")[0]),
               )
-              .map((modelName: string, index) => (
-                <MenuItem key={index} value={modelName}>
-                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
-                </MenuItem>
-              ))}
+              .map((modelName) => {
+                const [model, tag] = modelName.split(":");
+                const isMulti = isMultimodal(model);
+                return (
+                  <MenuItem key={modelName} value={modelName}>
+                    {isMulti ? `${model} (${tag}, multimodal)` : `${model} (${tag})`}
+                  </MenuItem>
+                );
+              })}
           </Select>
         </FormControl>
         <FormControl className="options-input" size="small">
