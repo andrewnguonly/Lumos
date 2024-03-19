@@ -24,6 +24,13 @@ _Lumos. Nox. Lumos. Nox._
 
 A local Ollama server is needed for the embedding database and LLM inference. Download and install Ollama and the CLI [here](https://ollama.ai/).
 
+### Pull Image
+
+Example:
+```
+ollama pull llama2
+```
+
 ### Start Server
 
 Example:
@@ -100,6 +107,7 @@ Right-click on the extension icon and select `Options` to access the extension's
 - **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
 - **Enable/Disable Tools**: Enable or disable individual tools. If a tool is enabled, a custom prefix trigger (e.g. "calc:") can be specified to override the app's internal prompt classification mechanism.
+- **Enable/Disable Dark Arts**: 😈
 
 ### Content Parser Config
 
