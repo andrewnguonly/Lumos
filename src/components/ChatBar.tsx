@@ -43,6 +43,8 @@ import { CodeBlock, PreBlock } from "./CodeBlock";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./ChatBar.css";
 
+const DEFAULT_PROMPT_PLACEHOLDER_TEXT = "Enter your prompt here";
+
 export class LumosMessage {
   constructor(
     public sender: string,
@@ -54,7 +56,7 @@ const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
   const [promptError, setPromptError] = useState(false);
   const [promptPlaceholderText, setPromptPlaceholderText] = useState(
-    "Enter your prompt here",
+    DEFAULT_PROMPT_PLACEHOLDER_TEXT,
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [highlightedContent, setHighlightedContent] = useState(false);
@@ -271,6 +273,7 @@ const ChatBar: React.FC = () => {
     setLoading1(true);
     setLoading1Text("Raise your wand...");
     setSubmitDisabled(true);
+    setPromptPlaceholderText("Press ctrl + c to cancel the request");
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
@@ -285,6 +288,10 @@ const ChatBar: React.FC = () => {
     // clear prompt after sending it to the background script
     setPrompt("");
     chrome.storage.session.set({ prompt: "" });
+  };
+
+  const cancelRequest = () => {
+    chrome.runtime.sendMessage({ cancelRequest: true });
   };
 
   const handleAvatarClick = (message: string) => {
@@ -324,6 +331,13 @@ const ChatBar: React.FC = () => {
         case ";":
           // open message history
           setOpenChatHistory(!openChatHistory);
+          break;
+      }
+    } else if (event.ctrlKey) {
+      switch (event.key) {
+        case "c":
+          // cancel request
+          cancelRequest();
           break;
       }
     }
@@ -374,9 +388,11 @@ const ChatBar: React.FC = () => {
     } else if (msg.done) {
       // save messages after response streaming is done
       chrome.storage.session.set({ messages: messages });
+      setLoading1(false);
       setLoading2(false);
       setSubmitDisabled(false);
       updateChat(currentChatId);
+      setPromptPlaceholderText(DEFAULT_PROMPT_PLACEHOLDER_TEXT);
     }
   };
 
@@ -420,7 +436,7 @@ const ChatBar: React.FC = () => {
 
         if (connected) {
           setPromptError(false);
-          setPromptPlaceholderText("Enter your prompt here");
+          setPromptPlaceholderText(DEFAULT_PROMPT_PLACEHOLDER_TEXT);
 
           if (!data.selectedModel) {
             // persist selected model to local storage
@@ -458,6 +474,7 @@ const ChatBar: React.FC = () => {
 
               setLoading2(false);
               setSubmitDisabled(false);
+              setPromptPlaceholderText(DEFAULT_PROMPT_PLACEHOLDER_TEXT);
               chrome.storage.sync.remove(["completion", "sender"]);
             }
           });

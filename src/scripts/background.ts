@@ -13,7 +13,7 @@ import {
   ChatPromptTemplate,
   SystemMessagePromptTemplate,
 } from "@langchain/core/prompts";
-import { RunnableSequence } from "@langchain/core/runnables";
+import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
@@ -45,6 +45,7 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 // global variables
 let context = "";
 let completion = "";
+let controller = new AbortController();
 
 // prompt classification constants
 const CLS_IMG_TYPE = "isImagePrompt";
@@ -92,6 +93,8 @@ const classifyPrompt = async (
     keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
+  }).bind({
+    signal: controller.signal,
   });
   const finalPrompt = `${classifcationPrompt} Answer with 'yes' or 'no'.\n\nPrompt: ${originalPrompt}`;
   return ollama.invoke(finalPrompt).then((response) => {
@@ -144,12 +147,14 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
   return base64EncodedImages;
 };
 
-const getChatModel = (options: LumosOptions): ChatOllama => {
+const getChatModel = (options: LumosOptions): Runnable => {
   return new ChatOllama({
     baseUrl: options.ollamaHost,
     model: options.ollamaModel,
     keepAlive: DEFAULT_KEEP_ALIVE,
     callbacks: [new ConsoleCallbackHandler()],
+  }).bind({
+    signal: controller.signal,
   });
 };
 
@@ -228,13 +233,18 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
-  for await (const chunk of stream) {
-    completion += chunk;
-    chrome.runtime
-      .sendMessage({ completion: completion, sender: "assistant" })
-      .catch(() => {
-        console.log("Sending partial completion, but popup is closed...");
-      });
+  try {
+    for await (const chunk of stream) {
+      completion += chunk;
+      chrome.runtime
+        .sendMessage({ completion: completion, sender: "assistant" })
+        .catch(() => {
+          console.log("Sending partial completion, but popup is closed...");
+        });
+    }
+  } catch (error) {
+    console.log("Cancelling LLM request...");
+    return;
   }
   chrome.runtime.sendMessage({ done: true }).catch(() => {
     console.log("Sending done message, but popup is closed...");
@@ -367,7 +377,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
           keepAlive: DEFAULT_KEEP_ALIVE,
         }),
       );
-      documents.forEach(async (doc, index) => {
+      for (let index = 0; index < documents.length; index++) {
+        if (controller.signal.aborted) {
+          console.log("Cancelling embeddings generation...");
+          return;
+        }
+
+        const doc = documents[index];
+
         await vectorStore.addDocuments([
           new Document({
             pageContent: doc.pageContent,
@@ -385,7 +402,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
               "Sending document embedding message, but popup is closed...",
             );
           });
-      });
+      }
 
       // store vector store in vector store map
       if (!skipCache) {
@@ -427,6 +444,21 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.context) {
     context = request.context;
     console.log(`Received context: ${context}`);
+  }
+
+  // cancel request
+  if (request.cancelRequest) {
+    console.log("Cancelling request...");
+    controller.abort();
+
+    await sleep(300); // hack to allow embeddings generation to stop
+    chrome.runtime.sendMessage({ done: true }).catch(() => {
+      console.log("Sending done message, but popup is closed...");
+      chrome.storage.sync.set({ completion: completion, sender: "assistant" });
+    });
+
+    // reset abort controller
+    controller = new AbortController();
   }
 });
 
