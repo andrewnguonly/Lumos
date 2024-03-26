@@ -287,6 +287,10 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ prompt: "" });
   };
 
+  const cancelRequest = () => {
+    chrome.runtime.sendMessage({ cancelRequest: true });
+  };
+
   const handleAvatarClick = (message: string) => {
     navigator.clipboard.writeText(message);
     setShowSnackbar(true);
@@ -324,6 +328,13 @@ const ChatBar: React.FC = () => {
         case ";":
           // open message history
           setOpenChatHistory(!openChatHistory);
+          break;
+      }
+    } else if (event.ctrlKey) {
+      switch (event.key) {
+        case "c":
+          // cancel request
+          cancelRequest();
           break;
       }
     }
@@ -374,6 +385,7 @@ const ChatBar: React.FC = () => {
     } else if (msg.done) {
       // save messages after response streaming is done
       chrome.storage.session.set({ messages: messages });
+      setLoading1(false);
       setLoading2(false);
       setSubmitDisabled(false);
       updateChat(currentChatId);
