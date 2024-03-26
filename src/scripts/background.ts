@@ -45,7 +45,7 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 // global variables
 let context = "";
 let completion = "";
-const controller = new AbortController();
+let controller = new AbortController();
 
 // prompt classification constants
 const CLS_IMG_TYPE = "isImagePrompt";
@@ -233,13 +233,18 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
-  for await (const chunk of stream) {
-    completion += chunk;
-    chrome.runtime
-      .sendMessage({ completion: completion, sender: "assistant" })
-      .catch(() => {
-        console.log("Sending partial completion, but popup is closed...");
-      });
+  try {
+    for await (const chunk of stream) {
+      completion += chunk;
+      chrome.runtime
+        .sendMessage({ completion: completion, sender: "assistant" })
+        .catch(() => {
+          console.log("Sending partial completion, but popup is closed...");
+        });
+    }
+  } catch (error) {
+    console.log("Cancelling LLM request...");
+    return;
   }
   chrome.runtime.sendMessage({ done: true }).catch(() => {
     console.log("Sending done message, but popup is closed...");
@@ -445,10 +450,15 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.cancelRequest) {
     console.log("Cancelling request...");
     controller.abort();
+
+    await sleep(300); // hack to allow embeddings generation to stop
     chrome.runtime.sendMessage({ done: true }).catch(() => {
       console.log("Sending done message, but popup is closed...");
       chrome.storage.sync.set({ completion: completion, sender: "assistant" });
     });
+
+    // reset abort controller
+    controller = new AbortController();
   }
 });
 
