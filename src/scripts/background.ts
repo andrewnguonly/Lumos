@@ -397,7 +397,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
               "Sending document embedding message, but popup is closed...",
             );
           });
-      };
+      }
 
       // store vector store in vector store map
       if (!skipCache) {
