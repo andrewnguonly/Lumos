@@ -7,6 +7,7 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
+import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
@@ -68,6 +69,7 @@ const ChatBar: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState("");
@@ -109,6 +111,10 @@ const ChatBar: React.FC = () => {
   ) => {
     setParsingDisabled(event.target.checked);
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
+  };
+
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleChangeHeight = (pixels: number) => {
@@ -619,6 +625,23 @@ const ChatBar: React.FC = () => {
             "& .MuiInputBase-root.Mui-error": {
               WebkitTextFillColor: "red",
             },
+          }}
+          InputProps={{
+            startAdornment: (
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                />
+                <IconButton
+                  sx={{ p: "0 8px 0 0" }}
+                  onClick={handleAttachmentClick}
+                >
+                  <AttachmentIcon />
+                </IconButton>
+              </div>
+            ),
           }}
         />
         <IconButton
