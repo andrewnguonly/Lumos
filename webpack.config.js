@@ -52,10 +52,16 @@ module.exports = {
   ],
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    fallback: {
+      fs: false
+    }
   },
   output: {
     path: path.join(__dirname, "dist/js"),
     filename: "[name].js",
+  },
+  externals: {
+    "node:fs/promises": "commonjs2 node:fs/promises",
   },
 };
 
