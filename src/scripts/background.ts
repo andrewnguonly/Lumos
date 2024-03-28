@@ -107,30 +107,29 @@ const classifyPrompt = async (
   });
 };
 
-const createDocuments = async (chunkSize: number, chunkOverlap: number): Promise<Document[]> => {
+const createDocuments = async (
+  chunkSize: number,
+  chunkOverlap: number,
+): Promise<Document[]> => {
   if (attachments.length > 0) {
     // Convert base64 to Blob
     const attachment = attachments[0];
     const base64 = attachment.base64;
-    const byteString = atob(base64.split(',')[1]);
-    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+    const byteString = atob(base64.split(",")[1]);
+    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
     for (let i = 0; i < byteString.length; i++) {
       ia[i] = byteString.charCodeAt(i);
     }
-    const blob = new Blob([ab], {type: mimeString});
-    const file = new File([blob], attachment.name, {type: mimeString});
+    const blob = new Blob([ab], { type: mimeString });
+    const file = new File([blob], attachment.name, { type: mimeString });
 
-    const loader = new DynamicFileLoader(
-      file,
-      {
-        ".txt": (file) => new TextLoader(file),
-        ".py": (file) => new TextLoader(file),
-      }
-    );
+    const loader = new DynamicFileLoader(file, {
+      ".txt": (file) => new TextLoader(file),
+      ".py": (file) => new TextLoader(file),
+    });
     return await loader.load();
-
   } else {
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
@@ -480,7 +479,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     console.log(`Received context: ${context}`);
     attachments.forEach((attachment) => {
       console.log(`Received attachment: ${attachment.name}`);
-    })
+    });
   }
 
   // cancel request

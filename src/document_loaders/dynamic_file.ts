@@ -26,7 +26,8 @@ export class DynamicFileLoader extends BaseDocumentLoader {
 
   public async load(): Promise<Document[]> {
     const documents: Document[] = [];
-    const extension = "." + this.file.name.split(".").pop()?.toLowerCase() || "";
+    const extension =
+      "." + this.file.name.split(".").pop()?.toLowerCase() || "";
 
     if (extension !== "" && extension in this.loaders) {
       const loaderFactory = this.loaders[extension];

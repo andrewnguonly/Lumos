@@ -127,7 +127,7 @@ const ChatBar: React.FC = () => {
 
   const handleAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
     const fileUploaded = event.target.files?.[0];
-    
+
     if (fileUploaded) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -296,17 +296,19 @@ const ChatBar: React.FC = () => {
 
         setHighlightedContent(isHighlightedContent);
 
-        chrome.runtime.sendMessage({ context: pageContent, attachments: [attachment] }).then(() => {
-          chrome.runtime.sendMessage({
-            prompt: prompt,
-            skipRAG: false,
-            chunkSize: config.chunkSize,
-            chunkOverlap: config.chunkOverlap,
-            url: url,
-            skipCache: isHighlightedContent,
-            imageURLs: imageURLs,
+        chrome.runtime
+          .sendMessage({ context: pageContent, attachments: [attachment] })
+          .then(() => {
+            chrome.runtime.sendMessage({
+              prompt: prompt,
+              skipRAG: false,
+              chunkSize: config.chunkSize,
+              chunkOverlap: config.chunkOverlap,
+              url: url,
+              skipCache: isHighlightedContent,
+              imageURLs: imageURLs,
+            });
           });
-        });
       })
       .catch((error) => {
         console.log(`Error: ${error}`);
@@ -630,7 +632,10 @@ const ChatBar: React.FC = () => {
         <div style={{ flex: 1 }}></div>
         {attachment && (
           <Tooltip placement="top" title={`Unattach ${attachment.name}`}>
-            <IconButton disabled={submitDisabled} onClick={handleAttachmentDelete}>
+            <IconButton
+              disabled={submitDisabled}
+              onClick={handleAttachmentDelete}
+            >
               <PlaylistRemoveIcon />
             </IconButton>
           </Tooltip>
