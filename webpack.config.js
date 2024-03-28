@@ -53,6 +53,7 @@ module.exports = {
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
     fallback: {
+      // enable use of LangChain document loaders
       fs: false
     }
   },
@@ -61,6 +62,7 @@ module.exports = {
     filename: "[name].js",
   },
   externals: {
+    // enable use of LangChain document loaders
     "node:fs/promises": "commonjs2 node:fs/promises",
   },
 };

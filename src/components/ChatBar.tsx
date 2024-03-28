@@ -56,7 +56,8 @@ export class LumosMessage {
 
 export interface Attachment {
   name: string;
-  file: File;
+  base64: string;
+  lastModified: number;
 }
 
 const ChatBar: React.FC = () => {
@@ -126,13 +127,21 @@ const ChatBar: React.FC = () => {
 
   const handleAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
     const fileUploaded = event.target.files?.[0];
-    const attachment: Attachment = {
-      name: fileUploaded?.name ?? "attachment",
-      file: fileUploaded ?? new File([""], "attachment"),
-    };
+    
+    if (fileUploaded) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const attachment: Attachment = {
+          name: fileUploaded.name,
+          base64: reader.result as string,
+          lastModified: fileUploaded.lastModified,
+        };
 
-    setAttachment(attachment);
-    chrome.storage.session.set({ attachment: attachment });
+        setAttachment(attachment);
+        chrome.storage.session.set({ attachment: attachment });
+      };
+      reader.readAsDataURL(fileUploaded);
+    }
   };
 
   const handleAttachmentDelete = () => {
@@ -279,6 +288,12 @@ const ChatBar: React.FC = () => {
         const isHighlightedContent = results[0].result[1];
         const imageURLs = results[0].result[2];
 
+        // if an attachment is present, the URL gets set to a fake file URL
+        let url = activeTabUrl.toString();
+        if (attachment) {
+          url = `file://${attachment.name}/${attachment.lastModified}`;
+        }
+
         setHighlightedContent(isHighlightedContent);
 
         chrome.runtime.sendMessage({ context: pageContent, attachments: [attachment] }).then(() => {
@@ -287,7 +302,7 @@ const ChatBar: React.FC = () => {
             skipRAG: false,
             chunkSize: config.chunkSize,
             chunkOverlap: config.chunkOverlap,
-            url: activeTabUrl.toString(),
+            url: url,
             skipCache: isHighlightedContent,
             imageURLs: imageURLs,
           });
@@ -615,7 +630,7 @@ const ChatBar: React.FC = () => {
         <div style={{ flex: 1 }}></div>
         {attachment && (
           <Tooltip placement="top" title={`Unattach ${attachment.name}`}>
-            <IconButton onClick={handleAttachmentDelete}>
+            <IconButton disabled={submitDisabled} onClick={handleAttachmentDelete}>
               <PlaylistRemoveIcon />
             </IconButton>
           </Tooltip>

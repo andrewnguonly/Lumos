@@ -108,24 +108,37 @@ const classifyPrompt = async (
 };
 
 const createDocuments = async (chunkSize: number, chunkOverlap: number): Promise<Document[]> => {
-  // split page content into overlapping documents
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: chunkSize,
-    chunkOverlap: chunkOverlap,
-  });
-
-  const loader = new DynamicFileLoader(
-    attachments[0].file,
-    {
-      ".txt": (file) => new TextLoader(file),
-      ".py": (file) => new TextLoader(file),
+  if (attachments.length > 0) {
+    // Convert base64 to Blob
+    const attachment = attachments[0];
+    const base64 = attachment.base64;
+    const byteString = atob(base64.split(',')[1]);
+    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
     }
-  );
+    const blob = new Blob([ab], {type: mimeString});
+    const file = new File([blob], attachment.name, {type: mimeString});
 
-  const docs = await loader.load();
-  console.log(docs);
+    const loader = new DynamicFileLoader(
+      file,
+      {
+        ".txt": (file) => new TextLoader(file),
+        ".py": (file) => new TextLoader(file),
+      }
+    );
+    return await loader.load();
 
-  return await splitter.createDocuments([context]);
+  } else {
+    // split page content into overlapping documents
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: chunkSize,
+      chunkOverlap: chunkOverlap,
+    });
+    return await splitter.createDocuments([context]);
+  }
 };
 
 const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
@@ -465,7 +478,9 @@ chrome.runtime.onMessage.addListener(async (request) => {
     context = request.context;
     attachments = request.attachments;
     console.log(`Received context: ${context}`);
-    console.log(`Received attachments: ${attachments}`);
+    attachments.forEach((attachment) => {
+      console.log(`Received attachment: ${attachment.name}`);
+    })
   }
 
   // cancel request
