@@ -10,6 +10,7 @@ import {
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
+import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Alert,
@@ -53,6 +54,11 @@ export class LumosMessage {
   ) {}
 }
 
+export interface Attachment {
+  name: string;
+  blob: Blob | undefined;
+}
+
 const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
   const [promptError, setPromptError] = useState(false);
@@ -61,6 +67,7 @@ const ChatBar: React.FC = () => {
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [highlightedContent, setHighlightedContent] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -115,6 +122,22 @@ const ChatBar: React.FC = () => {
 
   const handleAttachmentClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const fileUploaded = event.target.files?.[0];
+    const attachment: Attachment = {
+      name: fileUploaded?.name ?? "attachment",
+      blob: fileUploaded,
+    };
+
+    setAttachment(attachment);
+    chrome.storage.session.set({ attachment: attachment });
+  };
+
+  const handleAttachmentDelete = () => {
+    setAttachment(null);
+    chrome.storage.session.remove(["attachment"]);
   };
 
   const handleChangeHeight = (pixels: number) => {
@@ -456,7 +479,7 @@ const ChatBar: React.FC = () => {
     );
 
     chrome.storage.session.get(
-      ["prompt", "parsingDisabled", "messages", "currentChatId"],
+      ["prompt", "parsingDisabled", "messages", "attachment"],
       (data) => {
         if (data.prompt) {
           setPrompt(data.prompt);
@@ -484,6 +507,9 @@ const ChatBar: React.FC = () => {
               chrome.storage.sync.remove(["completion", "sender"]);
             }
           });
+        }
+        if (data.attachment) {
+          setAttachment(data.attachment);
         }
       },
     );
@@ -587,6 +613,13 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
+        {attachment && (
+          <Tooltip placement="top" title={`Unattach ${attachment.name}`}>
+            <IconButton onClick={handleAttachmentDelete}>
+              <PlaylistRemoveIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         <IconButton disabled={submitDisabled} onClick={saveChat}>
           <SaveAltIcon />
         </IconButton>
@@ -632,6 +665,7 @@ const ChatBar: React.FC = () => {
                 <input
                   type="file"
                   ref={fileInputRef}
+                  onChange={handleAttachmentChange}
                   style={{ display: "none" }}
                 />
                 <IconButton
