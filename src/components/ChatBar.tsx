@@ -622,7 +622,7 @@ const ChatBar: React.FC = () => {
           }
           label={
             <Typography sx={{ color: "gray", fontSize: 12 }}>
-              {`Disable ${attachment ? "file": "content"} parsing`}
+              {`Disable ${attachment ? "file" : "content"} parsing`}
             </Typography>
           }
         />
