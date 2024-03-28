@@ -16,10 +16,12 @@ import {
 import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
+import { TextLoader } from "langchain/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
-import { LumosMessage } from "../components/ChatBar";
+import { Attachment, LumosMessage } from "../components/ChatBar";
+import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -44,6 +46,7 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 // global variables
 let context = "";
+let attachments: Attachment[] = [];
 let completion = "";
 let controller = new AbortController();
 
@@ -102,6 +105,27 @@ const classifyPrompt = async (
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const createDocuments = async (chunkSize: number, chunkOverlap: number): Promise<Document[]> => {
+  // split page content into overlapping documents
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: chunkSize,
+    chunkOverlap: chunkOverlap,
+  });
+
+  const loader = new DynamicFileLoader(
+    attachments[0].file,
+    {
+      ".txt": (file) => new TextLoader(file),
+      ".py": (file) => new TextLoader(file),
+    }
+  );
+
+  const docs = await loader.load();
+  console.log(docs);
+
+  return await splitter.createDocuments([context]);
 };
 
 const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
@@ -361,12 +385,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
         `Creating ${skipCache ? "temporary" : "new"} vector store for url: ${url}`,
       );
 
-      // split page content into overlapping documents
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: chunkSize,
-        chunkOverlap: chunkOverlap,
-      });
-      const documents = await splitter.createDocuments([context]);
+      // create documents
+      const documents = await createDocuments(chunkSize, chunkOverlap);
       documentsCount = documents.length;
 
       // load documents into vector store
@@ -443,7 +463,9 @@ chrome.runtime.onMessage.addListener(async (request) => {
   // process parsed context
   if (request.context) {
     context = request.context;
+    attachments = request.attachments;
     console.log(`Received context: ${context}`);
+    console.log(`Received attachments: ${attachments}`);
   }
 
   // cancel request

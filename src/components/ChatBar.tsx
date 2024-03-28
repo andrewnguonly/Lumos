@@ -56,7 +56,7 @@ export class LumosMessage {
 
 export interface Attachment {
   name: string;
-  blob: Blob | undefined;
+  file: File;
 }
 
 const ChatBar: React.FC = () => {
@@ -128,7 +128,7 @@ const ChatBar: React.FC = () => {
     const fileUploaded = event.target.files?.[0];
     const attachment: Attachment = {
       name: fileUploaded?.name ?? "attachment",
-      blob: fileUploaded,
+      file: fileUploaded ?? new File([""], "attachment"),
     };
 
     setAttachment(attachment);
@@ -281,7 +281,7 @@ const ChatBar: React.FC = () => {
 
         setHighlightedContent(isHighlightedContent);
 
-        chrome.runtime.sendMessage({ context: pageContent }).then(() => {
+        chrome.runtime.sendMessage({ context: pageContent, attachments: [attachment] }).then(() => {
           chrome.runtime.sendMessage({
             prompt: prompt,
             skipRAG: false,
