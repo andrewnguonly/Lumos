@@ -269,8 +269,8 @@ const ChatBar: React.FC = () => {
         // get path specific content config
         config = getContentConfig(activeTabUrl, contentConfig) || config;
 
-        if (activeTabUrl.protocol === "chrome:") {
-          // skip script injection for chrome:// urls
+        if (activeTabUrl.protocol === "chrome:" || attachment) {
+          // skip script injection for chrome:// urls or if an attachment is present
           const result = new Array(1);
           result[0] = { result: [prompt, false, []] };
           return result;
@@ -289,15 +289,17 @@ const ChatBar: React.FC = () => {
         const imageURLs = results[0].result[2];
 
         // if an attachment is present, the URL gets set to a fake file URL
+        const attachments = [];
         let url = activeTabUrl.toString();
         if (attachment) {
+          attachments.push(attachment);
           url = `file://${attachment.name}/${attachment.lastModified}`;
         }
 
         setHighlightedContent(isHighlightedContent);
 
         chrome.runtime
-          .sendMessage({ context: pageContent, attachments: [attachment] })
+          .sendMessage({ context: pageContent, attachments: attachments })
           .then(() => {
             chrome.runtime.sendMessage({
               prompt: prompt,
@@ -620,7 +622,7 @@ const ChatBar: React.FC = () => {
           }
           label={
             <Typography sx={{ color: "gray", fontSize: 12 }}>
-              Disable content parsing
+              {`Disable ${attachment ? "file": "content"} parsing`}
             </Typography>
           }
         />

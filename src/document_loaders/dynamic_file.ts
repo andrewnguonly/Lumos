@@ -1,5 +1,6 @@
 import { Document } from "@langchain/core/documents";
 import { BaseDocumentLoader } from "langchain/document_loaders/base";
+import { TextLoader } from "langchain/document_loaders/fs/text";
 
 export interface LoadersMapping {
   [extension: string]: (file: File) => BaseDocumentLoader;
@@ -28,16 +29,17 @@ export class DynamicFileLoader extends BaseDocumentLoader {
     const documents: Document[] = [];
     const extension =
       "." + this.file.name.split(".").pop()?.toLowerCase() || "";
+    let loader;
 
     if (extension !== "" && extension in this.loaders) {
       const loaderFactory = this.loaders[extension];
-      const loader = loaderFactory(this.file);
-      documents.push(...(await loader.load()));
+      loader = loaderFactory(this.file);
     } else {
       // default to using text loader
-      throw new Error("No extension found in file name");
+      loader = new TextLoader(this.file);
     }
 
+    documents.push(...(await loader.load()));
     return documents;
   }
 }

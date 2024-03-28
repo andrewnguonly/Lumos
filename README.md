@@ -208,6 +208,16 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 
 Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).
 
+## File Attachments
+
+File attachments can be uploaded to Lumos. The contents of a file will be parsed and processed through Lumos's RAG workflow (similar to processing page content). By default, the text content of a file will be parsed if the extension type is not listed below (e.g. `.py`).
+
+Supported extension types:
+- `.txt`
+- `.json`
+
+Note: If an attachment is present, page content will not be parsed.
+
 ## Tools (Experimental)
 
 Lumos invokes [Tools](https://js.langchain.com/docs/modules/agents/tools/) automatically based on the provided prompt. See documentation and examples [here](./docs/tools.md).

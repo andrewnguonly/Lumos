@@ -16,6 +16,7 @@ import {
 import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
+import { JSONLoader } from "langchain/document_loaders/fs/json";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
@@ -126,8 +127,8 @@ const createDocuments = async (
     const file = new File([blob], attachment.name, { type: mimeString });
 
     const loader = new DynamicFileLoader(file, {
+      ".json": (file) => new JSONLoader(file),
       ".txt": (file) => new TextLoader(file),
-      ".py": (file) => new TextLoader(file),
     });
     return await loader.load();
   } else {
