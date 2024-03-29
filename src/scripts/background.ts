@@ -16,10 +16,14 @@ import {
 import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
+import { JSONLoader } from "langchain/document_loaders/fs/json";
+import { TextLoader } from "langchain/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
-import { LumosMessage } from "../components/ChatBar";
+import { Attachment, LumosMessage } from "../components/ChatBar";
+import { CSVPackedLoader } from "../document_loaders/csv";
+import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -44,6 +48,7 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 // global variables
 let context = "";
+let attachments: Attachment[] = [];
 let completion = "";
 let controller = new AbortController();
 
@@ -102,6 +107,40 @@ const classifyPrompt = async (
     const answer = response.trim().split(" ")[0].toLowerCase();
     return answer.includes("yes");
   });
+};
+
+const createDocuments = async (
+  chunkSize: number,
+  chunkOverlap: number,
+): Promise<Document[]> => {
+  if (attachments.length > 0) {
+    // Convert base64 to Blob
+    const attachment = attachments[0];
+    const base64 = attachment.base64;
+    const byteString = atob(base64.split(",")[1]);
+    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeString });
+    const file = new File([blob], attachment.name, { type: mimeString });
+
+    const loader = new DynamicFileLoader(file, {
+      ".csv": (file) => new CSVPackedLoader(file),
+      ".json": (file) => new JSONLoader(file),
+      ".txt": (file) => new TextLoader(file),
+    });
+    return await loader.load();
+  } else {
+    // split page content into overlapping documents
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: chunkSize,
+      chunkOverlap: chunkOverlap,
+    });
+    return await splitter.createDocuments([context]);
+  }
 };
 
 const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
@@ -361,12 +400,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
         `Creating ${skipCache ? "temporary" : "new"} vector store for url: ${url}`,
       );
 
-      // split page content into overlapping documents
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: chunkSize,
-        chunkOverlap: chunkOverlap,
-      });
-      const documents = await splitter.createDocuments([context]);
+      // create documents
+      const documents = await createDocuments(chunkSize, chunkOverlap);
       documentsCount = documents.length;
 
       // load documents into vector store
@@ -443,7 +478,11 @@ chrome.runtime.onMessage.addListener(async (request) => {
   // process parsed context
   if (request.context) {
     context = request.context;
+    attachments = request.attachments;
     console.log(`Received context: ${context}`);
+    attachments.forEach((attachment) => {
+      console.log(`Received attachment: ${attachment.name}`);
+    });
   }
 
   // cancel request

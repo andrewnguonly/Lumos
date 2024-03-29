@@ -7,8 +7,10 @@ import {
   MessageList,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
+import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
+import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Alert,
@@ -52,6 +54,12 @@ export class LumosMessage {
   ) {}
 }
 
+export interface Attachment {
+  name: string;
+  base64: string;
+  lastModified: number;
+}
+
 const ChatBar: React.FC = () => {
   const [prompt, setPrompt] = useState("");
   const [promptError, setPromptError] = useState(false);
@@ -60,6 +68,7 @@ const ChatBar: React.FC = () => {
   );
   const [parsingDisabled, setParsingDisabled] = useState(false);
   const [highlightedContent, setHighlightedContent] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [messages, setMessages] = useState<LumosMessage[]>([]);
   const [submitDisabled, setSubmitDisabled] = useState(false);
   const [loading1, setLoading1] = useState(false); // loading state during embedding process
@@ -68,6 +77,7 @@ const ChatBar: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const textFieldRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [chatContainerHeight, setChatContainerHeight] = useState(300);
   const [openChatHistory, setOpenChatHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState("");
@@ -109,6 +119,34 @@ const ChatBar: React.FC = () => {
   ) => {
     setParsingDisabled(event.target.checked);
     chrome.storage.session.set({ parsingDisabled: event.target.checked });
+  };
+
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAttachmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const fileUploaded = event.target.files?.[0];
+
+    if (fileUploaded) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const attachment: Attachment = {
+          name: fileUploaded.name,
+          base64: reader.result as string,
+          lastModified: fileUploaded.lastModified,
+        };
+
+        setAttachment(attachment);
+        chrome.storage.session.set({ attachment: attachment });
+      };
+      reader.readAsDataURL(fileUploaded);
+    }
+  };
+
+  const handleAttachmentDelete = () => {
+    setAttachment(null);
+    chrome.storage.session.remove(["attachment"]);
   };
 
   const handleChangeHeight = (pixels: number) => {
@@ -231,8 +269,8 @@ const ChatBar: React.FC = () => {
         // get path specific content config
         config = getContentConfig(activeTabUrl, contentConfig) || config;
 
-        if (activeTabUrl.protocol === "chrome:") {
-          // skip script injection for chrome:// urls
+        if (activeTabUrl.protocol === "chrome:" || attachment) {
+          // skip script injection for chrome:// urls or if an attachment is present
           const result = new Array(1);
           result[0] = { result: [prompt, false, []] };
           return result;
@@ -250,19 +288,29 @@ const ChatBar: React.FC = () => {
         const isHighlightedContent = results[0].result[1];
         const imageURLs = results[0].result[2];
 
+        // if an attachment is present, the URL gets set to a fake file URL
+        const attachments = [];
+        let url = activeTabUrl.toString();
+        if (attachment) {
+          attachments.push(attachment);
+          url = `file://${attachment.name}/${attachment.lastModified}`;
+        }
+
         setHighlightedContent(isHighlightedContent);
 
-        chrome.runtime.sendMessage({ context: pageContent }).then(() => {
-          chrome.runtime.sendMessage({
-            prompt: prompt,
-            skipRAG: false,
-            chunkSize: config.chunkSize,
-            chunkOverlap: config.chunkOverlap,
-            url: activeTabUrl.toString(),
-            skipCache: isHighlightedContent,
-            imageURLs: imageURLs,
+        chrome.runtime
+          .sendMessage({ context: pageContent, attachments: attachments })
+          .then(() => {
+            chrome.runtime.sendMessage({
+              prompt: prompt,
+              skipRAG: false,
+              chunkSize: config.chunkSize,
+              chunkOverlap: config.chunkOverlap,
+              url: url,
+              skipCache: isHighlightedContent,
+              imageURLs: imageURLs,
+            });
           });
-        });
       })
       .catch((error) => {
         console.log(`Error: ${error}`);
@@ -450,7 +498,7 @@ const ChatBar: React.FC = () => {
     );
 
     chrome.storage.session.get(
-      ["prompt", "parsingDisabled", "messages", "currentChatId"],
+      ["prompt", "parsingDisabled", "messages", "attachment"],
       (data) => {
         if (data.prompt) {
           setPrompt(data.prompt);
@@ -478,6 +526,9 @@ const ChatBar: React.FC = () => {
               chrome.storage.sync.remove(["completion", "sender"]);
             }
           });
+        }
+        if (data.attachment) {
+          setAttachment(data.attachment);
         }
       },
     );
@@ -571,7 +622,7 @@ const ChatBar: React.FC = () => {
           }
           label={
             <Typography sx={{ color: "gray", fontSize: 12 }}>
-              Disable content parsing
+              {`Disable ${attachment ? "file" : "content"} parsing`}
             </Typography>
           }
         />
@@ -581,6 +632,16 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <div style={{ flex: 1 }}></div>
+        {attachment && (
+          <Tooltip placement="top" title={`Unattach ${attachment.name}`}>
+            <IconButton
+              disabled={submitDisabled}
+              onClick={handleAttachmentDelete}
+            >
+              <PlaylistRemoveIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         <IconButton disabled={submitDisabled} onClick={saveChat}>
           <SaveAltIcon />
         </IconButton>
@@ -619,6 +680,24 @@ const ChatBar: React.FC = () => {
             "& .MuiInputBase-root.Mui-error": {
               WebkitTextFillColor: "red",
             },
+          }}
+          InputProps={{
+            startAdornment: (
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAttachmentChange}
+                  style={{ display: "none" }}
+                />
+                <IconButton
+                  sx={{ p: "0 8px 0 0" }}
+                  onClick={handleAttachmentClick}
+                >
+                  <AttachmentIcon />
+                </IconButton>
+              </div>
+            ),
           }}
         />
         <IconButton
