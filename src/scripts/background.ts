@@ -22,6 +22,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
 import { Attachment, LumosMessage } from "../components/ChatBar";
+import { CSVPackedLoader } from "../document_loaders/csv";
 import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 import {
   DEFAULT_KEEP_ALIVE,
@@ -127,6 +128,7 @@ const createDocuments = async (
     const file = new File([blob], attachment.name, { type: mimeString });
 
     const loader = new DynamicFileLoader(file, {
+      ".csv": (file) => new CSVPackedLoader(file),
       ".json": (file) => new JSONLoader(file),
       ".txt": (file) => new TextLoader(file),
     });

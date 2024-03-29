@@ -20,6 +20,7 @@
     "@types/react-dom": "^18.2.15",
     "@xenova/transformers": "^2.8.0",
     "buffer": "^6.0.3",
+    "d3-dsv": "^2.0.0",
     "fuse.js": "^7.0.0",
     "langchain": "^0.1.21",
     "markdown-to-jsx": "^7.4.1",
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
+    "@types/d3-dsv": "^3.0.7",
     "@types/react-syntax-highlighter": "^15.5.11",
     "@typescript-eslint/parser": "^5.62.0",
     "copy-webpack-plugin": "^11.0.0",
