@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
   IconButton,
@@ -9,7 +10,7 @@ import {
   ListItemText,
   ListSubheader,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import PropTypes from "prop-types";
 
 interface ChatHistoryProps {
   loadChat: (chatId: string) => void;

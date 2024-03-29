@@ -1,3 +1,6 @@
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { Ollama } from "@langchain/community/llms/ollama";
 import { Document } from "@langchain/core/documents";
 import {
   AIMessage,
@@ -10,27 +13,30 @@ import {
   ChatPromptTemplate,
   SystemMessagePromptTemplate,
 } from "@langchain/core/prompts";
-import { RunnableSequence } from "@langchain/core/runnables";
+import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
+import { JSONLoader } from "langchain/document_loaders/fs/json";
+import { TextLoader } from "langchain/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
-import { ChatOllama } from "@langchain/community/chat_models/ollama";
-import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
-import { Ollama } from "@langchain/community/llms/ollama";
-import { LumosMessage } from "../components/ChatBar";
+
+import { Attachment, LumosMessage } from "../components/ChatBar";
+import { CSVPackedLoader } from "../document_loaders/csv";
+import { DynamicFileLoader } from "../document_loaders/dynamic_file";
+import {
+  DEFAULT_KEEP_ALIVE,
+  getLumosOptions,
+  isMultimodal,
+  LumosOptions,
+  SUPPORTED_IMG_FORMATS,
+} from "../pages/Options";
 import {
   Calculator,
   CLS_CALC_PROMPT,
   CLS_CALC_TYPE,
 } from "../tools/calculator";
 import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
-import {
-  DEFAULT_KEEP_ALIVE,
-  getLumosOptions,
-  isMultimodal,
-  LumosOptions,
-} from "../pages/Options";
 
 interface VectorStoreMetadata {
   vectorStore: EnhancedMemoryVectorStore;
@@ -42,7 +48,9 @@ const vectorStoreMap = new Map<string, VectorStoreMetadata>();
 
 // global variables
 let context = "";
+let attachments: Attachment[] = [];
 let completion = "";
+let controller = new AbortController();
 
 // prompt classification constants
 const CLS_IMG_TYPE = "isImagePrompt";
@@ -90,6 +98,8 @@ const classifyPrompt = async (
     keepAlive: DEFAULT_KEEP_ALIVE,
     temperature: 0,
     stop: [".", ","],
+  }).bind({
+    signal: controller.signal,
   });
   const finalPrompt = `${classifcationPrompt} Answer with 'yes' or 'no'.\n\nPrompt: ${originalPrompt}`;
   return ollama.invoke(finalPrompt).then((response) => {
@@ -99,12 +109,91 @@ const classifyPrompt = async (
   });
 };
 
-const getChatModel = (options: LumosOptions): ChatOllama => {
+const createDocuments = async (
+  chunkSize: number,
+  chunkOverlap: number,
+): Promise<Document[]> => {
+  if (attachments.length > 0) {
+    // Convert base64 to Blob
+    const attachment = attachments[0];
+    const base64 = attachment.base64;
+    const byteString = atob(base64.split(",")[1]);
+    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeString });
+    const file = new File([blob], attachment.name, { type: mimeString });
+
+    const loader = new DynamicFileLoader(file, {
+      ".csv": (file) => new CSVPackedLoader(file),
+      ".json": (file) => new JSONLoader(file),
+      ".txt": (file) => new TextLoader(file),
+    });
+    return await loader.load();
+  } else {
+    // split page content into overlapping documents
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: chunkSize,
+      chunkOverlap: chunkOverlap,
+    });
+    return await splitter.createDocuments([context]);
+  }
+};
+
+const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
+  const base64EncodedImages: string[] = [];
+  let urls: string[] = imageURLs;
+
+  // filter out unsupported image formats
+  urls = urls.filter((url) => {
+    const extension = url.split(".").pop() || "";
+    return SUPPORTED_IMG_FORMATS.includes(extension);
+  });
+
+  // only download the first 10 images
+  for (const url of urls.slice(0, 10)) {
+    console.log(`Downloading image: ${url}`);
+    let response;
+
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      console.log(`Failed to download image: ${url}`);
+      continue;
+    }
+
+    if (response.ok) {
+      const blob = await response.blob();
+      let base64String: string = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+      });
+
+      // remove leading data url prefix `data:*/*;base64,`
+      base64String = base64String.split(",")[1];
+      base64EncodedImages.push(base64String);
+    } else {
+      console.log(`Failed to download image: ${url}`);
+    }
+  }
+
+  return base64EncodedImages;
+};
+
+const getChatModel = (options: LumosOptions): Runnable => {
   return new ChatOllama({
     baseUrl: options.ollamaHost,
     model: options.ollamaModel,
     keepAlive: DEFAULT_KEEP_ALIVE,
     callbacks: [new ConsoleCallbackHandler()],
+  }).bind({
+    signal: controller.signal,
   });
 };
 
@@ -183,13 +272,18 @@ const executeCalculatorTool = async (prompt: string): Promise<void> => {
 
 const streamChunks = async (stream: IterableReadableStream<string>) => {
   completion = "";
-  for await (const chunk of stream) {
-    completion += chunk;
-    chrome.runtime
-      .sendMessage({ completion: completion, sender: "assistant" })
-      .catch(() => {
-        console.log("Sending partial completion, but popup is closed...");
-      });
+  try {
+    for await (const chunk of stream) {
+      completion += chunk;
+      chrome.runtime
+        .sendMessage({ completion: completion, sender: "assistant" })
+        .catch(() => {
+          console.log("Sending partial completion, but popup is closed...");
+        });
+    }
+  } catch (error) {
+    console.log("Cancelling LLM request...");
+    return;
   }
   chrome.runtime.sendMessage({ done: true }).catch(() => {
     console.log("Sending done message, but popup is closed...");
@@ -263,7 +357,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
     );
 
     // define model bindings (e.g. images, functions)
-    const base64EncodedImages: string[] = [];
+    let base64EncodedImages: string[] = [];
 
     // classify prompt and optionally execute tools
     if (
@@ -276,37 +370,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
         CLS_IMG_TRIGGER,
       ))
     ) {
-      const urls: string[] = request.imageURLs;
-
-      // only download the first 10 images
-      for (const url of urls.slice(0, 10)) {
-        console.log(`Downloading image: ${url}`);
-        let response;
-
-        try {
-          response = await fetch(url);
-        } catch (error) {
-          console.log(`Failed to download image: ${url}`);
-          continue;
-        }
-
-        if (response.ok) {
-          const blob = await response.blob();
-          let base64String: string = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = () => {
-              resolve(reader.result as string);
-            };
-          });
-
-          // remove leading data url prefix `data:*/*;base64,`
-          base64String = base64String.split(",")[1];
-          base64EncodedImages.push(base64String);
-        } else {
-          console.log(`Failed to download image: ${url}`);
-        }
-      }
+      base64EncodedImages = await downloadImages(request.imageURLs);
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
@@ -336,12 +400,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
         `Creating ${skipCache ? "temporary" : "new"} vector store for url: ${url}`,
       );
 
-      // split page content into overlapping documents
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: chunkSize,
-        chunkOverlap: chunkOverlap,
-      });
-      const documents = await splitter.createDocuments([context]);
+      // create documents
+      const documents = await createDocuments(chunkSize, chunkOverlap);
       documentsCount = documents.length;
 
       // load documents into vector store
@@ -352,7 +412,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
           keepAlive: DEFAULT_KEEP_ALIVE,
         }),
       );
-      documents.forEach(async (doc, index) => {
+      for (let index = 0; index < documents.length; index++) {
+        if (controller.signal.aborted) {
+          console.log("Cancelling embeddings generation...");
+          return;
+        }
+
+        const doc = documents[index];
+
         await vectorStore.addDocuments([
           new Document({
             pageContent: doc.pageContent,
@@ -370,7 +437,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
               "Sending document embedding message, but popup is closed...",
             );
           });
-      });
+      }
 
       // store vector store in vector store map
       if (!skipCache) {
@@ -411,7 +478,26 @@ chrome.runtime.onMessage.addListener(async (request) => {
   // process parsed context
   if (request.context) {
     context = request.context;
+    attachments = request.attachments;
     console.log(`Received context: ${context}`);
+    attachments.forEach((attachment) => {
+      console.log(`Received attachment: ${attachment.name}`);
+    });
+  }
+
+  // cancel request
+  if (request.cancelRequest) {
+    console.log("Cancelling request...");
+    controller.abort();
+
+    await sleep(300); // hack to allow embeddings generation to stop
+    chrome.runtime.sendMessage({ done: true }).catch(() => {
+      console.log("Sending done message, but popup is closed...");
+      chrome.storage.sync.set({ completion: completion, sender: "assistant" });
+    });
+
+    // reset abort controller
+    controller = new AbortController();
   }
 });
 

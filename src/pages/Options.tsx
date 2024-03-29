@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useState } from "react";
+
 import {
   Box,
   FormControl,
@@ -12,6 +13,7 @@ import {
   TextField,
   ThemeProvider,
 } from "@mui/material";
+
 import {
   ContentConfig,
   defaultContentConfig,
@@ -43,6 +45,7 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
 };
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
 export const EMBEDDING_MODELS = ["nomic-embed-text", "all-minilm"];
+export const SUPPORTED_IMG_FORMATS = ["jpeg", "jpg", "png"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
 
@@ -293,11 +296,17 @@ const Options: React.FC = () => {
                 (model: string) =>
                   !EMBEDDING_MODELS.includes(model.split(":")[0]),
               )
-              .map((modelName: string, index) => (
-                <MenuItem key={index} value={modelName}>
-                  {`${modelName.split(":")[0]} (${modelName.split(":")[1]})`}
-                </MenuItem>
-              ))}
+              .map((modelName) => {
+                const [model, tag] = modelName.split(":");
+                const isMulti = isMultimodal(model);
+                return (
+                  <MenuItem key={modelName} value={modelName}>
+                    {isMulti
+                      ? `${model} (${tag}, multimodal)`
+                      : `${model} (${tag})`}
+                  </MenuItem>
+                );
+              })}
           </Select>
         </FormControl>
         <FormControl className="options-input" size="small">

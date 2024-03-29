@@ -4,7 +4,7 @@
 
 A RAG LLM co-pilot for browsing the web, powered by local LLMs.
 
-![Screenshot of Lumos](./screenshots/lumos_screenshot_3.png)
+![Screenshot of Lumos](./screenshots/lumos_screenshot_4.png)
 
 This Chrome extension is powered by [Ollama](https://ollama.ai/). Inference is done on your local machine without any _external_ server support. However, due to security constraints in the Chrome extension platform, the app does rely on _local_ server support to run the LLM. This app is inspired by the [Chrome extension example](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) provided by the [Web LLM project](https://webllm.mlc.ai/) and the [local LLM examples](https://js.langchain.com/docs/use_cases/question_answering/local_retrieval_qa) provided by [LangChain](https://github.com/langchain-ai/langchainjs).
 
@@ -210,10 +210,22 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `cmd + j`: Toggle `Disable content parsing` checkbox.
 - `cmd + k`: Clear all messages.
 - `cmd + ;`: Open/close Chat History panel.
+- `ctrl + c`: Cancel request (LLM request/streaming or embeddings generation)
 
 ## Multimodal
 
 Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).
+
+## File Attachments
+
+File attachments can be uploaded to Lumos. The contents of a file will be parsed and processed through Lumos's RAG workflow (similar to processing page content). By default, the text content of a file will be parsed if the extension type is not listed below (e.g. `.py`).
+
+Supported extension types:
+- `.csv`
+- `.json`
+- `.txt`
+
+Note: If an attachment is present, page content will not be parsed. Remove the file attachment to resume parsing page content.
 
 ## Tools (Experimental)
 
