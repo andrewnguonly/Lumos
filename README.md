@@ -50,6 +50,14 @@ Note: The environment variable `OLLAMA_ORIGINS` must be set to `chrome-extension
 Access to fetch at 'http://localhost:11434/api/tags' from origin 'chrome-extension://<extension_id>' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. If an opaque response serves your needs, set the request's mode to 'no-cors' to fetch the resource with CORS disabled.
 ```
 
+### macOS
+
+Run `launchctl setenv` to set `OLLAMA_ORIGINS`.
+```
+launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"
+```
+[Setting environment variables on Mac (Ollama)](https://github.com/ollama/ollama/blob/main/docs/faq.md#setting-environment-variables-on-mac)
+
 ### Docker
 
 The Ollama server can also be [run in a Docker container](https://hub.docker.com/r/ollama/ollama). The container should have the `OLLAMA_ORIGINS` environment variable set to `chrome-extension://*`.
