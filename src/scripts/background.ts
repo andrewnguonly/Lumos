@@ -113,34 +113,41 @@ const createDocuments = async (
   chunkSize: number,
   chunkOverlap: number,
 ): Promise<Document[]> => {
-  if (attachments.length > 0) {
-    // Convert base64 to Blob
-    const attachment = attachments[0];
-    const base64 = attachment.base64;
-    const byteString = atob(base64.split(",")[1]);
-    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], { type: mimeString });
-    const file = new File([blob], attachment.name, { type: mimeString });
+  const documents: Document[] = [];
 
-    const loader = new DynamicFileLoader(file, {
-      ".csv": (file) => new CSVPackedLoader(file),
-      ".json": (file) => new JSONLoader(file),
-      ".txt": (file) => new TextLoader(file),
-    });
-    return await loader.load();
-  } else {
+  if (attachments.length > 0) {
+    for (const attachment of attachments) {
+      // Convert base64 to Blob
+      const base64 = attachment.base64;
+      const byteString = atob(base64.split(",")[1]);
+      const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const file = new File([blob], attachment.name, { type: mimeString });
+
+      const loader = new DynamicFileLoader(file, {
+        ".csv": (file) => new CSVPackedLoader(file),
+        ".json": (file) => new JSONLoader(file),
+        ".txt": (file) => new TextLoader(file),
+      });
+      documents.push(...(await loader.load()));
+    }
+  }
+
+  if (context !== "") {
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: chunkSize,
       chunkOverlap: chunkOverlap,
     });
-    return await splitter.createDocuments([context]);
+    documents.push(...(await splitter.createDocuments([context])));
   }
+
+  return documents;
 };
 
 const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
