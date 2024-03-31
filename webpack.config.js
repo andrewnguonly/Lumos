@@ -54,7 +54,7 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js"],
     fallback: {
       // enable use of LangChain document loaders
-      fs: false
+      fs: false, // TextLoader
     }
   },
   output: {
@@ -63,7 +63,7 @@ module.exports = {
   },
   externals: {
     // enable use of LangChain document loaders
-    "node:fs/promises": "commonjs2 node:fs/promises",
+    "node:fs/promises": "commonjs2 node:fs/promises", // TextLoader
   },
 };
 

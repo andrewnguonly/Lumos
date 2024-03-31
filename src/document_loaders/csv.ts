@@ -6,6 +6,7 @@ export class CSVPackedLoader extends CSVLoader {
     const { column, separator = "," } = this.options;
 
     const psv = dsvFormat(separator);
+    // cannot use psv.parse(), unsafe-eval is not allowed
     let parsed = psv.parseRows(raw.trim());
 
     if (column !== undefined) {
