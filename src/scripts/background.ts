@@ -476,7 +476,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
   }
 
   // process parsed context
-  if (request.context) {
+  if (request.context || request.attachments) {
     context = request.context;
     attachments = request.attachments;
     console.log(`Received context: ${context}`);

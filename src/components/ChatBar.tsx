@@ -272,7 +272,7 @@ const ChatBar: React.FC = () => {
         if (activeTabUrl.protocol === "chrome:" || attachment) {
           // skip script injection for chrome:// urls or if an attachment is present
           const result = new Array(1);
-          result[0] = { result: [prompt, false, []] };
+          result[0] = { result: ["", false, []] };
           return result;
         } else {
           return chrome.scripting.executeScript({
