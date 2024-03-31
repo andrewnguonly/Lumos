@@ -55,6 +55,10 @@ module.exports = {
     fallback: {
       // enable use of LangChain document loaders
       fs: false, // TextLoader
+      zlib: false, // WebPDFLoader
+      http: false, // WebPDFLoader
+      https: false, // WebPDFLoader
+      url: false, // WebPDFLoader
     }
   },
   output: {

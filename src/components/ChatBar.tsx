@@ -26,11 +26,13 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { WebPDFLoader } from "langchain/document_loaders/web/pdf";
 import Markdown from "markdown-to-jsx";
 import { v4 as uuidv4 } from "uuid";
 
 import { getContentConfig } from "../contentConfig";
 import { useThemeContext } from "../contexts/ThemeContext";
+import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -130,10 +132,38 @@ const ChatBar: React.FC = () => {
 
     if (fileUploaded) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
+        let base64 = reader.result as string;
+
+        // Override base64 encoded string with content from document loaded
+        // files. Loading files on the client side (as opposed to the background
+        // script) is a workaround for using document loaders that require
+        // DOM/browser APIs.
+        const extensions = [".pdf"]
+        const extension = "." + fileUploaded.name.split(".").pop() || "";
+        if (extensions.includes(extension)) {
+          const loader = new DynamicFileLoader(fileUploaded, {
+            ".pdf": (file) => new WebPDFLoader(file, {splitPages: false}),
+          });
+          const docs = await loader.load();
+
+          // construct new base64 encoded string
+          let pageContent = "";
+          for (const doc of docs) {
+            pageContent += doc.pageContent + "\n\n";
+          }
+          const utf8Bytes = new TextEncoder().encode(pageContent);
+          let binary = '';
+          utf8Bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          
+          base64 = `data:${fileUploaded.type};base64,${btoa(binary)}`;
+        }
+
         const attachment: Attachment = {
           name: fileUploaded.name,
-          base64: reader.result as string,
+          base64: base64,
           lastModified: fileUploaded.lastModified,
         };
 
