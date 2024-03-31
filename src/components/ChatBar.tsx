@@ -139,11 +139,11 @@ const ChatBar: React.FC = () => {
         // files. Loading files on the client side (as opposed to the background
         // script) is a workaround for using document loaders that require
         // DOM/browser APIs.
-        const extensions = [".pdf"]
+        const extensions = [".pdf"];
         const extension = "." + fileUploaded.name.split(".").pop() || "";
         if (extensions.includes(extension)) {
           const loader = new DynamicFileLoader(fileUploaded, {
-            ".pdf": (file) => new WebPDFLoader(file, {splitPages: false}),
+            ".pdf": (file) => new WebPDFLoader(file, { splitPages: false }),
           });
           const docs = await loader.load();
 
@@ -153,11 +153,11 @@ const ChatBar: React.FC = () => {
             pageContent += doc.pageContent + "\n\n";
           }
           const utf8Bytes = new TextEncoder().encode(pageContent);
-          let binary = '';
+          let binary = "";
           utf8Bytes.forEach((byte) => {
             binary += String.fromCharCode(byte);
           });
-          
+
           base64 = `data:${fileUploaded.type};base64,${btoa(binary)}`;
         }
 
