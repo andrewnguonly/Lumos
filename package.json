@@ -1,6 +1,6 @@
 {
   "name": "lumos",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": true,
   "dependencies": {
     "@chatscope/chat-ui-kit-react": "^1.10.1",
@@ -24,6 +24,7 @@
     "fuse.js": "^7.0.0",
     "langchain": "^0.1.21",
     "markdown-to-jsx": "^7.4.1",
+    "pdf-parse": "^1.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^15.5.0",

@@ -31,6 +31,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getContentConfig } from "../contentConfig";
 import { useThemeContext } from "../contexts/ThemeContext";
+import { getBase64Str, getExtension } from "../document_loaders/util";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -130,10 +131,22 @@ const ChatBar: React.FC = () => {
 
     if (fileUploaded) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
+        let base64 = reader.result as string;
+
+        // Override base64 encoded string with content from document loaded
+        // files. Loading files on the client side (as opposed to the background
+        // script) is a workaround for using document loaders that require
+        // DOM/browser APIs.
+        const extensions = [".pdf"];
+        const extension = getExtension(fileUploaded.name, true);
+        if (extensions.includes(extension)) {
+          base64 = await getBase64Str(fileUploaded);
+        }
+
         const attachment: Attachment = {
           name: fileUploaded.name,
-          base64: reader.result as string,
+          base64: base64,
           lastModified: fileUploaded.lastModified,
         };
 
@@ -272,7 +285,7 @@ const ChatBar: React.FC = () => {
         if (activeTabUrl.protocol === "chrome:" || attachment) {
           // skip script injection for chrome:// urls or if an attachment is present
           const result = new Array(1);
-          result[0] = { result: [prompt, false, []] };
+          result[0] = { result: ["", false, []] };
           return result;
         } else {
           return chrome.scripting.executeScript({
@@ -386,6 +399,10 @@ const ChatBar: React.FC = () => {
         case "c":
           // cancel request
           cancelRequest();
+          break;
+        case "x":
+          // remove attachment
+          handleAttachmentDelete();
           break;
       }
     }
@@ -633,7 +650,10 @@ const ChatBar: React.FC = () => {
         )}
         <div style={{ flex: 1 }}></div>
         {attachment && (
-          <Tooltip placement="top" title={`Unattach ${attachment.name}`}>
+          <Tooltip
+            placement="top"
+            title={`Unattach ${attachment.name} (ctrl + x)`}
+          >
             <IconButton
               disabled={submitDisabled}
               onClick={handleAttachmentDelete}

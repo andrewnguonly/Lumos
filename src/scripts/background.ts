@@ -16,14 +16,11 @@ import {
 import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
-import { JSONLoader } from "langchain/document_loaders/fs/json";
-import { TextLoader } from "langchain/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
 import { Attachment, LumosMessage } from "../components/ChatBar";
-import { CSVPackedLoader } from "../document_loaders/csv";
-import { DynamicFileLoader } from "../document_loaders/dynamic_file";
+import { getDocuments, getExtension } from "../document_loaders/util";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -113,34 +110,28 @@ const createDocuments = async (
   chunkSize: number,
   chunkOverlap: number,
 ): Promise<Document[]> => {
-  if (attachments.length > 0) {
-    // Convert base64 to Blob
-    const attachment = attachments[0];
-    const base64 = attachment.base64;
-    const byteString = atob(base64.split(",")[1]);
-    const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], { type: mimeString });
-    const file = new File([blob], attachment.name, { type: mimeString });
+  const documents: Document[] = [];
 
-    const loader = new DynamicFileLoader(file, {
-      ".csv": (file) => new CSVPackedLoader(file),
-      ".json": (file) => new JSONLoader(file),
-      ".txt": (file) => new TextLoader(file),
-    });
-    return await loader.load();
-  } else {
+  if (attachments.length > 0) {
+    for (const attachment of attachments) {
+      const extension = getExtension(attachment.name);
+      if (!SUPPORTED_IMG_FORMATS.includes(extension)) {
+        // only add non-image attachments
+        documents.push(...(await getDocuments(attachment)));
+      }
+    }
+  }
+
+  if (context !== "") {
     // split page content into overlapping documents
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: chunkSize,
       chunkOverlap: chunkOverlap,
     });
-    return await splitter.createDocuments([context]);
+    documents.push(...(await splitter.createDocuments([context])));
   }
+
+  return documents;
 };
 
 const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
@@ -167,7 +158,7 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
 
     if (response.ok) {
       const blob = await response.blob();
-      let base64String: string = await new Promise((resolve) => {
+      const base64String: string = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
@@ -175,8 +166,6 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
         };
       });
 
-      // remove leading data url prefix `data:*/*;base64,`
-      base64String = base64String.split(",")[1];
       base64EncodedImages.push(base64String);
     } else {
       console.log(`Failed to download image: ${url}`);
@@ -235,7 +224,7 @@ const getMessages = async (
       base64EncodedImages.forEach((image) => {
         content.push({
           type: "image_url",
-          image_url: `data:image/*;base64,${image}`,
+          image_url: image,
         });
       });
 
@@ -370,7 +359,19 @@ chrome.runtime.onMessage.addListener(async (request) => {
         CLS_IMG_TRIGGER,
       ))
     ) {
-      base64EncodedImages = await downloadImages(request.imageURLs);
+      // first, try to get images from attachments
+      if (attachments.length > 0) {
+        for (const attachment of attachments) {
+          const extension = getExtension(attachment.name);
+          if (SUPPORTED_IMG_FORMATS.includes(extension)) {
+            base64EncodedImages.push(attachment.base64);
+          }
+        }
+      }
+      // then, try to download images from URLs
+      if (base64EncodedImages.length === 0) {
+        base64EncodedImages = await downloadImages(request.imageURLs);
+      }
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(
@@ -476,7 +477,7 @@ chrome.runtime.onMessage.addListener(async (request) => {
   }
 
   // process parsed context
-  if (request.context) {
+  if (request.context || request.attachments) {
     context = request.context;
     attachments = request.attachments;
     console.log(`Received context: ${context}`);
