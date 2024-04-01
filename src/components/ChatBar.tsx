@@ -650,7 +650,10 @@ const ChatBar: React.FC = () => {
         )}
         <div style={{ flex: 1 }}></div>
         {attachment && (
-          <Tooltip placement="top" title={`Unattach ${attachment.name} (ctrl + x)`}>
+          <Tooltip
+            placement="top"
+            title={`Unattach ${attachment.name} (ctrl + x)`}
+          >
             <IconButton
               disabled={submitDisabled}
               onClick={handleAttachmentDelete}
