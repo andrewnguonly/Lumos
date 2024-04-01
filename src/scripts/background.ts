@@ -16,13 +16,11 @@ import {
 import { Runnable, RunnableSequence } from "@langchain/core/runnables";
 import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
 import { IterableReadableStream } from "@langchain/core/utils/stream";
-import { JSONLoader } from "langchain/document_loaders/fs/json";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
 import { Attachment, LumosMessage } from "../components/ChatBar";
-import { CSVPackedLoader } from "../document_loaders/csv";
-import { DynamicFileLoader } from "../document_loaders/dynamic_file";
+import { getDocuments } from "../document_loaders/util";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -116,23 +114,7 @@ const createDocuments = async (
 
   if (attachments.length > 0) {
     for (const attachment of attachments) {
-      // Convert base64 to Blob
-      const base64 = attachment.base64;
-      const byteString = atob(base64.split(",")[1]);
-      const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: mimeString });
-      const file = new File([blob], attachment.name, { type: mimeString });
-
-      const loader = new DynamicFileLoader(file, {
-        ".csv": (file) => new CSVPackedLoader(file),
-        ".json": (file) => new JSONLoader(file),
-      });
-      documents.push(...(await loader.load()));
+      documents.push(...(await getDocuments(attachment)));
     }
   }
 

@@ -2,6 +2,11 @@ import { dsvFormat } from "d3-dsv";
 import { CSVLoader } from "langchain/document_loaders/fs/csv";
 
 export class CSVPackedLoader extends CSVLoader {
+  /**
+   * This function is copied from the CSVLoader class with a few
+   * modifications so that it's able to run in a Chrome extension
+   * context.
+   */
   public async parse(raw: string): Promise<string[]> {
     const { column, separator = "," } = this.options;
 
