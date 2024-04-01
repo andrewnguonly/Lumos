@@ -20,7 +20,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { formatDocumentsAsString } from "langchain/util/document";
 
 import { Attachment, LumosMessage } from "../components/ChatBar";
-import { getDocuments } from "../document_loaders/util";
+import { getDocuments, getExtension } from "../document_loaders/util";
 import {
   DEFAULT_KEEP_ALIVE,
   getLumosOptions,
@@ -114,7 +114,11 @@ const createDocuments = async (
 
   if (attachments.length > 0) {
     for (const attachment of attachments) {
-      documents.push(...(await getDocuments(attachment)));
+      const extension = getExtension(attachment.name);
+      if (!SUPPORTED_IMG_FORMATS.includes(extension)) {
+        // only add non-image attachments
+        documents.push(...(await getDocuments(attachment)));
+      }
     }
   }
 
@@ -154,7 +158,7 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
 
     if (response.ok) {
       const blob = await response.blob();
-      let base64String: string = await new Promise((resolve) => {
+      const base64String: string = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
@@ -162,8 +166,6 @@ const downloadImages = async (imageURLs: string[]): Promise<string[]> => {
         };
       });
 
-      // remove leading data url prefix `data:*/*;base64,`
-      base64String = base64String.split(",")[1];
       base64EncodedImages.push(base64String);
     } else {
       console.log(`Failed to download image: ${url}`);
@@ -222,7 +224,7 @@ const getMessages = async (
       base64EncodedImages.forEach((image) => {
         content.push({
           type: "image_url",
-          image_url: `data:image/*;base64,${image}`,
+          image_url: image,
         });
       });
 
@@ -357,7 +359,19 @@ chrome.runtime.onMessage.addListener(async (request) => {
         CLS_IMG_TRIGGER,
       ))
     ) {
-      base64EncodedImages = await downloadImages(request.imageURLs);
+      // first, try to get images from attachments
+      if (attachments.length > 0) {
+        for (const attachment of attachments) {
+          const extension = getExtension(attachment.name);
+          if (SUPPORTED_IMG_FORMATS.includes(extension)) {
+            base64EncodedImages.push(attachment.base64);
+          }
+        }
+      }
+      // then, try to download images from URLs
+      if (base64EncodedImages.length === 0) {
+        base64EncodedImages = await downloadImages(request.imageURLs);
+      }
     } else if (
       options.toolConfig["Calculator"].enabled &&
       (await classifyPrompt(

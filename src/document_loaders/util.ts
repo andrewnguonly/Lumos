@@ -6,8 +6,9 @@ import { Attachment } from "../components/ChatBar";
 import { CSVPackedLoader } from "../document_loaders/csv";
 import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 
-export const getExtension = (file: File): string => {
-  return "." + file.name.split(".").pop()?.toLowerCase() || "";
+export const getExtension = (fileName: string, withDot = false): string => {
+  const extension = fileName.split(".").pop()?.toLowerCase() || "";
+  return withDot ? `.${extension}` : extension;
 };
 
 export const getBase64Str = async (file: File): Promise<string> => {

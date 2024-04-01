@@ -29,7 +29,7 @@ export class DynamicFileLoader extends BaseDocumentLoader {
 
   public async load(): Promise<Document[]> {
     const documents: Document[] = [];
-    const extension = getExtension(this.file);
+    const extension = getExtension(this.file.name, true);
     let loader;
 
     if (extension !== "" && extension in this.loaders) {

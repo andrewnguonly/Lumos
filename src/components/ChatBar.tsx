@@ -139,7 +139,7 @@ const ChatBar: React.FC = () => {
         // script) is a workaround for using document loaders that require
         // DOM/browser APIs.
         const extensions = [".pdf"];
-        const extension = getExtension(fileUploaded);
+        const extension = getExtension(fileUploaded.name, true);
         if (extensions.includes(extension)) {
           base64 = await getBase64Str(fileUploaded);
         }
