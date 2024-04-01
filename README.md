@@ -211,6 +211,7 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `cmd + k`: Clear all messages.
 - `cmd + ;`: Open/close Chat History panel.
 - `ctrl + c`: Cancel request (LLM request/streaming or embeddings generation)
+- `ctrl + x`: Remove file attachment.
 
 ## Multimodal
 
