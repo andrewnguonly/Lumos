@@ -6,8 +6,13 @@ import { Attachment } from "../components/ChatBar";
 import { CSVPackedLoader } from "../document_loaders/csv";
 import { DynamicFileLoader } from "../document_loaders/dynamic_file";
 
+export const getExtension = (file: File): string => {
+  return "." + file.name.split(".").pop()?.toLowerCase() || "";
+};
+
 export const getBase64Str = async (file: File): Promise<string> => {
   const loader = new DynamicFileLoader(file, {
+    // add more loaders that require DOM/browser APIs here
     ".pdf": (file) => new WebPDFLoader(file, { splitPages: false }),
   });
   const docs = await loader.load();
@@ -41,6 +46,7 @@ export const getDocuments = async (
   const file = new File([blob], attachment.name, { type: mimeString });
 
   const loader = new DynamicFileLoader(file, {
+    // add more loaders that don't require DOM/browser APIs here
     ".csv": (file) => new CSVPackedLoader(file),
     ".json": (file) => new JSONLoader(file),
   });

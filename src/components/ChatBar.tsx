@@ -31,7 +31,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getContentConfig } from "../contentConfig";
 import { useThemeContext } from "../contexts/ThemeContext";
-import { getBase64Str } from "../document_loaders/util";
+import { getBase64Str, getExtension } from "../document_loaders/util";
 import {
   CHAT_CONTAINER_HEIGHT_MAX,
   CHAT_CONTAINER_HEIGHT_MIN,
@@ -139,7 +139,7 @@ const ChatBar: React.FC = () => {
         // script) is a workaround for using document loaders that require
         // DOM/browser APIs.
         const extensions = [".pdf"];
-        const extension = "." + fileUploaded.name.split(".").pop() || "";
+        const extension = getExtension(fileUploaded);
         if (extensions.includes(extension)) {
           base64 = await getBase64Str(fileUploaded);
         }
