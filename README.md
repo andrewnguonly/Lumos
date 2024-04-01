@@ -218,12 +218,13 @@ Lumos supports multimodal models! Images that are present on the current page wi
 
 ## File Attachments
 
-File attachments can be uploaded to Lumos. The contents of a file will be parsed and processed through Lumos's RAG workflow (similar to processing page content). By default, the text content of a file will be parsed if the extension type is not listed below (e.g. `.py`).
+File attachments can be uploaded to Lumos. The contents of a file will be parsed and processed through Lumos's RAG workflow (similar to processing page content). By default, the text content of a file will be parsed if the extension type is not explicitly listed below.
 
 Supported extension types:
 - `.csv`
 - `.json`
-- `.txt`
+- `.pdf`
+- any plain text file format (`.txt`, `.md`, `.py`, etc)
 
 Note: If an attachment is present, page content will not be parsed. Remove the file attachment to resume parsing page content.
 

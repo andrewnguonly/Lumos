@@ -54,7 +54,11 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js"],
     fallback: {
       // enable use of LangChain document loaders
-      fs: false
+      fs: false, // TextLoader
+      zlib: false, // WebPDFLoader
+      http: false, // WebPDFLoader
+      https: false, // WebPDFLoader
+      url: false, // WebPDFLoader
     }
   },
   output: {
@@ -63,7 +67,7 @@ module.exports = {
   },
   externals: {
     // enable use of LangChain document loaders
-    "node:fs/promises": "commonjs2 node:fs/promises",
+    "node:fs/promises": "commonjs2 node:fs/promises", // TextLoader
   },
 };
 
