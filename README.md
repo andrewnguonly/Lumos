@@ -228,6 +228,14 @@ Supported extension types:
 
 Note: If an attachment is present, page content will not be parsed. Remove the file attachment to resume parsing page content.
 
+### Image Files
+
+Image files will be processed through Lumos's [multimodal workflow](./docs/multimodal.md) (requires multimodal model).
+
+Supported image types:
+- `.jpeg`, `.jpg`
+- `.png`
+
 ## Tools (Experimental)
 
 Lumos invokes [Tools](https://js.langchain.com/docs/modules/agents/tools/) automatically based on the provided prompt. See documentation and examples [here](./docs/tools.md).
