@@ -255,3 +255,4 @@ Lumos invokes [Tools](https://js.langchain.com/docs/modules/agents/tools/) autom
 - [Let’s Normalize Online, In-Memory RAG! (Part 3)](https://medium.com/@andrewnguonly/lets-normalize-online-in-memory-rag-88e8169e9806)
 - [Supercharging If-Statements With Prompt Classification Using Ollama and LangChain (Part 4)](https://blog.langchain.dev/supercharging-if-statements-with-prompt-classification-using-ollama-and-langchain/)
 - [Bolstering LangChain’s MemoryVectorStore With Keyword Search (Part 5)](https://medium.com/@andrewnguonly/bolstering-langchains-memoryvectorstore-with-keyword-search-3d35cc278dc1)
+- [A Guide to Gotchas with LangChain Document Loaders in a Chrome Extension](https://medium.com/@andrewnguonly/a-guide-to-gotchas-with-langchain-document-loaders-in-a-chrome-extension-6228369f79f6)
