@@ -11,6 +11,7 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Alert,
@@ -183,7 +184,7 @@ const ChatBar: React.FC = () => {
   const savePrompt = (prompt: string) => {
     setPrompt(prompt);
     chrome.storage.session.set({ prompt: prompt });
-  }
+  };
 
   const saveCurrentChatId = (chatId: string) => {
     setCurrentChatId(chatId);
@@ -379,7 +380,7 @@ const ChatBar: React.FC = () => {
 
     // clear prompt after sending it to the background script
     savePrompt("");
-  }
+  };
 
   const handleAvatarClick = (message: string) => {
     navigator.clipboard.writeText(message);
@@ -653,6 +654,20 @@ const ChatBar: React.FC = () => {
                   >
                     {message.message.trim()}
                   </Markdown>
+                  {message.sender === "assistant" &&
+                    index === messages.length - 1 && (
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ flex: 1 }}></div>
+                        <IconButton
+                          sx={{ padding: 0 }}
+                          size="small"
+                          color="secondary"
+                          onClick={regenerate}
+                        >
+                          <RefreshIcon />
+                        </IconButton>
+                      </Box>
+                    )}
                 </Message.CustomContent>
               </Message>
             ))}

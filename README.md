@@ -220,6 +220,7 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `cmd + ;`: Open/close Chat History panel.
 - `ctrl + c`: Cancel request (LLM request/streaming or embeddings generation)
 - `ctrl + x`: Remove file attachment.
+- `ctrl + r`: Regenerate last LLM response.
 
 ## Multimodal
 

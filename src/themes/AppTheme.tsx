@@ -1,4 +1,4 @@
-import { amber, lightGreen } from "@mui/material/colors";
+import { amber, blue, lightGreen, purple } from "@mui/material/colors";
 import { createTheme, Theme } from "@mui/material/styles";
 
 const getAppTheme = (darkMode: boolean): Theme => {
@@ -6,6 +6,9 @@ const getAppTheme = (darkMode: boolean): Theme => {
     palette: {
       mode: darkMode ? "dark" : "light",
       primary: darkMode ? lightGreen : amber,
+      secondary: {
+        main: darkMode ? blue[800] : purple[300],
+      },
       text: {
         primary: darkMode ? "#aed581" : "#212121",
       },
