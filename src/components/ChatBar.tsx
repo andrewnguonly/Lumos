@@ -270,6 +270,13 @@ const ChatBar: React.FC = () => {
     }
   };
 
+  const setLoading = () => {
+    setLoading1(true);
+    setLoading1Text("Raise your wand...");
+    setSubmitDisabled(true);
+    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+  };
+
   const promptWithContent = async (prompt: string) => {
     // get default options
     const options = await getLumosOptions();
@@ -336,10 +343,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handleSendButtonClick = async () => {
-    setLoading1(true);
-    setLoading1Text("Raise your wand...");
-    setSubmitDisabled(true);
-    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+    setLoading();
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
@@ -360,10 +364,7 @@ const ChatBar: React.FC = () => {
   };
 
   const regenerate = () => {
-    setLoading1(true);
-    setLoading1Text("Raise your wand...");
-    setSubmitDisabled(true);
-    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+    setLoading();
 
     // delete last message (assistant/tool message)
     const newMessages = messages.slice(0, messages.length - 1);
