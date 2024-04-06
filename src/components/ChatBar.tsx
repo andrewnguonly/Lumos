@@ -111,8 +111,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPrompt(event.target.value);
-    chrome.storage.session.set({ prompt: event.target.value });
+    savePrompt(event.target.value);
   };
 
   const handleParsingDisabledChange = (
@@ -180,6 +179,11 @@ const ChatBar: React.FC = () => {
     setMessages(messages);
     chrome.storage.session.set({ messages: messages });
   };
+
+  const savePrompt = (prompt: string) => {
+    setPrompt(prompt);
+    chrome.storage.session.set({ prompt: prompt });
+  }
 
   const saveCurrentChatId = (chatId: string) => {
     setCurrentChatId(chatId);
@@ -265,7 +269,7 @@ const ChatBar: React.FC = () => {
     }
   };
 
-  const promptWithContent = async () => {
+  const promptWithContent = async (prompt: string) => {
     // get default options
     const options = await getLumosOptions();
     const contentConfig = options.contentConfig;
@@ -343,17 +347,39 @@ const ChatBar: React.FC = () => {
     if (parsingDisabled) {
       chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
     } else {
-      promptWithContent();
+      promptWithContent(prompt);
     }
 
     // clear prompt after sending it to the background script
-    setPrompt("");
-    chrome.storage.session.set({ prompt: "" });
+    savePrompt("");
   };
 
   const cancelRequest = () => {
     chrome.runtime.sendMessage({ cancelRequest: true });
   };
+
+  const regenerate = () => {
+    setLoading1(true);
+    setLoading1Text("Raise your wand...");
+    setSubmitDisabled(true);
+    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+
+    // delete last message (assistant/tool message)
+    const newMessages = messages.slice(0, messages.length - 1);
+    saveMessages(newMessages);
+
+    // get last message (user message)
+    const lastUserPrompt = newMessages[newMessages.length - 1].message;
+
+    if (parsingDisabled) {
+      chrome.runtime.sendMessage({ prompt: lastUserPrompt, skipRAG: true });
+    } else {
+      promptWithContent(lastUserPrompt);
+    }
+
+    // clear prompt after sending it to the background script
+    savePrompt("");
+  }
 
   const handleAvatarClick = (message: string) => {
     navigator.clipboard.writeText(message);
@@ -403,6 +429,10 @@ const ChatBar: React.FC = () => {
         case "x":
           // remove attachment
           handleAttachmentDelete();
+          break;
+        case "r":
+          // regenerate last LLM response
+          regenerate();
           break;
       }
     }
