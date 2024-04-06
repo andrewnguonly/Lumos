@@ -11,6 +11,7 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import {
   Alert,
@@ -111,8 +112,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPrompt(event.target.value);
-    chrome.storage.session.set({ prompt: event.target.value });
+    savePrompt(event.target.value);
   };
 
   const handleParsingDisabledChange = (
@@ -179,6 +179,11 @@ const ChatBar: React.FC = () => {
   const saveMessages = (messages: LumosMessage[]) => {
     setMessages(messages);
     chrome.storage.session.set({ messages: messages });
+  };
+
+  const savePrompt = (prompt: string) => {
+    setPrompt(prompt);
+    chrome.storage.session.set({ prompt: prompt });
   };
 
   const saveCurrentChatId = (chatId: string) => {
@@ -265,7 +270,14 @@ const ChatBar: React.FC = () => {
     }
   };
 
-  const promptWithContent = async () => {
+  const setLoading = () => {
+    setLoading1(true);
+    setLoading1Text("Raise your wand...");
+    setSubmitDisabled(true);
+    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+  };
+
+  const promptWithContent = async (prompt: string) => {
     // get default options
     const options = await getLumosOptions();
     const contentConfig = options.contentConfig;
@@ -331,10 +343,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handleSendButtonClick = async () => {
-    setLoading1(true);
-    setLoading1Text("Raise your wand...");
-    setSubmitDisabled(true);
-    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+    setLoading();
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
@@ -343,16 +352,35 @@ const ChatBar: React.FC = () => {
     if (parsingDisabled) {
       chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
     } else {
-      promptWithContent();
+      promptWithContent(prompt);
     }
 
     // clear prompt after sending it to the background script
-    setPrompt("");
-    chrome.storage.session.set({ prompt: "" });
+    savePrompt("");
   };
 
   const cancelRequest = () => {
     chrome.runtime.sendMessage({ cancelRequest: true });
+  };
+
+  const regenerate = () => {
+    setLoading();
+
+    // delete last message (assistant/tool message)
+    const newMessages = messages.slice(0, messages.length - 1);
+    saveMessages(newMessages);
+
+    // get last message (user message)
+    const lastUserPrompt = newMessages[newMessages.length - 1].message;
+
+    if (parsingDisabled) {
+      chrome.runtime.sendMessage({ prompt: lastUserPrompt, skipRAG: true });
+    } else {
+      promptWithContent(lastUserPrompt);
+    }
+
+    // clear prompt after sending it to the background script
+    savePrompt("");
   };
 
   const handleAvatarClick = (message: string) => {
@@ -403,6 +431,10 @@ const ChatBar: React.FC = () => {
         case "x":
           // remove attachment
           handleAttachmentDelete();
+          break;
+        case "r":
+          // regenerate last LLM response
+          regenerate();
           break;
       }
     }
@@ -623,6 +655,20 @@ const ChatBar: React.FC = () => {
                   >
                     {message.message.trim()}
                   </Markdown>
+                  {message.sender === "assistant" &&
+                    index === messages.length - 1 && (
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ flex: 1 }}></div>
+                        <IconButton
+                          sx={{ padding: 0 }}
+                          size="small"
+                          color="secondary"
+                          onClick={regenerate}
+                        >
+                          <RefreshIcon />
+                        </IconButton>
+                      </Box>
+                    )}
                 </Message.CustomContent>
               </Message>
             ))}
