@@ -682,7 +682,7 @@ const ChatBar: React.FC = () => {
           <Button onClick={() => {
             chrome.runtime.openOptionsPage()
           }}>
-           <SettingsIcon sx={{fontWeight: "bold", fontSize: 14}}/> 
+           <SettingsIcon sx={{fontWeight: "bold", fontSize: 20}}/> 
           </Button>
         </ButtonGroup>
       </Box>
