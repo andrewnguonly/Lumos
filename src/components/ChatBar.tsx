@@ -12,7 +12,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Alert,
   Box,
@@ -679,10 +679,12 @@ const ChatBar: React.FC = () => {
           <Button onClick={() => handleChangeHeight(-50)}>
             <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
           </Button>
-          <Button onClick={() => {
-            chrome.runtime.openOptionsPage()
-          }}>
-           <SettingsIcon sx={{fontWeight: "bold", fontSize: 20}}/> 
+          <Button
+            onClick={() => {
+              chrome.runtime.openOptionsPage();
+            }}
+          >
+            <SettingsIcon sx={{ fontWeight: "bold", fontSize: 20 }} />
           </Button>
         </ButtonGroup>
       </Box>
