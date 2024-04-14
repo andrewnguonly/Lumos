@@ -11,7 +11,9 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Alert,
   Box,
@@ -111,8 +113,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPrompt(event.target.value);
-    chrome.storage.session.set({ prompt: event.target.value });
+    savePrompt(event.target.value);
   };
 
   const handleParsingDisabledChange = (
@@ -181,6 +182,11 @@ const ChatBar: React.FC = () => {
     chrome.storage.session.set({ messages: messages });
   };
 
+  const savePrompt = (prompt: string) => {
+    setPrompt(prompt);
+    chrome.storage.session.set({ prompt: prompt });
+  };
+
   const saveCurrentChatId = (chatId: string) => {
     setCurrentChatId(chatId);
     chrome.storage.session.set({ currentChatId: chatId });
@@ -224,7 +230,7 @@ const ChatBar: React.FC = () => {
         // add new chat to chat history
         newChatHistory[newChatId] = {
           updatedAt: Date.now(),
-          preview: messages[0].message,
+          preview: messages[1].message.slice(0, 50),
           messages: messages,
         };
       } else {
@@ -232,7 +238,7 @@ const ChatBar: React.FC = () => {
         newChatHistory = {
           [newChatId]: {
             updatedAt: Date.now(),
-            preview: messages[0].message,
+            preview: messages[1].message.slice(0, 50),
             messages: messages,
           },
         };
@@ -265,7 +271,14 @@ const ChatBar: React.FC = () => {
     }
   };
 
-  const promptWithContent = async () => {
+  const setLoading = () => {
+    setLoading1(true);
+    setLoading1Text("Raise your wand...");
+    setSubmitDisabled(true);
+    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+  };
+
+  const promptWithContent = async (prompt: string) => {
     // get default options
     const options = await getLumosOptions();
     const contentConfig = options.contentConfig;
@@ -331,10 +344,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handleSendButtonClick = async () => {
-    setLoading1(true);
-    setLoading1Text("Raise your wand...");
-    setSubmitDisabled(true);
-    setPromptPlaceholderText("Press ctrl + c to cancel the request");
+    setLoading();
 
     // save user message to messages list
     const newMessages = [...messages, new LumosMessage("user", prompt)];
@@ -343,16 +353,35 @@ const ChatBar: React.FC = () => {
     if (parsingDisabled) {
       chrome.runtime.sendMessage({ prompt: prompt, skipRAG: true });
     } else {
-      promptWithContent();
+      promptWithContent(prompt);
     }
 
     // clear prompt after sending it to the background script
-    setPrompt("");
-    chrome.storage.session.set({ prompt: "" });
+    savePrompt("");
   };
 
   const cancelRequest = () => {
     chrome.runtime.sendMessage({ cancelRequest: true });
+  };
+
+  const regenerate = () => {
+    setLoading();
+
+    // delete last message (assistant/tool message)
+    const newMessages = messages.slice(0, messages.length - 1);
+    saveMessages(newMessages);
+
+    // get last message (user message)
+    const lastUserPrompt = newMessages[newMessages.length - 1].message;
+
+    if (parsingDisabled) {
+      chrome.runtime.sendMessage({ prompt: lastUserPrompt, skipRAG: true });
+    } else {
+      promptWithContent(lastUserPrompt);
+    }
+
+    // clear prompt after sending it to the background script
+    savePrompt("");
   };
 
   const handleAvatarClick = (message: string) => {
@@ -403,6 +432,10 @@ const ChatBar: React.FC = () => {
         case "x":
           // remove attachment
           handleAttachmentDelete();
+          break;
+        case "r":
+          // regenerate last LLM response
+          regenerate();
           break;
       }
     }
@@ -562,7 +595,10 @@ const ChatBar: React.FC = () => {
       <Drawer open={openChatHistory} onClose={() => setOpenChatHistory(false)}>
         <ChatHistory loadChat={loadChat} />
       </Drawer>
-      <Box className="chat-container" sx={{ height: chatContainerHeight }}>
+      <Box
+        className="lumos-chat-container"
+        sx={{ height: chatContainerHeight }}
+      >
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
           open={showSnackbar}
@@ -623,6 +659,20 @@ const ChatBar: React.FC = () => {
                   >
                     {message.message.trim()}
                   </Markdown>
+                  {message.sender === "assistant" &&
+                    index === messages.length - 1 && (
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ flex: 1 }}></div>
+                        <IconButton
+                          sx={{ padding: 0 }}
+                          size="small"
+                          color="secondary"
+                          onClick={regenerate}
+                        >
+                          <RefreshIcon />
+                        </IconButton>
+                      </Box>
+                    )}
                 </Message.CustomContent>
               </Message>
             ))}
@@ -678,11 +728,18 @@ const ChatBar: React.FC = () => {
           <Button onClick={() => handleChangeHeight(-50)}>
             <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
           </Button>
+          <Button
+            onClick={() => {
+              chrome.runtime.openOptionsPage();
+            }}
+          >
+            <SettingsIcon sx={{ fontWeight: "bold", fontSize: 20 }} />
+          </Button>
         </ButtonGroup>
       </Box>
-      <Box className="chat-bar">
+      <Box className="lumos-chat-bar">
         <TextField
-          className="input-field"
+          className="lumos-input-field"
           multiline
           maxRows={5}
           placeholder={promptPlaceholderText}
@@ -721,7 +778,7 @@ const ChatBar: React.FC = () => {
           }}
         />
         <IconButton
-          className="submit-button"
+          className="lumos-submit-button"
           disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
           style={imageStyle}
@@ -730,7 +787,7 @@ const ChatBar: React.FC = () => {
         </IconButton>
         <Tooltip title="Clear messages (cmd + k)">
           <IconButton
-            className="clear-button"
+            className="lumos-clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
             style={imageStyle}
