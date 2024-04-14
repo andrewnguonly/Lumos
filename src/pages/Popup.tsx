@@ -3,7 +3,7 @@ import "./Popup.css";
 
 const Popup: React.FC = () => {
   return (
-    <div className="popup">
+    <div className="lumos-popup">
       <ChatBar />
     </div>
   );

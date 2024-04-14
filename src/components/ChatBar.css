@@ -1,24 +1,24 @@
-.chat-container {
+.lumos-chat-container {
   height: 200px;
 }
 
-.chat-bar {
+.lumos-chat-bar {
   display: flex;
   justify-content: space-between;
   width: 100%;
 }
 
-.input-field {
+.lumos-input-field {
   flex: 1;
 }
 
-.submit-button {
+.lumos-submit-button {
   flex: 1;
   width: 40px;
   height: 40px;
 }
 
-.clear-button {
+.lumos-clear-button {
   flex: 1;
   width: 40px;
   height: 40px;

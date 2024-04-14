@@ -285,8 +285,8 @@ const Options: React.FC = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box className="options-popup">
-        <FormControl className="options-input" size="small">
+      <Box className="lumos-options-popup">
+        <FormControl className="lumos-options-input" size="small">
           <InputLabel id="ollama-model-select-label">Ollama Model</InputLabel>
           <Select
             sx={{ "margin-bottom": "15px" }}
@@ -313,7 +313,7 @@ const Options: React.FC = () => {
               })}
           </Select>
         </FormControl>
-        <FormControl className="options-input" size="small">
+        <FormControl className="lumos-options-input" size="small">
           <InputLabel id="ollama-embedding-select-label">
             Ollama Embedding Model
           </InputLabel>
@@ -339,7 +339,7 @@ const Options: React.FC = () => {
           </Select>
         </FormControl>
         <TextField
-          className="options-input"
+          className="lumos-options-input"
           sx={{ "margin-bottom": "15px" }}
           label="Ollama Host"
           value={host}
@@ -348,7 +348,7 @@ const Options: React.FC = () => {
           onChange={handleHostChange}
         />
         <TextField
-          className="options-input"
+          className="lumos-options-input"
           sx={{ "margin-bottom": "15px" }}
           type="number"
           label="Vector Store TTL (minutes)"
@@ -357,7 +357,7 @@ const Options: React.FC = () => {
           onChange={handleVectorStoreTTLMinsChange}
         />
         <TextField
-          className="options-input"
+          className="lumos-options-input"
           sx={{ "margin-bottom": "15px" }}
           label="Content Parser Config"
           multiline
