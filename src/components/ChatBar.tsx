@@ -595,7 +595,10 @@ const ChatBar: React.FC = () => {
       <Drawer open={openChatHistory} onClose={() => setOpenChatHistory(false)}>
         <ChatHistory loadChat={loadChat} />
       </Drawer>
-      <Box className="chat-container" sx={{ height: chatContainerHeight }}>
+      <Box
+        className="lumos-chat-container"
+        sx={{ height: chatContainerHeight }}
+      >
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
           open={showSnackbar}
@@ -734,9 +737,9 @@ const ChatBar: React.FC = () => {
           </Button>
         </ButtonGroup>
       </Box>
-      <Box className="chat-bar">
+      <Box className="lumos-chat-bar">
         <TextField
-          className="input-field"
+          className="lumos-input-field"
           multiline
           maxRows={5}
           placeholder={promptPlaceholderText}
@@ -775,7 +778,7 @@ const ChatBar: React.FC = () => {
           }}
         />
         <IconButton
-          className="submit-button"
+          className="lumos-submit-button"
           disabled={submitDisabled || prompt === ""}
           onClick={handleSendButtonClick}
           style={imageStyle}
@@ -784,7 +787,7 @@ const ChatBar: React.FC = () => {
         </IconButton>
         <Tooltip title="Clear messages (cmd + k)">
           <IconButton
-            className="clear-button"
+            className="lumos-clear-button"
             disabled={submitDisabled}
             onClick={handleClearButtonClick}
             style={imageStyle}

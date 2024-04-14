@@ -1,4 +1,4 @@
-.options-popup {
+.lumos-options-popup {
   width: 100%;
   height: 450px;
   box-sizing: border-box;
@@ -6,6 +6,6 @@
   overflow-x: hidden;
 }
 
-.options-input {
+.lumos-options-input {
   width: 100%;
 }
