@@ -230,7 +230,7 @@ const ChatBar: React.FC = () => {
         // add new chat to chat history
         newChatHistory[newChatId] = {
           updatedAt: Date.now(),
-          preview: messages[0].message,
+          preview: messages[1].message.slice(0, 50),
           messages: messages,
         };
       } else {
@@ -238,7 +238,7 @@ const ChatBar: React.FC = () => {
         newChatHistory = {
           [newChatId]: {
             updatedAt: Date.now(),
-            preview: messages[0].message,
+            preview: messages[1].message.slice(0, 50),
             messages: messages,
           },
         };
