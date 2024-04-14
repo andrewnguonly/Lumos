@@ -44,7 +44,11 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
   },
 };
 export const MULTIMODAL_MODELS = ["llava", "bakllava"];
-export const EMBEDDING_MODELS = ["nomic-embed-text", "all-minilm", "mxbai-embed-large"];
+export const EMBEDDING_MODELS = [
+  "nomic-embed-text",
+  "all-minilm",
+  "mxbai-embed-large",
+];
 export const SUPPORTED_IMG_FORMATS = ["jpeg", "jpg", "png"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
 export const CHAT_CONTAINER_HEIGHT_MAX = 500;
