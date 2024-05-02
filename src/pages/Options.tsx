@@ -48,6 +48,7 @@ export const EMBEDDING_MODELS = [
   "nomic-embed-text",
   "all-minilm",
   "mxbai-embed-large",
+  "snowflake-arctic-embed",
 ];
 export const SUPPORTED_IMG_FORMATS = ["jpeg", "jpg", "png"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
