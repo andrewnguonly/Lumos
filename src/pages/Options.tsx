@@ -139,6 +139,20 @@ export const apiConnected = async (
   return [false, [], errMsg];
 };
 
+export const preloadModel = async (
+  host: string,
+  model: string,
+  isEmbedding = false,
+): Promise<void> => {
+  fetch(`${host}/api/${isEmbedding ? "embeddings" : "chat"}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ model: model }),
+  });
+};
+
 const Options: React.FC = () => {
   const [model, setModel] = useState("");
   const [embeddingModel, setEmbeddingModel] = useState("");
@@ -282,6 +296,16 @@ const Options: React.FC = () => {
           }
           if (data.selectedEmbeddingModel) {
             setEmbeddingModel(data.selectedEmbeddingModel);
+          }
+
+          // preload inference model
+          const inferenceModel = data.selectedModel || models[0];
+          preloadModel(selectedHost, inferenceModel);
+
+          // preload embedding model
+          const embeddingModel = data.selectedEmbeddingModel || inferenceModel;
+          if (embeddingModel !== inferenceModel) {
+            preloadModel(selectedHost, embeddingModel, true);
           }
         } else {
           setHostError(true);
