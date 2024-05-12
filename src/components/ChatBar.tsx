@@ -40,6 +40,7 @@ import {
   DEFAULT_HOST,
   apiConnected,
   getLumosOptions,
+  preloadModel,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
 
@@ -506,7 +507,13 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedModel", "selectedHost", "chatHistory"],
+      [
+        "chatContainerHeight",
+        "selectedModel",
+        "selectedEmbeddingModel",
+        "selectedHost",
+        "chatHistory",
+      ],
       async (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
@@ -539,6 +546,16 @@ const ChatBar: React.FC = () => {
           if (!data.selectedModel) {
             // persist selected model to local storage
             chrome.storage.local.set({ selectedModel: models[0] });
+          }
+
+          // preload inference model
+          const inferenceModel = data.selectedModel || models[0];
+          preloadModel(selectedHost, inferenceModel);
+
+          // preload embedding model
+          const embeddingModel = data.selectedEmbeddingModel || inferenceModel;
+          if (embeddingModel !== inferenceModel) {
+            preloadModel(selectedHost, embeddingModel, true);
           }
         } else {
           setPromptError(true);
