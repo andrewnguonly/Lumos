@@ -43,7 +43,13 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     prefix: "calculate:",
   },
 };
-export const MULTIMODAL_MODELS = ["llava", "bakllava"];
+export const MULTIMODAL_MODELS = [
+  "llava",
+  "bakllava",
+  "moondream",
+  "llava-llama3",
+  "llava-phi3",
+];
 export const EMBEDDING_MODELS = [
   "nomic-embed-text",
   "all-minilm",
