@@ -20,7 +20,8 @@
     "permissions": [
         "activeTab",
         "scripting",
-        "storage"
+        "storage",
+        "clipboardRead"
     ],
     "options_ui": {
         "page": "js/options.html",

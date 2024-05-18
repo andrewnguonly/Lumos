@@ -218,6 +218,7 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 ## Shortcuts
 
 - `cmd + c`: Copy last message to clipboard.
+- `cmd + b`: Load clipboard text as a file attachment.
 - `cmd + j`: Toggle `Disable content parsing` checkbox.
 - `cmd + k`: Clear all messages.
 - `cmd + ;`: Open/close Chat History panel.
@@ -248,6 +249,10 @@ Image files will be processed through Lumos's [multimodal workflow](./docs/multi
 Supported image types:
 - `.jpeg`, `.jpg`
 - `.png`
+
+### Clipboard Content
+
+Clipboard content can be uploaded as a file attachment. Use the `cmd + b` shortcut key to load clipboard text as a file attachment.
 
 ## Tools (Experimental)
 
