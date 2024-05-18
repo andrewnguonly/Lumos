@@ -113,7 +113,7 @@ If you don't have `npm` installed, you can download the pre-built extension pack
 Right-click on the extension icon and select `Options` to access the extension's [Options page](https://developer.chrome.com/docs/extensions/develop/ui/options-page).
 
 - **Ollama Model**: Select desired model (e.g. `llama2`)
-- **Ollama Embedding Model**: Select desired embedding model (e.g. `nomic-embed-text`). **Caution**: Using a different embedding model requires Ollama to swap models, which may incur undesired latency in the app. This is a known limitation in Ollama and may be improved in the future.
+- **Ollama Embedding Model**: Select desired embedding model (e.g. `nomic-embed-text`). Specify the `OLLAMA_MAX_LOADED_MODELS=2` environment variable when starting the Ollama server to allow multiple models to be loaded into memory.
 - **Ollama Host**: Select desired host (defaults to `http://localhost:11434`)
 - **Vector Store TTL (minutes)**: Number of minutes to store a URL's content in the vector store cache.
 - **Content Parser Config**: Lumos's default content parser will extract all text content between a page's `<body></body>` tag. To customize the content parser, add an entry to the configuration.
@@ -218,6 +218,7 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 ## Shortcuts
 
 - `cmd + c`: Copy last message to clipboard.
+- `cmd + b`: Load clipboard text as a file attachment.
 - `cmd + j`: Toggle `Disable content parsing` checkbox.
 - `cmd + k`: Clear all messages.
 - `cmd + ;`: Open/close Chat History panel.
@@ -248,6 +249,10 @@ Image files will be processed through Lumos's [multimodal workflow](./docs/multi
 Supported image types:
 - `.jpeg`, `.jpg`
 - `.png`
+
+### Clipboard Content
+
+Clipboard content can be uploaded as a file attachment. Use the `cmd + b` shortcut key to load clipboard text as a file attachment.
 
 ## Tools (Experimental)
 

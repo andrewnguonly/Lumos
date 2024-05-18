@@ -43,11 +43,18 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     prefix: "calculate:",
   },
 };
-export const MULTIMODAL_MODELS = ["llava", "bakllava"];
+export const MULTIMODAL_MODELS = [
+  "llava",
+  "bakllava",
+  "moondream",
+  "llava-llama3",
+  "llava-phi3",
+];
 export const EMBEDDING_MODELS = [
   "nomic-embed-text",
   "all-minilm",
   "mxbai-embed-large",
+  "snowflake-arctic-embed",
 ];
 export const SUPPORTED_IMG_FORMATS = ["jpeg", "jpg", "png"];
 export const CHAT_CONTAINER_HEIGHT_MIN = 200;
@@ -130,6 +137,20 @@ export const apiConnected = async (
   }
 
   return [false, [], errMsg];
+};
+
+export const preloadModel = async (
+  host: string,
+  model: string,
+  isEmbedding = false,
+): Promise<void> => {
+  fetch(`${host}/api/${isEmbedding ? "embeddings" : "chat"}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ model: model }),
+  });
 };
 
 const Options: React.FC = () => {
@@ -275,6 +296,16 @@ const Options: React.FC = () => {
           }
           if (data.selectedEmbeddingModel) {
             setEmbeddingModel(data.selectedEmbeddingModel);
+          }
+
+          // preload inference model
+          const inferenceModel = data.selectedModel || models[0];
+          preloadModel(selectedHost, inferenceModel);
+
+          // preload embedding model
+          const embeddingModel = data.selectedEmbeddingModel || inferenceModel;
+          if (embeddingModel !== inferenceModel) {
+            preloadModel(selectedHost, embeddingModel, true);
           }
         } else {
           setHostError(true);

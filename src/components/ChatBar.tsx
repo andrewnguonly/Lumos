@@ -40,6 +40,7 @@ import {
   DEFAULT_HOST,
   apiConnected,
   getLumosOptions,
+  preloadModel,
 } from "../pages/Options";
 import { getHtmlContent } from "../scripts/content";
 
@@ -156,6 +157,31 @@ const ChatBar: React.FC = () => {
       };
       reader.readAsDataURL(fileUploaded);
     }
+  };
+
+  /**
+   * Clipboard content is processed as an attachment.
+   */
+  const loadAttachmentFromClipboard = () => {
+    // get text from clipboard
+    navigator.clipboard.readText().then((text) => {
+      if (text !== "") {
+        // remove non-Latin1 characters, btoa() only accepts Latin1 characters
+        // eslint-disable-next-line no-control-regex
+        const latin1Text = text.replace(/[^\x00-\xFF]/g, "");
+        const currentDate = Date.now();
+
+        // set text as attachment
+        const attachment: Attachment = {
+          name: `__clipboard__${currentDate}`,
+          base64: `data:text/plain;base64,${btoa(latin1Text)}`,
+          lastModified: currentDate,
+        };
+
+        setAttachment(attachment);
+        chrome.storage.session.set({ attachment: attachment });
+      }
+    });
   };
 
   const handleAttachmentDelete = () => {
@@ -418,6 +444,13 @@ const ChatBar: React.FC = () => {
           setShowSnackbar(true);
           setSnackbarMessage("Copied!");
           break;
+        case "b":
+          // load clipboard text as attachment
+          //
+          // For security reasons, a user interaction is required to access
+          // the clipboard.
+          loadAttachmentFromClipboard();
+          break;
         case ";":
           // open message history
           setOpenChatHistory(!openChatHistory);
@@ -506,7 +539,13 @@ const ChatBar: React.FC = () => {
 
   useEffect(() => {
     chrome.storage.local.get(
-      ["chatContainerHeight", "selectedModel", "selectedHost", "chatHistory"],
+      [
+        "chatContainerHeight",
+        "selectedModel",
+        "selectedEmbeddingModel",
+        "selectedHost",
+        "chatHistory",
+      ],
       async (data) => {
         if (data.chatContainerHeight) {
           setChatContainerHeight(data.chatContainerHeight);
@@ -539,6 +578,16 @@ const ChatBar: React.FC = () => {
           if (!data.selectedModel) {
             // persist selected model to local storage
             chrome.storage.local.set({ selectedModel: models[0] });
+          }
+
+          // preload inference model
+          const inferenceModel = data.selectedModel || models[0];
+          preloadModel(selectedHost, inferenceModel);
+
+          // preload embedding model
+          const embeddingModel = data.selectedEmbeddingModel || inferenceModel;
+          if (embeddingModel !== inferenceModel) {
+            preloadModel(selectedHost, embeddingModel, true);
           }
         } else {
           setPromptError(true);
@@ -702,7 +751,7 @@ const ChatBar: React.FC = () => {
         {attachment && (
           <Tooltip
             placement="top"
-            title={`Unattach ${attachment.name} (ctrl + x)`}
+            title={`Unattach ${attachment.name.startsWith("__clipboard__") ? "clipboard content" : attachment.name} (ctrl + x)`}
           >
             <IconButton
               disabled={submitDisabled}
