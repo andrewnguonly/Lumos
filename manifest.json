@@ -15,7 +15,7 @@
         "128": "assets/wand_128.png"
     },
     "background": {
-        "service_worker": "js/background.js"
+        "service_worker": "js/background_v2.js"
     },
     "permissions": [
         "activeTab",

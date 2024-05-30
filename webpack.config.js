@@ -7,7 +7,7 @@ module.exports = {
   entry: {
     index: "./src/index.tsx",
     options: "./src/options.tsx",
-    background: "./src/scripts/background.ts"
+    background: "./src/scripts/background_v2.ts"
   },
   mode: "production",
   module: {
@@ -68,6 +68,7 @@ module.exports = {
   externals: {
     // enable use of LangChain document loaders
     "node:fs/promises": "commonjs2 node:fs/promises", // TextLoader
+    "node:async_hooks": "commonjs2 node:async_hooks", // langgraph
   },
 };
 
