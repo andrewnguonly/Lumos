@@ -61,4 +61,16 @@ describe("getContentConfig", () => {
     const config = getContentConfig(url, contentConfig);
     expect(config?.chunkSize).toEqual(503);
   });
+
+  test("should match subdomain", () => {
+    const url = new URL("https://sub.domain.com");
+    const config = getContentConfig(url, contentConfig);
+    expect(config?.chunkSize).toEqual(501);
+  });
+
+  test("should match sub subdomain", () => {
+    const url = new URL("https://sub.sub.domain.com");
+    const config = getContentConfig(url, contentConfig);
+    expect(config?.chunkSize).toEqual(501);
+  });
 });
