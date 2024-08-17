@@ -65,7 +65,9 @@ export const getContentConfig = (
   selectors: string[];
   selectorsAll: string[];
 } => {
-  const searchPath = `${url.hostname}${url.pathname}`;
+  const domainParts = url.hostname.split(".");
+  const topLevelDomain = `${domainParts[domainParts.length - 2]}.${domainParts[domainParts.length - 1]}`;
+  const searchPath = `${topLevelDomain}${url.pathname}`;
 
   // Order keys (paths) of contentConfig in reverse order and check if any
   // key is a substring of searchPath. This will find the longest matching
