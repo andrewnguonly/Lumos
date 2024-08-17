@@ -1,4 +1,10 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  ClipboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Avatar,
@@ -440,7 +446,9 @@ const ChatBar: React.FC = () => {
         case "c":
           // copy last message
           if (messages.length === 0) return;
-          navigator.clipboard.writeText(messages[messages.length - 1].message);
+          navigator.clipboard.writeText(
+            messages[messages.length - 1].message.trim(),
+          );
           setShowSnackbar(true);
           setSnackbarMessage("Copied!");
           break;
@@ -471,6 +479,20 @@ const ChatBar: React.FC = () => {
           regenerate();
           break;
       }
+    }
+  };
+
+  /**
+   * This function is needed to prevent HTML elements (e.g. background color)
+   * from being copied to the clipboard. Only plain text should be copied to
+   * the clipboard.
+   */
+  const handleMessageOnCopy = (event: ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const selectedText = window.getSelection()?.toString() || "";
+    if (selectedText !== "") {
+      navigator.clipboard.writeText(selectedText);
     }
   };
 
@@ -685,6 +707,7 @@ const ChatBar: React.FC = () => {
                 }}
                 type="custom"
                 style={messageStyle}
+                onCopy={handleMessageOnCopy}
               >
                 <Avatar
                   src={
