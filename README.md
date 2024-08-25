@@ -226,6 +226,8 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `ctrl + x`: Remove file attachment.
 - `ctrl + r`: Regenerate last LLM response.
 
+Note: On Windows PC, use the `alt` key instead of `cmd`.
+
 ## Multimodal
 
 Lumos supports multimodal models! Images that are present on the current page will be downloaded and bound to the model for prompting. See documentation and examples [here](./docs/multimodal.md).

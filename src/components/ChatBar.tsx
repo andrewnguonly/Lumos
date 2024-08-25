@@ -428,7 +428,7 @@ const ChatBar: React.FC = () => {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.metaKey) {
+    if (event.metaKey || event.altKey) {
       const toggledParsingDisabled = !parsingDisabled;
 
       switch (event.key) {
