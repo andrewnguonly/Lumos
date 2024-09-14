@@ -789,10 +789,7 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <IconButton disabled={submitDisabled} onClick={saveChat}>
-          <Tooltip
-            placement="top"
-            title="Save chat (cmd + s)"
-          >
+          <Tooltip placement="top" title="Save chat (cmd + s)">
             <SaveAltIcon />
           </Tooltip>
         </IconButton>
@@ -800,28 +797,23 @@ const ChatBar: React.FC = () => {
           disabled={submitDisabled}
           onClick={() => setOpenChatHistory(true)}
         >
-          <Tooltip
-            placement="top"
-            title="Open chat history (cmd + ;)"
-          >
+          <Tooltip placement="top" title="Open chat history (cmd + ;)">
             <HistoryIcon />
           </Tooltip>
         </IconButton>
         <ButtonGroup variant="text">
-          <Tooltip
-            placement="top"
-            title="Increase chat window height"
-          >
+          <Tooltip placement="top" title="Increase chat window height">
             <Button onClick={() => handleChangeHeight(50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>+</Typography>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
+                +
+              </Typography>
             </Button>
           </Tooltip>
-          <Tooltip
-            placement="top"
-            title="Decrease chat window height"
-          >
+          <Tooltip placement="top" title="Decrease chat window height">
             <Button onClick={() => handleChangeHeight(-50)}>
-              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>
+                -
+              </Typography>
             </Button>
           </Tooltip>
           <Button
