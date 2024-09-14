@@ -463,6 +463,10 @@ const ChatBar: React.FC = () => {
           // open message history
           setOpenChatHistory(!openChatHistory);
           break;
+        case "s":
+          // save chat to chat history
+          event.preventDefault();
+          saveChat();
       }
     } else if (event.ctrlKey) {
       switch (event.key) {
@@ -785,21 +789,41 @@ const ChatBar: React.FC = () => {
           </Tooltip>
         )}
         <IconButton disabled={submitDisabled} onClick={saveChat}>
-          <SaveAltIcon />
+          <Tooltip
+            placement="top"
+            title="Save chat (cmd + s)"
+          >
+            <SaveAltIcon />
+          </Tooltip>
         </IconButton>
         <IconButton
           disabled={submitDisabled}
           onClick={() => setOpenChatHistory(true)}
         >
-          <HistoryIcon />
+          <Tooltip
+            placement="top"
+            title="Open chat history (cmd + ;)"
+          >
+            <HistoryIcon />
+          </Tooltip>
         </IconButton>
         <ButtonGroup variant="text">
-          <Button onClick={() => handleChangeHeight(50)}>
-            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>+</Typography>
-          </Button>
-          <Button onClick={() => handleChangeHeight(-50)}>
-            <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
-          </Button>
+          <Tooltip
+            placement="top"
+            title="Increase chat window height"
+          >
+            <Button onClick={() => handleChangeHeight(50)}>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>+</Typography>
+            </Button>
+          </Tooltip>
+          <Tooltip
+            placement="top"
+            title="Decrease chat window height"
+          >
+            <Button onClick={() => handleChangeHeight(-50)}>
+              <Typography sx={{ fontWeight: "bold", fontSize: 14 }}>-</Typography>
+            </Button>
+          </Tooltip>
           <Button
             onClick={() => {
               chrome.runtime.openOptionsPage();

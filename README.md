@@ -221,12 +221,16 @@ Note: Content that is highlighted will not be cached in the vector store cache. 
 - `cmd + b`: Load clipboard text as a file attachment.
 - `cmd + j`: Toggle `Disable content parsing` checkbox.
 - `cmd + k`: Clear all messages.
+- `cmd + s`: Save chat to Chat History.
 - `cmd + ;`: Open/close Chat History panel.
 - `ctrl + c`: Cancel request (LLM request/streaming or embeddings generation)
 - `ctrl + x`: Remove file attachment.
 - `ctrl + r`: Regenerate last LLM response.
 
 Note: On Windows PC, use the `alt` key instead of `cmd`.
+
+## Chat History
+Save a chat to the Chat History (`cmd + s`). Open the Chat History (`cmd + ;`) and load a previously saved chat.
 
 ## Multimodal
 
