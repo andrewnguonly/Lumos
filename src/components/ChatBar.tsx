@@ -727,6 +727,7 @@ const ChatBar: React.FC = () => {
                 <Message.CustomContent>
                   <Markdown
                     options={{
+                      disableParsingRawHTML: true,
                       overrides: {
                         pre: PreBlock,
                         code: CodeBlock,
