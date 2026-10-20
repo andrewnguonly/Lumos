@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 
 import {
   Box,
+  Button,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -20,6 +21,7 @@ import {
   isContentConfig,
 } from "../contentConfig";
 import { useThemeContext } from "../contexts/ThemeContext";
+import { hasWebPermission, setWebPermission } from "../tools/web";
 import "./Options.css";
 
 export interface ToolConfig {
@@ -42,7 +44,18 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     enabled: true,
     prefix: "calculate:",
   },
+  "Web Search": { enabled: true, prefix: "search:" },
+  "Fetch Page": { enabled: true, prefix: "fetch:" },
 };
+
+export const mergeToolConfig = (saved?: ToolConfig): ToolConfig =>
+  Object.fromEntries(
+    Object.entries(DEFAULT_TOOL_CONFIG).map(([key, value]) => [
+      key,
+      saved?.[key] ? { ...saved[key] } : { ...value },
+    ]),
+  );
+
 export const MULTIMODAL_MODELS = [
   "llava",
   "bakllava",
@@ -95,7 +108,7 @@ export const getLumosOptions = async (): Promise<LumosOptions> => {
             vectorStoreTTLMins:
               parseInt(data.selectedVectorStoreTTLMins, 10) ||
               DEFAULT_VECTOR_STORE_TTL_MINS,
-            toolConfig: data.toolConfig || DEFAULT_TOOL_CONFIG,
+            toolConfig: mergeToolConfig(data.toolConfig),
           });
         }
       },
@@ -168,6 +181,8 @@ const Options: React.FC = () => {
   );
   const [vectorStoreTTLMinsError, setVectorStoreTTLMinsError] = useState(false);
   const [toolConfig, setToolConfig] = useState(DEFAULT_TOOL_CONFIG);
+  const [webAllowed, setWebAllowed] = useState(false);
+  const [webError, setWebError] = useState("");
   const { theme, toggleDarkMode } = useThemeContext();
   const isDarkMode = theme.palette.mode === "dark";
 
@@ -230,19 +245,20 @@ const Options: React.FC = () => {
 
   const handleToolEnabledChange = (tool: string, enabled: boolean) => {
     const newToolConfig = { ...toolConfig };
-    newToolConfig[tool].enabled = enabled;
+    newToolConfig[tool] = { ...newToolConfig[tool], enabled };
     setToolConfig(newToolConfig);
     chrome.storage.local.set({ toolConfig: newToolConfig });
   };
 
   const handleToolPrefixChange = (tool: string, prefix: string) => {
     const newToolConfig = { ...toolConfig };
-    newToolConfig[tool].prefix = prefix;
+    newToolConfig[tool] = { ...newToolConfig[tool], prefix };
     setToolConfig(newToolConfig);
     chrome.storage.local.set({ toolConfig: newToolConfig });
   };
 
   useEffect(() => {
+    hasWebPermission().then(setWebAllowed);
     chrome.storage.local
       .get([
         "selectedModel",
@@ -425,6 +441,26 @@ const Options: React.FC = () => {
               />
             </Box>
           ))}
+        </Box>
+        <Box sx={{ my: "10px" }}>
+          Web tools send only the query after the search prefix or URL after the
+          fetch prefix to Parallel. Web tools do not send page content,
+          attachments or chat history to Parallel. Ollama settings are
+          unchanged. No account or API key is needed.
+          <Button
+            onClick={() => {
+              setWebPermission(!webAllowed)
+                .then(setWebAllowed)
+                .catch(() =>
+                  setWebError(
+                    "Unable to change web access. Check extension permissions.",
+                  ),
+                );
+            }}
+          >
+            {webAllowed ? "Revoke web access" : "Allow web access"}
+          </Button>
+          {webError}
         </Box>
         <Box sx={{ ml: "10px" }}>
           <FormGroup>

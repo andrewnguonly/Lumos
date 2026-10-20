@@ -33,6 +33,7 @@ import {
   CLS_CALC_PROMPT,
   CLS_CALC_TYPE,
 } from "../tools/calculator";
+import { callWebTool, resolveWebTool } from "../tools/web";
 import { EnhancedMemoryVectorStore } from "../vectorstores/enhanced_memory";
 
 interface VectorStoreMetadata {
@@ -280,7 +281,46 @@ const streamChunks = async (stream: IterableReadableStream<string>) => {
   });
 };
 
+const deliverWebAnswer = async (answer: string, webConversationId?: string) => {
+  const message = {
+    completion: answer,
+    sender: "tool",
+    done: true,
+    webConversationId,
+  };
+  await chrome.runtime
+    .sendMessage(message)
+    .catch(() => chrome.storage.session.set({ webCompletion: message }));
+};
+
 chrome.runtime.onMessage.addListener(async (request) => {
+  if (request.prompt) {
+    const signal = controller.signal;
+    try {
+      const options = await getLumosOptions();
+      const webRequest = resolveWebTool(request.prompt, options.toolConfig);
+      if (webRequest) {
+        const answer = await callWebTool(
+          webRequest,
+          request.webConversationId,
+          signal,
+        );
+        if (!signal.aborted)
+          await deliverWebAnswer(answer, request.webConversationId);
+        return;
+      }
+    } catch (error) {
+      if (!signal.aborted) {
+        const answer =
+          error instanceof Error
+            ? error.message
+            : "Unable to execute web tool.";
+        await deliverWebAnswer(answer, request.webConversationId);
+      }
+      return;
+    }
+  }
+
   // process prompt (RAG disabled)
   if (request.prompt && request.skipRAG) {
     const prompt = request.prompt.trim();
